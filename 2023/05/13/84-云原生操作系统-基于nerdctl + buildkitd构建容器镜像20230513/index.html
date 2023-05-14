@@ -1,0 +1,1100 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>84-云原生操作系统-基于nerdctl + buildkitd构建容器镜像 | Hexo</title>
+  <meta name="keywords" content="">
+  <meta name="description" content="84-云原生操作系统-基于nerdctl + buildkitd构建容器镜像 | Hexo">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="description" content="基于现有虚拟机磁盘为模版创建新的虚拟机使用 virt-install 创建虚拟机• 虽然使用virt-manager 可以方便的管理虚拟机,但如果需要批量进行虚拟机的创建管理,命令行工具virtinstall更加方便和适合案例：利用 qemu-img命令创建虚拟磁盘#注意: qemu-img create 一定要确认对应路径下没有此文件,如果存在将覆盖原文件  确认现有的虚拟磁盘文件[root@u">
+<meta property="og:type" content="article">
+<meta property="og:title" content="42-KVM虚拟化-基于现有虚拟机磁盘为模版创建新的虚拟机">
+<meta property="og:url" content="http://example.com/2023/05/14/42-KVM%E8%99%9A%E6%8B%9F%E5%8C%96-%E5%9F%BA%E4%BA%8E%E7%8E%B0%E6%9C%89%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%A3%81%E7%9B%98%E4%B8%BA%E6%A8%A1%E7%89%88%E5%88%9B%E5%BB%BA%E6%96%B0%E7%9A%84%E8%99%9A%E6%8B%9F%E6%9C%BA/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="基于现有虚拟机磁盘为模版创建新的虚拟机使用 virt-install 创建虚拟机• 虽然使用virt-manager 可以方便的管理虚拟机,但如果需要批量进行虚拟机的创建管理,命令行工具virtinstall更加方便和适合案例：利用 qemu-img命令创建虚拟磁盘#注意: qemu-img create 一定要确认对应路径下没有此文件,如果存在将覆盖原文件  确认现有的虚拟磁盘文件[root@u">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="http://example.com/img/092d6b54082e04ec1c20121058c692bc5844b5.png">
+<meta property="og:image" content="http://example.com/img/f8bada3025892d742fe1746c42ead86f562ddc.png">
+<meta property="article:published_time" content="2023-05-14T08:21:34.888Z">
+<meta property="article:modified_time" content="2023-05-14T08:23:40.552Z">
+<meta property="article:author" content="John Doe">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/img/092d6b54082e04ec1c20121058c692bc5844b5.png">
+
+
+<link rel="icon" href="/img/avatar.jpg">
+
+<link href="/css/style.css?v=1.1.0" rel="stylesheet">
+
+<link href="/css/hl_theme/atom-light.css?v=1.1.0" rel="stylesheet">
+
+<link href="//cdn.jsdelivr.net/npm/animate.css@4.1.0/animate.min.css" rel="stylesheet">
+
+<script src="//cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js"></script>
+<script src="/js/titleTip.js?v=1.1.0" ></script>
+
+<script src="//cdn.jsdelivr.net/npm/highlightjs@9.16.2/highlight.pack.min.js"></script>
+<script>
+    hljs.initHighlightingOnLoad();
+</script>
+
+<script src="//cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.min.js"></script>
+
+
+
+<script src="//cdn.jsdelivr.net/npm/jquery.cookie@1.4.1/jquery.cookie.min.js" ></script>
+
+<script src="/js/iconfont.js?v=1.1.0" ></script>
+
+<meta name="generator" content="Hexo 6.3.0"></head>
+<div style="display: none">
+  <input class="theme_disqus_on" value="false">
+  <input class="theme_preload_comment" value="">
+  <input class="theme_blog_path" value="">
+  <input id="theme_shortcut" value="true" />
+  <input id="theme_highlight_on" value="true" />
+  <input id="theme_code_copy" value="true" />
+</div>
+
+
+
+<body>
+<aside class="nav">
+    <div class="nav-left">
+        <a href="/"
+   class="avatar_target">
+    <img class="avatar"
+         src="/img/avatar.jpg"/>
+</a>
+<div class="author">
+    <span>John Doe</span>
+</div>
+
+<div class="icon">
+    
+        
+            <a title="rss"
+               href="/atom.xml"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-rss"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="github"
+               href="https://github.com/yelog"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-github"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="facebook"
+               href="https://www.facebook.com/faker.tops"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-facebook"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+    
+        
+    
+        
+            <a title="instagram"
+               href="https://www.facebook.com/faker.tops"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-instagram"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="reddit"
+               href="https://www.reddit.com/user/yelog/"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-reddit"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="weibo"
+               href="http://weibo.com/u/2307534817"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-weibo"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="jianshu"
+               href="https://www.jianshu.com/u/ff56736de7cf"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-jianshu"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="zhihu"
+               href="https://www.zhihu.com/people/jaytp/activities"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-zhihu"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+    
+        
+            <a title="oschina"
+               href="https://my.oschina.net/yelog"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-oschina"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+    
+        
+            <a title="email"
+               href="mailto:jaytp@qq.com"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-email"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="qq"
+               href="http://wpa.qq.com/msgrd?v=3&uin=872336115&site=qq&menu=yes"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-qq"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="kugou"
+               href="https://www.kugou.com/"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-kugou"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="neteasemusic"
+               href="https://music.163.com/#/user/home?id=88151013"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-neteasemusic"></use>
+                    </svg>
+                
+            </a>
+        
+    
+</div>
+
+
+
+
+<ul>
+    <li>
+        <div class="all active" data-rel="All">All
+            
+                <small>(36)</small>
+            
+        </div>
+    </li>
+    
+        
+            
+                <li>
+                    <div data-rel="SRE linux云计算">
+                        
+                        SRE linux云计算
+                        <small>(11)</small>
+                        
+                    </div>
+                    
+                </li>
+            
+        
+    
+        
+            
+                <li>
+                    <div data-rel="云原生">
+                        
+                        云原生
+                        <small>(10)</small>
+                        
+                    </div>
+                    
+                </li>
+            
+        
+    
+        
+            
+                <li>
+                    <div data-rel="PMP管理">
+                        
+                        PMP管理
+                        <small>(1)</small>
+                        
+                    </div>
+                    
+                </li>
+            
+        
+    
+        
+            
+                <li>
+                    <div data-rel="Python 爬虫">
+                        
+                        Python 爬虫
+                        <small>(14)</small>
+                        
+                    </div>
+                    
+                </li>
+            
+        
+    
+</ul>
+<div class="left-bottom">
+    <div class="menus">
+        
+            
+            
+            
+    </div>
+    <div>
+        
+            <a class="about  hasFriend  site_url"
+               
+               href="/about">About</a>
+        
+        <a style="width: 50%"
+                
+                                           class="friends">Friends</a>
+        
+    </div>
+</div>
+<input type="hidden" id="yelog_site_posts_number" value="36">
+
+<div style="display: none">
+    <span id="busuanzi_value_site_uv"></span>
+    <span id="busuanzi_value_site_pv"></span>
+</div>
+
+    </div>
+    <div class="nav-right">
+        <div class="friends-area">
+    <div class="friends-title">
+        Links
+        <i class="iconfont icon-left"></i>
+    </div>
+    <div class="friends-content">
+        <ul>
+            
+            <li><a target="_blank" href="http://yelog.org/">叶落阁</a></li>
+            
+        </ul>
+    </div>
+</div>
+        <div class="title-list">
+    <div class="right-top">
+        <div id="default-panel">
+            <i class="iconfont icon-search" data-title="搜索 快捷键 i"></i>
+            <div class="right-title">All</div>
+            <i class="iconfont icon-file-tree" data-title="切换到大纲视图 快捷键 w"></i>
+        </div>
+        <div id="search-panel">
+            <i class="iconfont icon-left" data-title="返回"></i>
+            <input id="local-search-input" autocomplete="off"/>
+            <label class="border-line" for="input"></label>
+            <i class="iconfont icon-case-sensitive" data-title="大小写敏感"></i>
+            <i class="iconfont icon-tag" data-title="标签"></i>
+        </div>
+        <div id="outline-panel" style="display: none">
+            <div class="right-title">大纲</div>
+            <i class="iconfont icon-list" data-title="切换到文章列表"></i>
+        </div>
+    </div>
+
+    <div class="tags-list">
+    <input id="tag-search" />
+    <div class="tag-wrapper">
+        
+    </div>
+
+</div>
+
+    
+    <nav id="title-list-nav">
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/14/42-KVM%E8%99%9A%E6%8B%9F%E5%8C%96-%E5%9F%BA%E4%BA%8E%E7%8E%B0%E6%9C%89%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%A3%81%E7%9B%98%E4%B8%BA%E6%A8%A1%E7%89%88%E5%88%9B%E5%BB%BA%E6%96%B0%E7%9A%84%E8%99%9A%E6%8B%9F%E6%9C%BA/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="42-KVM虚拟化-基于现有虚拟机磁盘为模版创建新的虚拟机">42-KVM虚拟化-基于现有虚拟机磁盘为模版创建新的虚拟机</span>
+            <span class="post-date" title="2023-05-14 16:21:34">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%B8%89%E7%AB%A0-2-requests%20%E8%BF%9B%E9%98%B6%E2%80%A2%20%E7%88%AC%E5%8F%96%E6%9F%90%E8%A7%86%E9%A2%91%E7%BD%91%E7%9B%B8%E5%85%B3%E8%A7%86%E9%A2%91/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第三章-2-requests 进阶• 爬取某视频网相关视频">Python爬虫-第三章-2-requests 进阶• 爬取某视频网相关视频</span>
+            <span class="post-date" title="2023-05-14 16:20:20">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/14/44-KVM%E8%99%9A%E6%8B%9F%E5%8C%96-%E5%AD%98%E5%82%A8%E7%AE%A1%E7%90%86%E5%92%8C%E7%A3%81%E7%9B%98%E6%89%A9%E5%AE%B9/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="44-KVM虚拟化-存储管理和磁盘扩容">44-KVM虚拟化-存储管理和磁盘扩容</span>
+            <span class="post-date" title="2023-05-14 16:18:30">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%B8%89%E7%AB%A0-3-%E5%88%A9%E7%94%A8re%E6%A8%A1%E5%9D%97%E7%88%AC%E5%8F%96%E6%9F%90%E7%BD%91%E7%94%B5%E5%BD%B1%E6%8E%92%E8%A1%8C%E6%A6%9C/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第三章-3-利用re模块爬取某网电影排行榜">Python爬虫-第三章-3-利用re模块爬取某网电影排行榜</span>
+            <span class="post-date" title="2023-05-14 16:16:51">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/14/46-Docker-Container%E5%AE%B9%E5%99%A8%E7%AE%A1%E7%90%86%E5%90%84%E7%A7%8D%E6%93%8D%E4%BD%9C/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="46-Docker-Container容器管理各种操作">46-Docker-Container容器管理各种操作</span>
+            <span class="post-date" title="2023-05-14 16:14:04">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/14/47-Docker-Dockerfile%E9%95%9C%E5%83%8F%E5%88%9B%E5%BB%BA%E8%87%AA%E5%8A%A8%E5%8C%96%E7%94%9F%E4%BA%A7%E6%A1%88%E4%BE%8B/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="47-Docker-Dockerfile镜像创建自动化生产案例">47-Docker-Dockerfile镜像创建自动化生产案例</span>
+            <span class="post-date" title="2023-05-14 16:09:19">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/14/48-Docker-%E5%A4%9A%E5%AE%B9%E5%99%A8%E6%95%B0%E6%8D%AE%E5%85%B1%E4%BA%AB%E5%8F%8A%E6%8C%81%E4%B9%85%E5%8C%96/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="48-Docker-多容器数据共享及持久化">48-Docker-多容器数据共享及持久化</span>
+            <span class="post-date" title="2023-05-14 16:06:48">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%B8%89%E7%AB%A0-4-%E5%88%A9%E7%94%A8BeautifulSoup%E6%A8%A1%E5%9D%97%E7%88%AC%E5%8F%96%E6%9F%90%E7%BD%91%E5%A3%81%E7%BA%B8%E5%9B%BE%E5%BA%93%E5%9B%BE%E7%89%87/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第三章-4-利用BeautifulSoup模块爬取某网壁纸图库图片">Python爬虫-第三章-4-利用BeautifulSoup模块爬取某网壁纸图库图片</span>
+            <span class="post-date" title="2023-05-14 16:05:34">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%B8%89%E7%AB%A0-5-%E5%88%A9%E7%94%A8xpath%E7%88%AC%E5%8F%96%E6%9F%90%E5%85%AB%E6%88%92%E7%BD%91%E7%9B%B8%E5%85%B3%E8%AF%8D%E8%AF%AD%E5%85%AC%E5%8F%B8%E7%9A%84%E4%BF%A1%E6%81%AF%E5%92%8C%E4%BB%B7%E6%A0%BC/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第三章-5-利用xpath爬取某八戒网相关词语公司的信息和价格">Python爬虫-第三章-5-利用xpath爬取某八戒网相关词语公司的信息和价格</span>
+            <span class="post-date" title="2023-05-14 16:04:16">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%B8%89%E7%AB%A0-6-%E6%8A%93%E5%8F%96%E6%9F%90%E4%BA%91%E9%9F%B3%E4%B9%90%E8%AF%84%E8%AE%BA%E6%95%B0%E6%8D%AE/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第三章-6-抓取某云音乐评论数据">Python爬虫-第三章-6-抓取某云音乐评论数据</span>
+            <span class="post-date" title="2023-05-14 16:03:15">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-1-%E5%A4%9A%E7%BA%BF%E7%A8%8B%E5%A4%9A%E8%BF%9B%E7%A8%8B%E5%B9%B6%E5%8F%91%E7%88%AC%E5%8F%96%E2%85%A0/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-1-多线程多进程并发爬取Ⅰ">Python爬虫-第四章-1-多线程多进程并发爬取Ⅰ</span>
+            <span class="post-date" title="2023-05-14 16:01:27">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-1-%E5%A4%9A%E7%BA%BF%E7%A8%8B%E5%A4%9A%E8%BF%9B%E7%A8%8B%E5%B9%B6%E5%8F%91%E7%88%AC%E5%8F%96%E2%85%A1/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-1-多线程多进程并发爬取Ⅱ">Python爬虫-第四章-1-多线程多进程并发爬取Ⅱ</span>
+            <span class="post-date" title="2023-05-14 16:00:37">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-1-%E5%A4%9A%E7%BA%BF%E7%A8%8B%E5%A4%9A%E8%BF%9B%E7%A8%8B%E5%B9%B6%E5%8F%91%E7%88%AC%E5%8F%96%E2%85%A2-%E7%88%AC%E5%8F%96%E6%9F%90%E8%8F%9C%E5%B8%82%E5%9C%BA%E6%89%B9%E5%8F%91%E4%BB%B7%E6%95%B0%E6%8D%AE/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-1-多线程多进程并发爬取Ⅲ-爬取某菜市场批发价数据">Python爬虫-第四章-1-多线程多进程并发爬取Ⅲ-爬取某菜市场批发价数据</span>
+            <span class="post-date" title="2023-05-14 15:59:35">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-2-%E5%8D%8F%E7%A8%8B%E4%B8%8E%E5%BC%82%E6%AD%A5/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-2-协程与异步">Python爬虫-第四章-2-协程与异步</span>
+            <span class="post-date" title="2023-05-14 15:58:20">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/14/52-HAProxy-10%E7%A7%8D%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E8%B0%83%E5%BA%A6%E7%AE%97%E6%B3%95/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="52-HAProxy-10种负载均衡调度算法">52-HAProxy-10种负载均衡调度算法</span>
+            <span class="post-date" title="2023-05-14 15:56:12">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/14/55-Redis-%E7%BC%96%E8%AF%91%E9%83%A8%E7%BD%B2%E5%8F%8A%E6%95%B0%E6%8D%AE%E6%8C%81%E4%B9%85%E5%8C%96/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="55-Redis-编译部署及数据持久化">55-Redis-编译部署及数据持久化</span>
+            <span class="post-date" title="2023-05-14 15:54:02">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/14/56-Redis%E9%9B%86%E7%BE%A4-%E5%93%A8%E5%85%B5Sentinel%E6%90%AD%E5%BB%BA%E5%AE%9E%E7%8E%B0%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E9%AB%98%E5%8F%AF%E7%94%A8/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="56-Redis集群-哨兵Sentinel搭建实现负载均衡高可用">56-Redis集群-哨兵Sentinel搭建实现负载均衡高可用</span>
+            <span class="post-date" title="2023-05-14 15:41:50">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/14/998-%E6%90%AD%E5%BB%BA%E4%B8%80%E5%8F%B0%E7%A7%81%E7%94%A8%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%A8%E8%BF%87%E7%A8%8B/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="998-搭建一台私用服务器全过程">998-搭建一台私用服务器全过程</span>
+            <span class="post-date" title="2023-05-14 15:36:20">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/%20Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-3-%E5%A4%9A%E7%BA%BF%E7%A8%8B%E5%A4%9A%E8%BF%9B%E7%A8%8B%E6%8F%90%E5%8D%87%E4%BB%BB%E5%8A%A1%E6%89%A7%E8%A1%8C%E6%95%88%E7%8E%87/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-3-多线程多进程提升任务执行效率">Python爬虫-第四章-3-多线程多进程提升任务执行效率</span>
+            <span class="post-date" title="2023-05-14 15:35:16">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/%20Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-4-%E5%88%A9%E7%94%A8%E7%BA%BF%E7%A8%8B%E6%B1%A0%E5%92%8C%E8%BF%9B%E7%A8%8B%E6%B1%A0%E9%AB%98%E6%95%88%E7%88%AC%E5%8F%96%E5%8C%97%E4%BA%AC%E6%9F%90%E5%8F%91%E8%8F%9C%E5%9C%B0%E6%95%B0%E6%8D%AE/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-4-利用线程池和进程池高效爬取北京某发菜地数据">Python爬虫-第四章-4-利用线程池和进程池高效爬取北京某发菜地数据</span>
+            <span class="post-date" title="2023-05-14 15:34:07">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/13/%20Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-5-%E9%AB%98%E6%95%88%E6%8A%93%E5%8F%96%E8%A7%86%E9%A2%91%E7%BD%91%E7%AB%99%E8%A7%86%E9%A2%91%E8%B5%84%E6%BA%90%E8%87%B3%E6%9C%AC%E5%9C%B0/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-5-高效抓取视频网站视频资源至本地">Python爬虫-第四章-5-高效抓取视频网站视频资源至本地</span>
+            <span class="post-date" title="2023-05-13 20:13:14">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/13/%20Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%BA%94%E7%AB%A0-1-%E8%B6%85%E7%BA%A7%E9%B9%B0%E6%8F%92%E4%BB%B6%E5%AE%9E%E7%8E%B0%E8%87%AA%E5%8A%A8%E5%A1%AB%E5%86%99%E8%AF%86%E5%88%AB%E7%A0%81%E5%B9%B6%E7%99%BB%E5%BD%9512306%E7%BD%91%E7%AB%99/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第五章-1-超级鹰插件实现自动填写识别码并登录12306网站">Python爬虫-第五章-1-超级鹰插件实现自动填写识别码并登录12306网站</span>
+            <span class="post-date" title="2023-05-13 19:54:30">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/13/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%BA%94%E7%AB%A0-2-%E7%88%AC%E5%8F%96%E6%9F%90%E7%BD%91%E7%AB%99%E5%9B%BE%E5%BA%93/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第五章-2-爬取某网站图库">Python爬虫-第五章-2-爬取某网站图库</span>
+            <span class="post-date" title="2023-05-13 19:52:47">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/66-CICD%E6%8C%81%E7%BB%AD%E9%9B%86%E6%88%90%E5%B7%A5%E5%85%B7-Jenkins%E5%A3%B0%E6%98%8E%E5%BC%8FPipeline%E9%83%A8%E7%BD%B2JAVA%E7%A8%8B%E5%BA%8F%E7%94%9F%E4%BA%A7%E6%A1%88%E4%BE%8B(%E5%8C%85%E5%90%ABDocker%E6%A1%88%E4%BE%8B)/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="66-CICD持续集成工具-Jenkins声明式Pipeline部署JAVA程序生产案例(包含Docker案例)">66-CICD持续集成工具-Jenkins声明式Pipeline部署JAVA程序生产案例(包含Docker案例)</span>
+            <span class="post-date" title="2023-05-13 19:49:20">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/997-%E6%89%A9%E5%B1%95KVM%E8%99%9A%E6%8B%9F%E6%9C%BA%E9%80%BB%E8%BE%91%E5%8D%B7/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="67-日志分析系统ELK-ELK架构简述">67-日志分析系统ELK-ELK架构简述</span>
+            <span class="post-date" title="2023-05-13 19:47:57">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/67-%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90%E7%B3%BB%E7%BB%9FELK-ELK%E6%9E%B6%E6%9E%84%E7%AE%80%E8%BF%B0/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="67-日志分析系统ELK-ELK架构简述">67-日志分析系统ELK-ELK架构简述</span>
+            <span class="post-date" title="2023-05-13 19:46:06">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/68-%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90%E7%B3%BB%E7%BB%9FELK-Elasticsearch%E5%8D%95%E7%82%B9%E9%83%A8%E7%BD%B2%E5%92%8C%E9%85%8D%E7%BD%AE%E4%BC%98%E5%8C%96%EF%BC%88%E5%90%AB%E5%9F%BA%E4%BA%8EDocker%E5%8D%95%E7%82%B9%E9%83%A8%E7%BD%B2%E6%A1%88%E4%BE%8B%EF%BC%89/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="68-日志分析系统ELK-Elasticsearch单点部署和配置优化（含基于Docker单点部署案例）">68-日志分析系统ELK-Elasticsearch单点部署和配置优化（含基于Docker单点部署案例）</span>
+            <span class="post-date" title="2023-05-13 19:44:06">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/13/78-%E4%BA%91%E5%8E%9F%E7%94%9F%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-Kubernetes%E9%9B%86%E7%BE%A4%E8%8A%82%E7%82%B9%E6%A8%AA%E5%90%91%E4%BC%B8%E7%BC%A9%E5%8F%8A%E6%A0%B8%E5%BF%83%E7%BB%84%E4%BB%B6%E7%89%88%E6%9C%AC%E5%8D%87%E7%BA%A7/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="78-云原生操作系统-Kubernetes集群节点横向伸缩及核心组件版本升级">78-云原生操作系统-Kubernetes集群节点横向伸缩及核心组件版本升级</span>
+            <span class="post-date" title="2023-05-13 17:37:37">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/13/79-%E4%BA%91%E5%8E%9F%E7%94%9F%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-Kubectl%E5%91%BD%E4%BB%A4%E4%BB%A5%E5%8F%8AEtcd%E5%9F%BA%E4%BA%8E%E5%BF%AB%E7%85%A7%E7%9A%84%E6%95%B0%E6%8D%AE%E5%A4%87%E4%BB%BD%E4%B8%8E%E6%81%A2%E5%A4%8D/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="79-云原生操作系统-Kubectl命令以及Etcd基于快照的数据备份与恢复">79-云原生操作系统-Kubectl命令以及Etcd基于快照的数据备份与恢复</span>
+            <span class="post-date" title="2023-05-13 17:34:14">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All PMP管理 "
+           href="/2023/05/13/%E9%A2%84%E6%B5%8B%E5%9E%8B%E9%A1%B9%E7%9B%AE%E7%AE%A1%E7%90%86-6-%E9%A1%B9%E7%9B%AE%E8%BF%9B%E5%BA%A6%E7%AE%A1%E7%90%86%E2%85%A1/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="预测型项目管理-6-项目进度管理Ⅱ">预测型项目管理-6-项目进度管理Ⅱ</span>
+            <span class="post-date" title="2023-05-13 17:32:31">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/13/84-%E4%BA%91%E5%8E%9F%E7%94%9F%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-%E5%9F%BA%E4%BA%8Enerdctl%20+%20buildkitd%E6%9E%84%E5%BB%BA%E5%AE%B9%E5%99%A8%E9%95%9C%E5%83%8F20230513/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="84-云原生操作系统-基于nerdctl + buildkitd构建容器镜像">84-云原生操作系统-基于nerdctl + buildkitd构建容器镜像</span>
+            <span class="post-date" title="2023-05-13 17:22:54">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/13/86-%E4%BA%91%E5%8E%9F%E7%94%9F%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-Zookeeper%E9%9B%86%E7%BE%A4%E5%8F%8A%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%8A%A8%E6%80%81%E6%B3%A8%E5%86%8C%E5%92%8C%E5%8F%91%E7%8E%B0%E4%B8%9A%E5%8A%A1%E5%AE%B9%E5%99%A8%E5%8C%96%E6%A1%88%E4%BE%8B/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="86-云原生操作系统-Zookeeper集群及微服务动态注册和发现业务容器化案例">86-云原生操作系统-Zookeeper集群及微服务动态注册和发现业务容器化案例</span>
+            <span class="post-date" title="2023-05-13 17:13:23">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/13/87-%E4%BA%91%E5%8E%9F%E7%94%9F%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-Redis%E5%8D%95%E6%9C%BA%E5%92%8C%E9%9B%86%E7%BE%A4%E4%B8%9A%E5%8A%A1%E5%AE%B9%E5%99%A8%E5%8C%96%E6%A1%88%E4%BE%8B/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="87-云原生操作系统-Redis单机和集群业务容器化案例">87-云原生操作系统-Redis单机和集群业务容器化案例</span>
+            <span class="post-date" title="2023-05-13 17:08:49">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/997-%E4%BD%BF%E7%94%A8ChatGPT%E5%81%9A%E8%BF%90%E7%BB%B4%E5%BA%94%E7%94%A8%E5%B7%A5%E5%85%B7%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E8%A7%A3%E7%AD%94/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="997-使用ChatGPT做运维应用工具常见问题解答">997-使用ChatGPT做运维应用工具常见问题解答</span>
+            <span class="post-date" title="2023-05-13 15:49:52">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/%E5%A4%A7%E5%9E%8B%E4%BA%92%E8%81%94%E7%BD%91%E5%BE%AE%E6%9C%8D%E5%8A%A1%E6%9E%B6%E6%9E%84%E5%9B%BE/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="大型互联网微服务架构图">大型互联网微服务架构图</span>
+            <span class="post-date" title="2023-05-13 15:47:16">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/%E4%BA%91%E8%AE%A1%E7%AE%97%E6%9E%B6%E6%9E%84%E5%9B%BE/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="云计算架构图">云计算架构图</span>
+            <span class="post-date" title="2023-05-13 15:24:25">2023/05/13</span>
+        </a>
+        
+        <div id="no-item-tips">
+
+        </div>
+    </nav>
+    <div id="outline-list">
+    </div>
+</div>
+
+    </div>
+    <div class="hide-list">
+        <div class="semicircle" data-title="切换全屏 快捷键 s">
+            <div class="brackets first"><</div>
+            <div class="brackets">&gt;</div>
+        </div>
+    </div>
+</aside>
+<div id="post">
+    <div class="pjax">
+        <article id="post-84-云原生操作系统-基于nerdctl + buildkitd构建容器镜像20230513" class="article article-type-post" itemscope itemprop="blogPost">
+    
+        <h1 class="article-title">84-云原生操作系统-基于nerdctl + buildkitd构建容器镜像</h1>
+    
+    <div class="article-meta">
+        
+        
+        
+        <span class="book">
+            <i class="iconfont icon-category"></i>
+            
+            
+            <a  data-rel="云原生">云原生</a>
+            
+        </span>
+        
+        
+    </div>
+    <div class="article-meta">
+        
+            Created At : <time class="date" title='Updated At: 2023-05-13 17:31:28'>2023-05-13 17:22</time>
+        
+    </div>
+    <div class="article-meta">
+        
+        
+        <span id="busuanzi_container_page_pv">
+            Views 👀 :<span id="busuanzi_value_page_pv">
+                <span class="count-comment">
+                    <span class="spinner">
+                      <div class="cube1"></div>
+                      <div class="cube2"></div>
+                    </span>
+                </span>
+            </span>
+        </span>
+        
+        
+    </div>
+    
+    <div class="toc-ref">
+    
+        <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link"><span class="toc-text">Nginx 测试web页面</span></a></li><li class="toc-item toc-level-2"><a class="toc-link"><span class="toc-text">Nginx 测试web页面</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%B0%9D%E8%AF%95%E5%88%A9%E7%94%A8harbor%E4%B8%AD%E7%9A%84%E9%95%9C%E5%83%8F%E8%BF%9B%E8%A1%8C%E4%BA%8C%E6%AC%A1%E6%9E%84%E5%BB%BA%E4%BC%9A%E6%8A%A5%E9%94%99-root-K8s-master01-jdk-1-8-212-nerdctl-build-t-K8s-harbor01-mooreyxia-com-x2F-pub-images-x2F-jdk-base-v8-212-Building-0-4s-3-x2F-3-FINISHED-x3D-gt-internal-load-build-definition-from-Dockerfile-0-1s-x3D-gt-x3D-gt-transferring-dockerfile-447B-0-0s-x3D-gt-internal-load-dockerignore-0-1s-x3D-gt-x3D-gt-transferring-context-2B-0-0s-x3D-gt-ERROR-internal-load-metadata-for-K8s-harbor01-mooreyxia-com-x2F-baseimages-x2F-centos-base-7-9-2009-0-1s"><span class="toc-text">#尝试利用harbor中的镜像进行二次构建会报错[root@K8s-master01 jdk-1.8.212]#nerdctl build -t  K8s-harbor01.mooreyxia.com&#x2F;pub-images&#x2F;jdk-base:v8.212  .[+] Building 0.4s (3&#x2F;3) FINISHED &#x3D;&gt; [internal] load build definition from Dockerfile                                                                                                                          0.1s &#x3D;&gt; &#x3D;&gt; transferring dockerfile: 447B                                                                                                                                          0.0s &#x3D;&gt; [internal] load .dockerignore                                                                                                                                             0.1s &#x3D;&gt; &#x3D;&gt; transferring context: 2B                                                                                                                                               0.0s &#x3D;&gt; ERROR [internal] load metadata for K8s-harbor01.mooreyxia.com&#x2F;baseimages&#x2F;centos-base:7.9.2009                                                                             0.1s</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Dockerfile-2"><span class="toc-text">Dockerfile:2</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-JDK-Base-Image-2-gt-gt-gt-FROM-K8s-harbor01-mooreyxia-com-x2F-baseimages-x2F-centos-base-7-9-2009-3-FROM-centos-7-9-2009-4"><span class="toc-text">   1 |     #JDK Base Image   2 | &gt;&gt;&gt; FROM K8s-harbor01.mooreyxia.com&#x2F;baseimages&#x2F;centos-base:7.9.2009   3 |     #FROM centos:7.9.2009   4 |     </span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#https-related-config"><span class="toc-text">https related config</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#https-port-for-harbor-default-is-443"><span class="toc-text">https port for harbor, default is 443</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#port-443"><span class="toc-text">port: 443</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#The-path-of-cert-and-key-files-for-nginx"><span class="toc-text">The path of cert and key files for nginx</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#certificate-x2F-data-x2F-harbor-x2F-certs-x2F-K8s-harbor01-mooreyxia-com-crt"><span class="toc-text">certificate: &#x2F;data&#x2F;harbor&#x2F;certs&#x2F;K8s-harbor01.mooreyxia.com.crt</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#private-key-x2F-data-x2F-harbor-x2F-certs-x2F-K8s-harbor01-mooreyxia-com-key"><span class="toc-text">private_key: &#x2F;data&#x2F;harbor&#x2F;certs&#x2F;K8s-harbor01.mooreyxia.com.key</span></a>
+    
+<style>
+    .left-col .switch-btn,
+    .left-col .switch-area {
+        display: none;
+    }
+    .toc-level-3 i,
+    .toc-level-3 ol {
+        display: none !important;
+    }
+</style>
+</div>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>基于nerdctl + buildkitd+containerd构建容器镜像<br>• 处理逻辑<br><img src="/../img/4150dd41926f162bf038234a6179a2af40bf83.png"><br>软件部署<br>• 部署nerdctl<br><img src="/../img/2675f4364a4920df974402033e0eb0c59b4930.png"><br>#官方源码<br><a target="_blank" rel="noopener" href="https://github.com/containerd/nerdctl">https://github.com/containerd/nerdctl</a></p>
+<p>#下载并安装nerdctl<br>[root@K8s-ansible containerd-bin]#wget <a target="_blank" rel="noopener" href="https://github.com/containerd/nerdctl/releases/download/v1.3.0/nerdctl-1.3.0-linux-amd64.tar.gz">https://github.com/containerd/nerdctl/releases/download/v1.3.0/nerdctl-1.3.0-linux-amd64.tar.gz</a></p>
+<p>[root@K8s-ansible containerd-bin]#tar xvf nerdctl-1.3.0-linux-amd64.tar.gz<br>nerdctl<br>containerd-rootless-setuptool.sh<br>containerd-rootless.sh</p>
+<p>[root@K8s-ansible containerd-bin]#ls nerdctl<br>nerdctl</p>
+<p>#将nerdctl复制到Master节点和Node节点的&#x2F;usr&#x2F;local&#x2F;bin下<br>[root@K8s-ansible containerd-bin]#scp nerdctl 192.168.11.211:&#x2F;usr&#x2F;local&#x2F;bin&#x2F;<br>nerdctl                                                                                                                                          100%   24MB  70.2MB&#x2F;s   00:00    </p>
+<p>#重启kubelet kube-proxy containerd 如果是已经有业务的节点，需要驱逐业务后再重启，慎用<br>[root@K8s-master01 ~]#systemctl restart  kubelet kube-proxy containerd</p>
+<p>[root@K8s-master01 ~]#nerdctl –version<br>nerdctl version 1.3.0</p>
+<p>#添加命令补全<br>[root@K8s-master01 ~] vim &#x2F;etc&#x2F;profile<br>source &lt;(nerdctl completion bash)<br>[root@K8s-master01 ~] source &#x2F;etc&#x2F;profile</p>
+<p>#nerdctl默认使用defalut,需要切换至k8s.io的namespace才能显示对方的镜像信息<br>[root@K8s-master01 ~]#mkdir -p &#x2F;etc&#x2F;nerdctl&#x2F;<br>[root@K8s-master01 ~]#vim &#x2F;etc&#x2F;nerdctl&#x2F;nerdctl.toml<br>[root@K8s-master01 ~]#cat &#x2F;etc&#x2F;nerdctl&#x2F;nerdctl.toml<br>namespace &#x3D; “k8s.io”</p>
+<p>#测试nerdctl查看kubernetes内镜像，如果非集群内镜像，可以不用添加<br>[root@K8s-master01 ubuntu]#nerdctl images<br>REPOSITORY                                             TAG              IMAGE ID        CREATED       PLATFORM       SIZE         BLOB SIZE<br>K8s-harbor01.mooreyxia.com&#x2F;kubernetes&#x2F;calico&#x2F;cni       v3.24.5          6d29e8402585    9 days ago    linux&#x2F;amd64    188.5 MiB    83.4 MiB<br>K8s-harbor01.mooreyxia.com&#x2F;kubernetes&#x2F;calico&#x2F;cni       <none>           6d29e8402585    9 days ago    linux&#x2F;amd64    188.5 MiB    83.4 MiB<br>K8s-harbor01.mooreyxia.com&#x2F;kubernetes&#x2F;calico&#x2F;node      v3.24.5          5c614b62b13d    9 days ago    linux&#x2F;amd64    224.4 MiB    77.8 MiB<br>K8s-harbor01.mooreyxia.com&#x2F;kubernetes&#x2F;calico&#x2F;node      <none>           5c614b62b13d    9 days ago    linux&#x2F;amd64    224.4 MiB    77.8 MiB<br>K8s-harbor01.mooreyxia.com&#x2F;kubernetes&#x2F;easzlab&#x2F;pause    3.9              3ec9d4ec5512    9 days ago    linux&#x2F;amd64    732.0 KiB    312.4 KiB<br>K8s-harbor01.mooreyxia.com&#x2F;kubernetes&#x2F;easzlab&#x2F;pause    <none>           3ec9d4ec5512    9 days ago    linux&#x2F;amd64    732.0 KiB    312.4 KiB<br>nginx                                                  1.20.2-alpine    74694f2de64c    2 days ago    linux&#x2F;amd64    26.1 MiB     9.6 MiB<br>nginx                                                  <none>           74694f2de64c    2 days ago    linux&#x2F;amd64    26.1 MiB     9.6 MiB</p>
+<p>#创建容器cni运行环境，否则无法用nerdctl运行容器<br>#官方源码<br><a target="_blank" rel="noopener" href="https://github.com/containernetworking/plugins">https://github.com/containernetworking/plugins</a><br>#安装cni<br>[root@K8s-master01 ubuntu]#cd &#x2F;opt&#x2F;<br>[root@K8s-master01 opt]#wget <a target="_blank" rel="noopener" href="https://github.com/containernetworking/plugins/releases/download/v1.2.0/cni-plugins-linux-amd64-v1.2.0.tgz">https://github.com/containernetworking/plugins/releases/download/v1.2.0/cni-plugins-linux-amd64-v1.2.0.tgz</a><br>[root@K8s-master01 opt]#ls cni-plugins-linux-amd64-v1.2.0.tgz<br>cni-plugins-linux-amd64-v1.2.0.tgz<br>[root@K8s-master01 opt]#mkdir -p  &#x2F;opt&#x2F;cni&#x2F;bin<br>[root@K8s-master01 opt]#tar xvf cni-plugins-linux-amd64-v1.2.0.tgz -C &#x2F;opt&#x2F;cni&#x2F;bin&#x2F;<br>.&#x2F;<br>.&#x2F;loopback<br>.&#x2F;bandwidth<br>.&#x2F;ptp<br>.&#x2F;vlan<br>.&#x2F;host-device<br>.&#x2F;tuning<br>.&#x2F;vrf<br>.&#x2F;sbr<br>.&#x2F;dhcp<br>.&#x2F;static<br>.&#x2F;firewall<br>.&#x2F;macvlan<br>.&#x2F;dummy<br>.&#x2F;bridge<br>.&#x2F;ipvlan<br>.&#x2F;portmap<br>.&#x2F;host-local<br>[root@K8s-master01 opt]#tree &#x2F;opt&#x2F;cni&#x2F;bin&#x2F;<br>&#x2F;opt&#x2F;cni&#x2F;bin&#x2F;<br>├── bandwidth<br>├── bridge<br>├── dhcp<br>├── dummy<br>├── firewall<br>├── host-device<br>├── host-local<br>├── ipvlan<br>├── loopback<br>├── macvlan<br>├── portmap<br>├── ptp<br>├── sbr<br>├── static<br>├── tuning<br>├── vlan<br>└── vrf</p>
+<p>0 directories, 17 files</p>
+<p>#测试nerdctl运行容器<br>[root@K8s-master01 ~]#nerdctl run -p 81:80 K8s-harbor01.mooreyxia.com&#x2F;baseimages&#x2F;nginx-base:1.22.0</p>
+<p>[root@K8s-dns ~]#curl <a target="_blank" rel="noopener" href="http://192.168.11.211:81/">http://192.168.11.211:81/</a><br><!DOCTYPE html></p>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Nginx 测试页面</title>
+</head>
+<body>
+<h2>Nginx 测试web页面</h2>
+<img src="./images/1.jpg">
+<p>
+    <a href="http://www.jd.com" target="_blank">app跳转</a>
+</p>
+</body>
+</html>
+• 部署buildkitd
+![](../img/5377bd482b8fb4dd91f390d8c62b982f03ffd9.png)
+• buildkitd组成部分
+#官方源码
+https://github.com/moby/buildkit
+
+<p>buildkitd(服务端)，⽬前⽀持runc和containerd作为镜像构建环境，默认是runc，可以更换为containerd。buildctl(客户端)，负责解析Dockerfile⽂件，并向服务端buildkitd发出构建请求。• 部署过程<br>• 注意：安装buildkit需要安装环境只有containerd没有docker,避免安装冲突<br>#下载buildkit源码并解压<br>[root@K8s-master01 ~]# cd &#x2F;usr&#x2F;local&#x2F;src&#x2F;<br>[root@K8s-master01 src]#wget <a target="_blank" rel="noopener" href="https://github.com/moby/buildkit/releases/download/v0.11.5/buildkit-v0.11.5.linux-amd64.tar.gz">https://github.com/moby/buildkit/releases/download/v0.11.5/buildkit-v0.11.5.linux-amd64.tar.gz</a><br>[root@K8s-master01 src]#ls<br>buildkit-v0.11.5.linux-amd64.tar.gz<br>[root@K8s-master01 src]#tar -xvf buildkit-v0.11.5.linux-amd64.tar.gz -C &#x2F;usr&#x2F;local&#x2F;bin&#x2F;<br>bin&#x2F;<br>bin&#x2F;buildctl<br>bin&#x2F;buildkit-qemu-aarch64<br>bin&#x2F;buildkit-qemu-arm<br>bin&#x2F;buildkit-qemu-i386<br>bin&#x2F;buildkit-qemu-mips64<br>bin&#x2F;buildkit-qemu-mips64el<br>bin&#x2F;buildkit-qemu-ppc64le<br>bin&#x2F;buildkit-qemu-riscv64<br>bin&#x2F;buildkit-qemu-s390x<br>bin&#x2F;buildkit-runc<br>bin&#x2F;buildkitd</p>
+<p>#复制可文件到&#x2F;usr&#x2F;local&#x2F;bin下<br>[root@K8s-master01 src]#mv &#x2F;usr&#x2F;local&#x2F;bin&#x2F;bin&#x2F;buildctl &#x2F;usr&#x2F;local&#x2F;bin&#x2F;bin&#x2F;buildkitd &#x2F;usr&#x2F;local&#x2F;bin&#x2F;<br>[root@K8s-master01 src]#ls &#x2F;usr&#x2F;local&#x2F;bin&#x2F;build*<br>&#x2F;usr&#x2F;local&#x2F;bin&#x2F;buildctl  &#x2F;usr&#x2F;local&#x2F;bin&#x2F;buildkitd</p>
+<p>#创建buildkit.socket套接字文件<br>[root@K8s-master01 src]#vim &#x2F;lib&#x2F;systemd&#x2F;system&#x2F;buildkit.socket<br>[root@K8s-master01 src]#cat &#x2F;lib&#x2F;systemd&#x2F;system&#x2F;buildkit.socket<br>[Unit]<br>Descriptinotallow&#x3D;BuildKit<br>Documentatinotallow&#x3D;<a target="_blank" rel="noopener" href="https://github.com/moby/buildkit">https://github.com/moby/buildkit</a><br>[Socket]<br>ListenStream&#x3D;%t&#x2F;buildkit&#x2F;buildkitd.sock<br>[Install]<br>WantedBy&#x3D;sockets.target</p>
+<p>#创建buildkitd.service<br>[root@K8s-master01 src]#vim &#x2F;lib&#x2F;systemd&#x2F;system&#x2F;buildkit.service<br>[root@K8s-master01 src]#cat &#x2F;lib&#x2F;systemd&#x2F;system&#x2F;buildkit.service<br>[Unit]<br>Descriptinotallow&#x3D;BuildKit<br>Requires&#x3D;buildkit.socket<br>After&#x3D;buildkit.socketDocumentatinotallow&#x3D;<a target="_blank" rel="noopener" href="https://github.com/moby/buildkit">https://github.com/moby/buildkit</a><br>[Service]<br>ExecStart&#x3D;&#x2F;usr&#x2F;local&#x2F;bin&#x2F;buildkitd –oci-worker&#x3D;false –containerd-worker&#x3D;true<br>[Install]<br>WantedBy&#x3D;multi-user.target</p>
+<p>#加载服务<br>[root@K8s-master01 src]#systemctl daemon-reload<br>[root@K8s-master01 src]#systemctl enable –now buildkit<br>Created symlink &#x2F;etc&#x2F;systemd&#x2F;system&#x2F;multi-user.target.wants&#x2F;buildkit.service → &#x2F;lib&#x2F;systemd&#x2F;system&#x2F;buildkit.service.<br>[root@K8s-master01 src]#systemctl status buildkit<br>● buildkit.service - BuildKit<br>     Loaded: loaded (&#x2F;lib&#x2F;systemd&#x2F;system&#x2F;buildkit.service; enabled; vendor preset: enabled)<br>     Active: active (running) since Sat 2023-04-08 02:05:46 UTC; 57s ago<br>TriggeredBy: ● buildkit.socket<br>   Main PID: 31137 (buildkitd)<br>      Tasks: 8 (limit: 2234)<br>     Memory: 7.6M<br>        CPU: 68ms<br>     CGroup: &#x2F;system.slice&#x2F;buildkit.service<br>             └─31137 &#x2F;usr&#x2F;local&#x2F;bin&#x2F;buildkitd –oci-worker&#x3D;false –containerd-worker&#x3D;true</p>
+<p>Apr 08 02:05:46 K8s-master01.mooreyxia.com systemd[1]: Started BuildKit.<br>Apr 08 02:05:46 K8s-master01.mooreyxia.com buildkitd[31137]: time&#x3D;”2023-04-08T02:05:46Z” level&#x3D;warning msg&#x3D;”using host network as the default”<br>Apr 08 02:05:46 K8s-master01.mooreyxia.com buildkitd[31137]: time&#x3D;”2023-04-08T02:05:46Z” level&#x3D;warning msg&#x3D;”git source cannot be enabled: failed to find git binary: exec: &quot;git&quot;:<br> executable file not found in $PATH”<br>Apr 08 02:05:46 K8s-master01.mooreyxia.com buildkitd[31137]: time&#x3D;”2023-04-08T02:05:46Z” level&#x3D;info msg&#x3D;”found worker &quot;ph4qqnwb8sk8awqhtrqse2xzs&quot;, labels&#x3D;map[org.mobyproject.bui<br>ldkit.worker.containerd.namespace:buildkit org.mobyproject.buildkit.worker.containerd.uuid:627774aa-294c-43ef-a5fa-01d506629339 org.mobyproject.buildkit.worker.executor:containerd<br> org.mobyproject.buildkit.worker.hostname:K8s-master01.mooreyxia.com org.mobyproject.buildkit.worker.network:host org.mobyproject.buildkit.worker.selinux.enabled:false org.mobypro<br>ject.buildkit.worker.snapshotter:overlayfs], platforms&#x3D;[linux&#x2F;amd64 linux&#x2F;amd64&#x2F;v2 linux&#x2F;amd64&#x2F;v3 linux&#x2F;386]”<br>Apr 08 02:05:46 K8s-master01.mooreyxia.com buildkitd[31137]: time&#x3D;”2023-04-08T02:05:46Z” level&#x3D;info msg&#x3D;”found 1 workers, default&#x3D;&quot;ph4qqnwb8sk8awqhtrqse2xzs&quot;“<br>Apr 08 02:05:46 K8s-master01.mooreyxia.com buildkitd[31137]: time&#x3D;”2023-04-08T02:05:46Z” level&#x3D;warning msg&#x3D;”currently, only the default worker can be used.”<br>Apr 08 02:05:46 K8s-master01.mooreyxia.com buildkitd[31137]: time&#x3D;”2023-04-08T02:05:46Z” level&#x3D;info msg&#x3D;”running server on &#x2F;run&#x2F;buildkit&#x2F;buildkitd.sock”构建镜像<br>• 加入nginx代理访问harbor<br>#DNS中加入nginx代理解析<br>k8s-nginx       A       192.168.11.200</p>
+<p>[root@K8s-dns ~]#dig k8s-nginx.mooreyxia.com</p>
+<p>; &lt;&lt;&gt;&gt; DiG 9.18.1-1ubuntu1.3-Ubuntu &lt;&lt;&gt;&gt; k8s-nginx.mooreyxia.com<br>;; global options: +cmd<br>;; Got answer:<br>;; -&gt;&gt;HEADER&lt;&lt;- opcode: QUERY, status: NOERROR, id: 61537<br>;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 1</p>
+<p>;; OPT PSEUDOSECTION:<br>; EDNS: version: 0, flags:; udp: 65494<br>;; QUESTION SECTION:<br>;k8s-nginx.mooreyxia.com.   IN  A</p>
+<p>;; ANSWER SECTION:<br>k8s-nginx.mooreyxia.com. 86400  IN  A   192.168.11.200</p>
+<p>;; Query time: 4 msec<br>;; SERVER: 127.0.0.53#53(127.0.0.53) (UDP)<br>;; WHEN: Sat Apr 08 02:23:29 UTC 2023<br>;; MSG SIZE  rcvd: 68</p>
+<p>#部署Nginx<br>[root@K8s-dns ~]#cat nginx_install.sh<br>#!&#x2F;bin&#x2F;bash</p>
+<p>NGINX_FILE&#x3D;nginx-1.22.1<br>NGINX_URL&#x3D;<a target="_blank" rel="noopener" href="http://nginx.org/download/">http://nginx.org/download/</a><br>TAR&#x3D;.tar.gz<br>SRC_DIR&#x3D;&#x2F;usr&#x2F;local&#x2F;src<br>NGINX_INSTALL_DIR&#x3D;&#x2F;apps&#x2F;nginx<br>CPUS&#x3D;<code>lscpu |awk &#39;/^CPU\(s\)/&#123;print $2&#125;&#39;</code><br>. &#x2F;etc&#x2F;os-release</p>
+<p>color () {<br>    RES_COL&#x3D;60<br>    MOVE_TO_COL&#x3D;”echo -en \033[${RES_COL}G”<br>    SETCOLOR_SUCCESS&#x3D;”echo -en \033[1;32m”<br>    SETCOLOR_FAILURE&#x3D;”echo -en \033[1;31m”<br>    SETCOLOR_WARNING&#x3D;”echo -en \033[1;33m”<br>    SETCOLOR_NORMAL&#x3D;”echo -en \E[0m”<br>    echo -n “$1” &amp;&amp; $MOVE_TO_COL<br>    echo -n “[“<br>    if [ $2 &#x3D; “success” -o $2 &#x3D; “0” ] ;then<br>        ${SETCOLOR_SUCCESS}<br>        echo -n $”  OK  “<br>    elif [ $2 &#x3D; “failure” -o $2 &#x3D; “1”  ] ;then<br>        ${SETCOLOR_FAILURE}<br>        echo -n $”FAILED”<br>    else<br>        ${SETCOLOR_WARNING}<br>        echo -n $”WARNING”<br>    fi<br>    ${SETCOLOR_NORMAL}<br>    echo -n “]”<br>    echo<br>}</p>
+<p>check () {<br>    [ -e ${NGINX_INSTALL_DIR} ] &amp;&amp; { color “nginx 已安装,请卸载后再安装” 1; exit; }<br>    cd  ${SRC_DIR}<br>    if [  -e ${NGINX_FILE}${TAR} ];then<br>        color “相关文件已准备好” 0<br>    else<br>        color ‘开始下载 nginx 源码包’ 0<br>        wget ${NGINX_URL}${NGINX_FILE}${TAR}<br>        [ $? -ne 0 ] &amp;&amp; { color “下载 ${NGINX_FILE}${TAR}文件失败” 1; exit; }<br>    fi<br>} </p>
+<p>install () {<br>    color “开始安装 nginx” 0<br>    if id nginx  &amp;&gt; &#x2F;dev&#x2F;null;then<br>        color “nginx 用户已存在” 1<br>    else<br>        useradd -s &#x2F;sbin&#x2F;nologin -r  nginx<br>        color “创建 nginx 用户” 0<br>    fi<br>    color “开始安装 nginx 依赖包” 0<br>    if [ $ID &#x3D;&#x3D; “centos” ] ;then<br>        if [[ $VERSION_ID &#x3D;~ ^7 ]];then<br>            yum -y  install  gcc  make pcre-devel openssl-devel zlib-devel perl-ExtUtils-Embed<br>        elif [[ $VERSION_ID &#x3D;~ ^8 ]];then<br>            yum -y  install make gcc-c++ libtool pcre pcre-devel zlib zlib-devel openssl openssl-devel perl-ExtUtils-Embed<br>        else<br>            color ‘不支持此系统!’  1<br>            exit<br>        fi<br>     elif [ $ID &#x3D;&#x3D; “rocky”  ];then<br>        yum -y  install gcc make gcc-c++ libtool pcre pcre-devel zlib zlib-devel openssl openssl-devel perl-ExtUtils-Embed<br>     else<br>        apt update<br>        apt -y install gcc make  libpcre3 libpcre3-dev openssl libssl-dev zlib1g-dev<br>     fi<br>     [ $? -ne 0 ] &amp;&amp; { color “安装依赖包失败” 1; exit; }<br>     cd $SRC_DIR<br>     tar xf ${NGINX_FILE}${TAR}<br>     NGINX_DIR&#x3D;<code>echo $&#123;NGINX_FILE&#125;$&#123;TAR&#125;| sed -nr &#39;s/^(.*[0-9]).*/\1/p&#39;</code><br>     cd ${NGINX_DIR}<br>     .&#x2F;configure –prefix&#x3D;${NGINX_INSTALL_DIR} –user&#x3D;nginx –group&#x3D;nginx –with-http_ssl_module –with-http_v2_module –with-http_realip_module –with-http_stub_status_module –with-http_gzip_static_module –with-pcre –with-stream –with-stream_ssl_module –with-stream_realip_module<br>     make -j $CPUS &amp;&amp; make install<br>     [ $? -eq 0 ] &amp;&amp; color “nginx 编译安装成功” 0 ||  { color “nginx 编译安装失败,退出!” 1 ;exit; }<br>     chown -R nginx.nginx ${NGINX_INSTALL_DIR}<br>     echo “PATH&#x3D;${NGINX_INSTALL_DIR}&#x2F;sbin:${PATH}” &gt; &#x2F;etc&#x2F;profile.d&#x2F;nginx.sh<br>     cat &gt; &#x2F;lib&#x2F;systemd&#x2F;system&#x2F;nginx.service &lt;&lt;EOF<br>[Unit]<br>Descriptinotallow&#x3D;The nginx HTTP and reverse proxy server<br>After&#x3D;network.target remote-fs.target nss-lookup.target</p>
+<p>[Service]<br>Type&#x3D;forking<br>PIDFile&#x3D;${NGINX_INSTALL_DIR}&#x2F;logs&#x2F;nginx.pid<br>ExecStartPre&#x3D;&#x2F;bin&#x2F;rm -f ${NGINX_INSTALL_DIR}&#x2F;logs&#x2F;nginx.pid<br>ExecStartPre&#x3D;${NGINX_INSTALL_DIR}&#x2F;sbin&#x2F;nginx -t<br>ExecStart&#x3D;${NGINX_INSTALL_DIR}&#x2F;sbin&#x2F;nginx<br>ExecReload&#x3D;&#x2F;bin&#x2F;kill -s HUP $MAINPID<br>KillSignal&#x3D;SIGQUIT<br>TimeoutStopSec&#x3D;5<br>KillMode&#x3D;process<br>PrivateTmp&#x3D;true<br>LimitNOFILE&#x3D;100000</p>
+<p>[Install]<br>WantedBy&#x3D;multi-user.target<br>EOF<br>     systemctl daemon-reload<br>     systemctl enable –now nginx &amp;&gt; &#x2F;dev&#x2F;null<br>     systemctl is-active nginx &amp;&gt; &#x2F;dev&#x2F;null ||  { color “nginx 启动失败,退出!” 1 ; exit; }<br>     color “nginx 安装完成” 0<br>}</p>
+<p>check<br>install<br>exec bash</p>
+<p>[root@K8s-dns ~]#bash nginx_install.sh </p>
+<p>#创建一个证书目录并存放harbor生成的证书<br>[root@K8s-dns nginx-1.22.1]#cd<br>[root@K8s-dns ~]#mkdir -p &#x2F;apps&#x2F;nginx&#x2F;certs</p>
+<p>#将harbor复制到目录下<br>[root@K8s-harbor01 certs]#ls<br>K8s-harbor01.mooreyxia.com.cert  K8s-harbor01.mooreyxia.com.crt  K8s-harbor01.mooreyxia.com.csr  K8s-harbor01.mooreyxia.com.key  ca.crt  ca.key  scp.sh  v3.ext<br>[root@K8s-harbor01 certs]#scp K8s-harbor01.mooreyxia.com.cert K8s-harbor01.mooreyxia.com.key 192.168.11.200:&#x2F;apps&#x2F;nginx&#x2F;certs&#x2F;</p>
+<p>[root@K8s-dns ~]#tree &#x2F;apps&#x2F;nginx&#x2F;certs<br>&#x2F;apps&#x2F;nginx&#x2F;certs<br>├── K8s-harbor01.mooreyxia.com.cert<br>└── K8s-harbor01.mooreyxia.com.key</p>
+<p>0 directories, 2 files</p>
+<p>#编辑nginx配置⽂件：<br>[root@K8s-dns ~]#cat &#x2F;apps&#x2F;nginx&#x2F;conf&#x2F;nginx.conf</p>
+<p>…<br>    client_max_body_size 1000m;<br>    server {<br>        listen 80;<br>        listen 443 ssl;<br>        ssl_certificate &#x2F;apps&#x2F;nginx&#x2F;certs&#x2F;K8s-harbor01.mooreyxia.com.cert;<br>        ssl_certificate_key &#x2F;apps&#x2F;nginx&#x2F;certs&#x2F;K8s-harbor01.mooreyxia.com.key;<br>        ssl_session_cache shared:sslcache:20m;<br>        ssl_session_timeout 10m;<br>        server_name  K8s-harbor01.mooreyxia.com;</p>
+<pre><code>    #charset koi8-r;
+
+    #access_log  logs/host.access.log  main;
+
+    location / &#123;
+       # root   html;
+       # index  index.html index.htm;
+        proxy_pass http://192.168.11.201;
+    &#125;
+</code></pre>
+<p>…</p>
+<p>[root@K8s-dns ~]#&#x2F;apps&#x2F;nginx&#x2F;sbin&#x2F;nginx -t<br>nginx: the configuration file &#x2F;apps&#x2F;nginx&#x2F;conf&#x2F;nginx.conf syntax is ok<br>nginx: configuration file &#x2F;apps&#x2F;nginx&#x2F;conf&#x2F;nginx.conf test is successful</p>
+<p>#重新加载Nginx配置<br>[root@K8s-dns ~]#&#x2F;apps&#x2F;nginx&#x2F;sbin&#x2F;nginx -s reload</p>
+<p>[root@K8s-dns ~]#ss -ntlp|grep 443<br>LISTEN 0      511                                  0.0.0.0:443        0.0.0.0:*    users:((“nginx”,pid&#x3D;4788,fd&#x3D;10),(“nginx”,pid&#x3D;4435,fd&#x3D;10))<br>LISTEN 0      511                                  0.0.0.0:80         0.0.0.0:*    users:((“nginx”,pid&#x3D;4788,fd&#x3D;6),(“nginx”,pid&#x3D;4435,fd&#x3D;6)) </p>
+<p>#浏览器访问<br><a target="_blank" rel="noopener" href="https://k8s-nginx.mooreyxia.com/">https://k8s-nginx.mooreyxia.com</a><br><img src="/../img/c9de10390b728d608df21184c0bc264611b388.png"><br>• harbor证书分发到buildkit控制节点，授权登录<br>• 如果是临时使用可以省略这一步使用nerdctl login –insecure-registry harbor<br>[root@K8s-master01 ~]#mkdir -p &#x2F;etc&#x2F;containerd&#x2F;certs.d&#x2F;K8s-harbor01.mooreyxia.com</p>
+<p>#复制证书<br>[root@K8s-harbor01 certs]#ls<br>K8s-harbor01.mooreyxia.com.cert  K8s-harbor01.mooreyxia.com.crt  K8s-harbor01.mooreyxia.com.csr  K8s-harbor01.mooreyxia.com.key  ca.crt  ca.key  scp.sh  v3.ext<br>[root@K8s-harbor01 certs]#scp K8s-harbor01.mooreyxia.com.cert K8s-harbor01.mooreyxia.com.key ca.crt 192.168.11.211:&#x2F;etc&#x2F;containerd&#x2F;certs.d&#x2F;K8s-harbor01.mooreyxia.com<br><a href="mailto:&#114;&#111;&#111;&#x74;&#x40;&#x31;&#57;&#50;&#46;&#49;&#54;&#x38;&#x2e;&#x31;&#x31;&#x2e;&#50;&#x31;&#x31;">&#114;&#111;&#111;&#x74;&#x40;&#x31;&#57;&#50;&#46;&#49;&#54;&#x38;&#x2e;&#x31;&#x31;&#x2e;&#50;&#x31;&#x31;</a>‘s password:<br>K8s-harbor01.mooreyxia.com.cert                                                                                                                  100% 2195   274.7KB&#x2F;s   00:00<br>K8s-harbor01.mooreyxia.com.key                                                                                                                   100% 3272   340.4KB&#x2F;s   00:00<br>ca.crt                                                                                                                                           100% 2049   224.3KB&#x2F;s   00:00    </p>
+<p>#验证登录<br>[root@K8s-master01 ~]#nerdctl login K8s-harbor01.mooreyxia.com<br>Enter Username: admin<br>Enter Password:<br>WARNING: Your password will be stored unencrypted in &#x2F;root&#x2F;.docker&#x2F;config.json.<br>Configure a credential helper to remove this warning. See<br><a target="_blank" rel="noopener" href="https://docs.docker.com/engine/reference/commandline/login/#credentials-store">https://docs.docker.com/engine/reference/commandline/login/#credentials-store</a></p>
+<p>Login Succeeded• 镜像构建<br>#用ubuntu官方镜像构建nginx镜像并上传到harbor<br>[root@K8s-master01 ubuntu]#cat Dockerfile<br>FROM ubuntu:22.04<br>MAINTAINER “mooreyxia <a href="mailto:&#x6d;&#111;&#x6f;&#114;&#x65;&#121;&#x78;&#x69;&#x61;&#64;&#103;&#x6d;&#97;&#105;&#x6c;&#x2e;&#x63;&#111;&#109;">&#x6d;&#111;&#x6f;&#114;&#x65;&#121;&#x78;&#x69;&#x61;&#64;&#103;&#x6d;&#97;&#105;&#x6c;&#x2e;&#x63;&#111;&#109;</a>“</p>
+<p>RUN apt update &amp;&amp; apt  install -y iproute2  ntpdate  tcpdump telnet traceroute nfs-kernel-server nfs-common  lrzsz tree  openssl libssl-dev libpcre3 libpcre3-dev zlib1g-dev ntpdate tcpdump telnet traceroute  gcc openssh-server lrzsz tree  openssl libssl-dev libpcre3 libpcre3-dev zlib1g-dev ntpdate tcpdump telnet traceroute iotop unzip zip make</p>
+<p>ADD nginx-1.22.0.tar.gz &#x2F;usr&#x2F;local&#x2F;src&#x2F;<br>RUN cd &#x2F;usr&#x2F;local&#x2F;src&#x2F;nginx-1.22.0 &amp;&amp; .&#x2F;configure –prefix&#x3D;&#x2F;apps&#x2F;nginx &amp;&amp; make &amp;&amp; make install  &amp;&amp; ln -sv &#x2F;apps&#x2F;nginx&#x2F;sbin&#x2F;nginx &#x2F;usr&#x2F;bin<br>RUN groupadd  -g 2088 nginx &amp;&amp; useradd  -g nginx -s &#x2F;usr&#x2F;sbin&#x2F;nologin -u 2088 nginx &amp;&amp; chown -R nginx.nginx &#x2F;apps&#x2F;nginx<br>ADD nginx.conf &#x2F;apps&#x2F;nginx&#x2F;conf&#x2F;<br>ADD frontend.tar.gz &#x2F;apps&#x2F;nginx&#x2F;html&#x2F;</p>
+<p>EXPOSE 80 443<br>CMD [“nginx”,”-g”,”daemon off;”]</p>
+<p>#准备一个前端页面<br>[root@K8s-master01 ubuntu]#cat html&#x2F;index.html<br><!DOCTYPE html></p>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Nginx 测试页面</title>
+</head>
+<body>
+<h2>Nginx 测试web页面</h2>
+<img src="./images/1.jpg">
+<p>
+    <a href="http://www.jd.com" target="_blank">app跳转</a>
+</p>
+</body>
+</html>
+
+<p>#构建镜像<br>[root@K8s-master01 ubuntu]#&#x2F;usr&#x2F;local&#x2F;bin&#x2F;nerdctl build -t K8s-harbor01.mooreyxia.com&#x2F;baseimages&#x2F;nginx-base:1.22.0 .<br>[+] Building 284.8s (12&#x2F;12)<br>[+] Building 285.4s (12&#x2F;12) FINISHED<br> &#x3D;&gt; [internal] load .dockerignore                                                                                                                                             0.5s<br> &#x3D;&gt; &#x3D;&gt; transferring context: 2B                                                                                                                                               0.0s<br> &#x3D;&gt; [internal] load build definition from Dockerfile                                                                                                                          0.6s<br> &#x3D;&gt; &#x3D;&gt; transferring dockerfile: 931B                                                                                                                                          0.0s<br> &#x3D;&gt; [internal] load metadata for docker.io&#x2F;library&#x2F;ubuntu:22.04                                                                                                              13.3s<br> &#x3D;&gt; [1&#x2F;7] FROM docker.io&#x2F;library&#x2F;ubuntu:22.04@sha256:67211c14fa74f070d27cc59d69a7fa9aeff8e28ea118ef3babc295a0428a6d21                                                         7.0s<br> &#x3D;&gt; &#x3D;&gt; resolve docker.io&#x2F;library&#x2F;ubuntu:22.04@sha256:67211c14fa74f070d27cc59d69a7fa9aeff8e28ea118ef3babc295a0428a6d21                                                         0.3s<br> &#x3D;&gt; &#x3D;&gt; sha256:2ab09b027e7f3a0c2e8bb1944ac46de38cebab7145f0bd6effebfe5492c818b6 29.53MB &#x2F; 29.53MB                                                                              4.0s<br> &#x3D;&gt; &#x3D;&gt; extracting sha256:2ab09b027e7f3a0c2e8bb1944ac46de38cebab7145f0bd6effebfe5492c818b6                                                                                     2.3s<br> &#x3D;&gt; [internal] load build context                                                                                                                                             0.5s<br> &#x3D;&gt; &#x3D;&gt; transferring context: 1.12MB                                                                                                                                           0.1s<br> &#x3D;&gt; [2&#x2F;7] RUN apt update &amp;&amp; apt  install -y iproute2  ntpdate  tcpdump telnet traceroute nfs-kernel-server nfs-common  lrzsz tree  openssl libssl-dev libpcre3 libpcre3-de  170.5s<br> &#x3D;&gt; [3&#x2F;7] ADD nginx-1.22.0.tar.gz &#x2F;usr&#x2F;local&#x2F;src&#x2F;                                                                                                                             1.1s<br> &#x3D;&gt; [4&#x2F;7] RUN cd &#x2F;usr&#x2F;local&#x2F;src&#x2F;nginx-1.22.0 &amp;&amp; .&#x2F;configure –prefix&#x3D;&#x2F;apps&#x2F;nginx &amp;&amp; make &amp;&amp; make install  &amp;&amp; ln -sv &#x2F;apps&#x2F;nginx&#x2F;sbin&#x2F;nginx &#x2F;usr&#x2F;bin                          39.9s<br> &#x3D;&gt; [5&#x2F;7] RUN groupadd  -g 2088 nginx &amp;&amp; useradd  -g nginx -s &#x2F;usr&#x2F;sbin&#x2F;nologin -u 2088 nginx &amp;&amp; chown -R nginx.nginx &#x2F;apps&#x2F;nginx                                             1.8s<br> &#x3D;&gt; [6&#x2F;7] ADD nginx.conf &#x2F;apps&#x2F;nginx&#x2F;conf&#x2F;                                                                                                                                    0.4s<br> &#x3D;&gt; [7&#x2F;7] ADD frontend.tar.gz &#x2F;apps&#x2F;nginx&#x2F;html&#x2F;                                                                                                                               0.5s<br> &#x3D;&gt; exporting to docker image format                                                                                                                                         48.9s<br> &#x3D;&gt; &#x3D;&gt; exporting layers                                                                                                                                                      35.8s<br> &#x3D;&gt; &#x3D;&gt; exporting manifest sha256:e0d4ee65783ce3c03e7c21eed4867d563be71611685d4eef7de2fb5dc5501daf                                                                             0.2s<br> &#x3D;&gt; &#x3D;&gt; exporting config sha256:1be61ce233a3d46c7e7d826a4a3747cabb11fbf5c425df18a9cf33fc8314be2a                                                                               0.1s<br> &#x3D;&gt; &#x3D;&gt; sending tarball                                                                                                                                                       12.8s<br>Loaded image: K8s-harbor01.mooreyxia.com&#x2F;baseimages&#x2F;nginx-base:1.22.0</p>
+<p>#上传镜像<br>[root@K8s-master01 ~]#nerdctl push K8s-harbor01.mooreyxia.com&#x2F;baseimages&#x2F;nginx-base:1.22.0<br>INFO[0000] pushing as a reduced-platform image (application&#x2F;vnd.docker.distribution.manifest.v2+json, sha256:e0d4ee65783ce3c03e7c21eed4867d563be71611685d4eef7de2fb5dc5501daf)<br>manifest-sha256:e0d4ee65783ce3c03e7c21eed4867d563be71611685d4eef7de2fb5dc5501daf: done           |++++++++++++++++++++++++++++++++++++++|<br>config-sha256:1be61ce233a3d46c7e7d826a4a3747cabb11fbf5c425df18a9cf33fc8314be2a:   done           |++++++++++++++++++++++++++++++++++++++|<br>elapsed: 6.6 s                                                                    total:  5.5 Ki (858.0 B&#x2F;s)• 分层构建镜像<br>#构建基础基础镜像<br>[root@K8s-master01 k8s-data]#cat dockerfile&#x2F;system&#x2F;centos&#x2F;Dockerfile<br>#自定义Centos 基础镜像<br>FROM centos:7.9.2009<br>MAINTAINER mooreyxia  <a href="mailto:&#109;&#x6f;&#x6f;&#114;&#101;&#121;&#120;&#105;&#x61;&#64;&#x67;&#109;&#x61;&#105;&#x6c;&#x2e;&#x63;&#111;&#109;">&#109;&#x6f;&#x6f;&#114;&#101;&#121;&#120;&#105;&#x61;&#64;&#x67;&#109;&#x61;&#105;&#x6c;&#x2e;&#x63;&#111;&#109;</a></p>
+<p>ADD filebeat-7.12.1-x86_64.rpm &#x2F;tmp<br>RUN yum install -y &#x2F;tmp&#x2F;filebeat-7.12.1-x86_64.rpm vim wget tree  lrzsz gcc gcc-c++ automake pcre pcre-devel zlib zlib-devel openssl openssl-devel iproute net-tools iotop &amp;&amp;  rm -rf &#x2F;etc&#x2F;localtime &#x2F;tmp&#x2F;filebeat-7.12.1-x86_64.rpm &amp;&amp; ln -snf &#x2F;usr&#x2F;share&#x2F;zoneinfo&#x2F;Asia&#x2F;Shanghai &#x2F;etc&#x2F;localtime  &amp;&amp; useradd nginx -u 2088</p>
+<p>#生成镜像并上传<br>[root@K8s-master01 centos]#cat build-command.sh<br>#!&#x2F;bin&#x2F;bash<br>#docker build -t  K8s-harbor01.mooreyxia.com&#x2F;baseimages&#x2F;magedu-centos-base:7.9.2009 .<br>#docker push K8s-harbor01.mooreyxia.com&#x2F;baseimages&#x2F;magedu-centos-base:7.9.2009</p>
+<p>&#x2F;usr&#x2F;local&#x2F;bin&#x2F;nerdctl build -t K8s-harbor01.mooreyxia.com&#x2F;baseimages&#x2F;centos-base:7.9.2009 .<br>&#x2F;usr&#x2F;local&#x2F;bin&#x2F;nerdctl push K8s-harbor01.mooreyxia.com&#x2F;baseimages&#x2F;centos-base:7.9.2009</p>
+<p>[root@K8s-master01 centos]#nerdctl images |grep centos-base<br>K8s-harbor01.mooreyxia.com&#x2F;baseimages&#x2F;centos-base    7.9.2009         eae0cec54c49    2 minutes ago     linux&#x2F;amd64    746.7 MiB    267.2 MiB</p>
+<p>#构建中间层镜像<br>[root@K8s-master01 pub-images]#cd jdk-1.8.212&#x2F;<br>[root@K8s-master01 jdk-1.8.212]#ls<br>Dockerfile  build-command.sh  jdk-8u212-linux-x64.tar.gz  profile<br>[root@K8s-master01 jdk-1.8.212]#vim Dockerfile<br>[root@K8s-master01 jdk-1.8.212]#cat Dockerfile<br>#JDK Base Image<br>FROM K8s-harbor01.mooreyxia.com&#x2F;baseimages&#x2F;centos-base:7.9.2009<br>#FROM centos:7.9.2009</p>
+<p>MAINTAINER mooreyxia  <a href="mailto:&#109;&#x6f;&#111;&#x72;&#101;&#121;&#x78;&#x69;&#x61;&#x40;&#x67;&#x6d;&#97;&#105;&#x6c;&#46;&#99;&#111;&#x6d;">&#109;&#x6f;&#111;&#x72;&#101;&#121;&#x78;&#x69;&#x61;&#x40;&#x67;&#x6d;&#97;&#105;&#x6c;&#46;&#99;&#111;&#x6d;</a></p>
+<p>ADD jdk-8u212-linux-x64.tar.gz &#x2F;usr&#x2F;local&#x2F;src&#x2F;<br>RUN ln -sv &#x2F;usr&#x2F;local&#x2F;src&#x2F;jdk1.8.0_212 &#x2F;usr&#x2F;local&#x2F;jdk<br>ADD profile &#x2F;etc&#x2F;profile</p>
+<p>ENV JAVA_HOME &#x2F;usr&#x2F;local&#x2F;jdk<br>ENV JRE_HOME $JAVA_HOME&#x2F;jre<br>ENV CLASSPATH $JAVA_HOME&#x2F;lib&#x2F;:$JRE_HOME&#x2F;lib&#x2F;<br>ENV PATH $PATH:$JAVA_HOME&#x2F;bin</p>
+<p>[root@K8s-master01 jdk-1.8.212]#cat build-command.sh<br>&#x2F;bin&#x2F;bash<br>#docker build -t K8s-harbor01.mooreyxia.com&#x2F;pub-images&#x2F;jdk-base:v8.212  .<br>#sleep 1<br>#docker push  K8s-harbor01.mooreyxia.com&#x2F;pub-images&#x2F;jdk-base:v8.212</p>
+<p>nerdctl build -t  K8s-harbor01.mooreyxia.com&#x2F;pub-images&#x2F;jdk-base:v8.212  .</p>
+<p>nerdctl push  K8s-harbor01.mooreyxia.com&#x2F;pub-images&#x2F;jdk-base:v8.212</p>
+<h2 id="尝试利用harbor中的镜像进行二次构建会报错-root-K8s-master01-jdk-1-8-212-nerdctl-build-t-K8s-harbor01-mooreyxia-com-x2F-pub-images-x2F-jdk-base-v8-212-Building-0-4s-3-x2F-3-FINISHED-x3D-gt-internal-load-build-definition-from-Dockerfile-0-1s-x3D-gt-x3D-gt-transferring-dockerfile-447B-0-0s-x3D-gt-internal-load-dockerignore-0-1s-x3D-gt-x3D-gt-transferring-context-2B-0-0s-x3D-gt-ERROR-internal-load-metadata-for-K8s-harbor01-mooreyxia-com-x2F-baseimages-x2F-centos-base-7-9-2009-0-1s"><a href="#尝试利用harbor中的镜像进行二次构建会报错-root-K8s-master01-jdk-1-8-212-nerdctl-build-t-K8s-harbor01-mooreyxia-com-x2F-pub-images-x2F-jdk-base-v8-212-Building-0-4s-3-x2F-3-FINISHED-x3D-gt-internal-load-build-definition-from-Dockerfile-0-1s-x3D-gt-x3D-gt-transferring-dockerfile-447B-0-0s-x3D-gt-internal-load-dockerignore-0-1s-x3D-gt-x3D-gt-transferring-context-2B-0-0s-x3D-gt-ERROR-internal-load-metadata-for-K8s-harbor01-mooreyxia-com-x2F-baseimages-x2F-centos-base-7-9-2009-0-1s" class="headerlink" title="#尝试利用harbor中的镜像进行二次构建会报错[root@K8s-master01 jdk-1.8.212]#nerdctl build -t  K8s-harbor01.mooreyxia.com&#x2F;pub-images&#x2F;jdk-base:v8.212  .[+] Building 0.4s (3&#x2F;3) FINISHED &#x3D;&gt; [internal] load build definition from Dockerfile                                                                                                                          0.1s &#x3D;&gt; &#x3D;&gt; transferring dockerfile: 447B                                                                                                                                          0.0s &#x3D;&gt; [internal] load .dockerignore                                                                                                                                             0.1s &#x3D;&gt; &#x3D;&gt; transferring context: 2B                                                                                                                                               0.0s &#x3D;&gt; ERROR [internal] load metadata for K8s-harbor01.mooreyxia.com&#x2F;baseimages&#x2F;centos-base:7.9.2009                                                                             0.1s"></a>#尝试利用harbor中的镜像进行二次构建会报错<br>[root@K8s-master01 jdk-1.8.212]#nerdctl build -t  K8s-harbor01.mooreyxia.com&#x2F;pub-images&#x2F;jdk-base:v8.212  .<br>[+] Building 0.4s (3&#x2F;3) FINISHED<br> &#x3D;&gt; [internal] load build definition from Dockerfile                                                                                                                          0.1s<br> &#x3D;&gt; &#x3D;&gt; transferring dockerfile: 447B                                                                                                                                          0.0s<br> &#x3D;&gt; [internal] load .dockerignore                                                                                                                                             0.1s<br> &#x3D;&gt; &#x3D;&gt; transferring context: 2B                                                                                                                                               0.0s<br> &#x3D;&gt; ERROR [internal] load metadata for K8s-harbor01.mooreyxia.com&#x2F;baseimages&#x2F;centos-base:7.9.2009                                                                             0.1s</h2><blockquote>
+<p>[internal] load metadata for K8s-harbor01.mooreyxia.com&#x2F;baseimages&#x2F;centos-base:7.9.2009:</p>
+</blockquote>
+<hr>
+<h2 id="Dockerfile-2"><a href="#Dockerfile-2" class="headerlink" title="Dockerfile:2"></a>Dockerfile:2</h2><h2 id="1-JDK-Base-Image-2-gt-gt-gt-FROM-K8s-harbor01-mooreyxia-com-x2F-baseimages-x2F-centos-base-7-9-2009-3-FROM-centos-7-9-2009-4"><a href="#1-JDK-Base-Image-2-gt-gt-gt-FROM-K8s-harbor01-mooreyxia-com-x2F-baseimages-x2F-centos-base-7-9-2009-3-FROM-centos-7-9-2009-4" class="headerlink" title="   1 |     #JDK Base Image   2 | &gt;&gt;&gt; FROM K8s-harbor01.mooreyxia.com&#x2F;baseimages&#x2F;centos-base:7.9.2009   3 |     #FROM centos:7.9.2009   4 |     "></a>   1 |     #JDK Base Image<br>   2 | &gt;&gt;&gt; FROM K8s-harbor01.mooreyxia.com&#x2F;baseimages&#x2F;centos-base:7.9.2009<br>   3 |     #FROM centos:7.9.2009<br>   4 |     </h2><p>error: failed to solve: K8s-harbor01.mooreyxia.com&#x2F;baseimages&#x2F;centos-base:7.9.2009: failed to do request: Head “<a target="_blank" rel="noopener" href="https://k8s-harbor01.mooreyxia.com/v2/baseimages/centos-base/manifests/7.9.2009">https://K8s-harbor01.mooreyxia.com/v2/baseimages/centos-base/manifests/7.9.2009</a>“: x509: certificate signed by unknown authority<br>FATA[0000] no image was built                           </p>
+<p>#原因 - 证书对containerd起作用，镜像构建build时没有携带证书信息<br>[root@K8s-master01 jdk-1.8.212]#ls &#x2F;etc&#x2F;containerd&#x2F;certs.d&#x2F;K8s-harbor01.mooreyxia.com&#x2F;<br>K8s-harbor01.mooreyxia.com.cert  K8s-harbor01.mooreyxia.com.key  ca.crt</p>
+<p>#解决方案 - 基于nginx代理harbor并实现https• 基于nginx代理harbor并实现https<br>#停止harbor服务<br>[root@K8s-harbor01 certs]#cd &#x2F;apps&#x2F;harbor&#x2F;<br>[root@K8s-harbor01 harbor]#ls<br>LICENSE  common  common.sh  docker-compose.yml  harbor.v2.7.1.tar.gz  harbor.yml  harbor.yml.tmpl  install.sh  prepare<br>[root@K8s-harbor01 harbor]#docker-compose stop<br>Stopping nginx             … done<br>Stopping harbor-jobservice … done<br>Stopping harbor-core       … done<br>Stopping registry          … done<br>Stopping harbor-db         … done<br>Stopping harbor-portal     … done<br>Stopping redis             … done<br>Stopping registryctl       … done<br>Stopping harbor-log        … done</p>
+<p>#取消https端口改为http<br>[root@K8s-harbor01 harbor]#cat harbor.yml<br>…</p>
+<h1 id="https-related-config"><a href="#https-related-config" class="headerlink" title="https related config"></a>https related config</h1><p>#https:</p>
+<h1 id="https-port-for-harbor-default-is-443"><a href="#https-port-for-harbor-default-is-443" class="headerlink" title="https port for harbor, default is 443"></a>https port for harbor, default is 443</h1><h1 id="port-443"><a href="#port-443" class="headerlink" title="port: 443"></a>port: 443</h1><h1 id="The-path-of-cert-and-key-files-for-nginx"><a href="#The-path-of-cert-and-key-files-for-nginx" class="headerlink" title="The path of cert and key files for nginx"></a>The path of cert and key files for nginx</h1><h1 id="certificate-x2F-data-x2F-harbor-x2F-certs-x2F-K8s-harbor01-mooreyxia-com-crt"><a href="#certificate-x2F-data-x2F-harbor-x2F-certs-x2F-K8s-harbor01-mooreyxia-com-crt" class="headerlink" title="certificate: &#x2F;data&#x2F;harbor&#x2F;certs&#x2F;K8s-harbor01.mooreyxia.com.crt"></a>certificate: &#x2F;data&#x2F;harbor&#x2F;certs&#x2F;K8s-harbor01.mooreyxia.com.crt</h1><h1 id="private-key-x2F-data-x2F-harbor-x2F-certs-x2F-K8s-harbor01-mooreyxia-com-key"><a href="#private-key-x2F-data-x2F-harbor-x2F-certs-x2F-K8s-harbor01-mooreyxia-com-key" class="headerlink" title="private_key: &#x2F;data&#x2F;harbor&#x2F;certs&#x2F;K8s-harbor01.mooreyxia.com.key"></a>private_key: &#x2F;data&#x2F;harbor&#x2F;certs&#x2F;K8s-harbor01.mooreyxia.com.key</h1><p>…</p>
+<p>#更新harbor配置，会自动生成默认配置文件，包含nginx配置文件<br>[root@K8s-harbor01 harbor]#.&#x2F;prepare<br>prepare base dir is set to &#x2F;apps&#x2F;harbor<br>WARNING:root:WARNING: HTTP protocol is insecure. Harbor will deprecate http protocol in the future. Please make sure to upgrade to https<br>Clearing the configuration file: &#x2F;config&#x2F;core&#x2F;env<br>Clearing the configuration file: &#x2F;config&#x2F;core&#x2F;app.conf<br>Clearing the configuration file: &#x2F;config&#x2F;nginx&#x2F;nginx.conf<br>Clearing the configuration file: &#x2F;config&#x2F;jobservice&#x2F;env<br>Clearing the configuration file: &#x2F;config&#x2F;jobservice&#x2F;config.yml<br>Clearing the configuration file: &#x2F;config&#x2F;log&#x2F;logrotate.conf<br>Clearing the configuration file: &#x2F;config&#x2F;log&#x2F;rsyslog_docker.conf<br>Clearing the configuration file: &#x2F;config&#x2F;registryctl&#x2F;env<br>Clearing the configuration file: &#x2F;config&#x2F;registryctl&#x2F;config.yml<br>Clearing the configuration file: &#x2F;config&#x2F;portal&#x2F;nginx.conf<br>Clearing the configuration file: &#x2F;config&#x2F;db&#x2F;env<br>Clearing the configuration file: &#x2F;config&#x2F;registry&#x2F;root.crt<br>Clearing the configuration file: &#x2F;config&#x2F;registry&#x2F;passwd<br>Clearing the configuration file: &#x2F;config&#x2F;registry&#x2F;config.yml<br>Generated configuration file: &#x2F;config&#x2F;portal&#x2F;nginx.conf<br>Generated configuration file: &#x2F;config&#x2F;log&#x2F;logrotate.conf<br>Generated configuration file: &#x2F;config&#x2F;log&#x2F;rsyslog_docker.conf<br>Generated configuration file: &#x2F;config&#x2F;nginx&#x2F;nginx.conf<br>Generated configuration file: &#x2F;config&#x2F;core&#x2F;env<br>Generated configuration file: &#x2F;config&#x2F;core&#x2F;app.conf<br>Generated configuration file: &#x2F;config&#x2F;registry&#x2F;config.yml<br>Generated configuration file: &#x2F;config&#x2F;registryctl&#x2F;env<br>Generated configuration file: &#x2F;config&#x2F;registryctl&#x2F;config.yml<br>Generated configuration file: &#x2F;config&#x2F;db&#x2F;env<br>Generated configuration file: &#x2F;config&#x2F;jobservice&#x2F;env<br>Generated configuration file: &#x2F;config&#x2F;jobservice&#x2F;config.yml<br>loaded secret from file: &#x2F;data&#x2F;secret&#x2F;keys&#x2F;secretkey<br>Generated configuration file: &#x2F;compose_location&#x2F;docker-compose.yml<br>Clean up the input dir</p>
+<p>[root@K8s-harbor01 harbor]#ls common&#x2F;config&#x2F;portal&#x2F;nginx.conf<br>common&#x2F;config&#x2F;portal&#x2F;nginx.conf</p>
+<p>#重启harbor<br>[root@K8s-harbor01 harbor]#docker-compose up -d<br>Creating network “harbor_harbor” with the default driver<br>Creating harbor-log … done<br>Creating registry      … done<br>Creating harbor-portal … done<br>Creating harbor-db     … done<br>Creating redis         … done<br>Creating registryctl   … done<br>Creating harbor-core   … done<br>Creating nginx             … done<br>Creating harbor-jobservice … done</p>
+<p>#测试http访问harbor<br><a target="_blank" rel="noopener" href="http://k8s-harbor01.mooreyxia.com/">http://k8s-harbor01.mooreyxia.com/</a><br><img src="/../img/24c97f57430f1ebf6217365e62851724bd4a74.png"><br>#由于之前的节点访问harbor都是基于https认证，所以需要重新建立访问<br>#采用Nginx反向代理的方式最简便，证书不变</p>
+<p>#nginx实现反向代理 - 前面已经实现，此处省略<br>• 更改buildkitd配置⽂件<br>#build不信任自签发证书就指定http模式访问<br>[root@K8s-master01 ~]#mkdir -p &#x2F;etc&#x2F;buildkit&#x2F;<br>[root@K8s-master01 ~]#vim  &#x2F;etc&#x2F;buildkit&#x2F;buildkitd.toml<br>[root@K8s-master01 ~]#cat &#x2F;etc&#x2F;buildkit&#x2F;buildkitd.toml<br>[registry.”K8s-harbor01.mooreyxia.com”]<br>http &#x3D; true<br>insecure &#x3D; true• 更改nerdctl配置⽂件：<br>[root@K8s-master01 ~]#cat &#x2F;etc&#x2F;nerdctl&#x2F;nerdctl.toml<br>namespace &#x3D; “k8s.io”<br>debug &#x3D; false<br>debug_full &#x3D; false<br>insecure_registry &#x3D; true</p>
+<p>#重启<br>[root@K8s-master01 ~]#systemctl restart buildkit</p>
+<p>#尝试执行镜像构建 - 此时镜像的下载采用仓库http80端口，镜像的上传采用https<br>[root@K8s-master01 jdk-1.8.212]#nerdctl build -t  k8s-nginx.mooreyxia.com&#x2F;pub-images&#x2F;jdk-base:v8.212  .<br>[+] Building 89.3s (10&#x2F;10)<br>[+] Building 89.7s (10&#x2F;10) FINISHED<br> &#x3D;&gt; [internal] load build definition from Dockerfile                                                                                                                          0.5s<br> &#x3D;&gt; &#x3D;&gt; transferring dockerfile: 447B                                                                                                                                          0.0s<br> &#x3D;&gt; [internal] load .dockerignore                                                                                                                                             0.5s<br> &#x3D;&gt; &#x3D;&gt; transferring context: 2B                                                                                                                                               0.0s<br> &#x3D;&gt; [internal] load metadata for K8s-harbor01.mooreyxia.com&#x2F;baseimages&#x2F;centos-base:7.9.2009                                                                                   0.4s<br> &#x3D;&gt; [auth] baseimages&#x2F;centos-base:pull token for K8s-harbor01.mooreyxia.com                                                                                                   0.0s<br> &#x3D;&gt; [internal] load build context                                                                                                                                             5.9s<br> &#x3D;&gt; &#x3D;&gt; transferring context: 195.05MB                                                                                                                                         4.2s<br> &#x3D;&gt; [1&#x2F;4] FROM K8s-harbor01.mooreyxia.com&#x2F;baseimages&#x2F;centos-base:7.9.2009@sha256:eae0cec54c4942b50c38d000f7f20ceee592af11896b09bfeae076017630b832                             0.2s<br> &#x3D;&gt; &#x3D;&gt; resolve K8s-harbor01.mooreyxia.com&#x2F;baseimages&#x2F;centos-base:7.9.2009@sha256:eae0cec54c4942b50c38d000f7f20ceee592af11896b09bfeae076017630b832                             0.1s<br> &#x3D;&gt; [2&#x2F;4] ADD jdk-8u212-linux-x64.tar.gz &#x2F;usr&#x2F;local&#x2F;src&#x2F;                                                                                                                     15.0s<br> &#x3D;&gt; [3&#x2F;4] RUN ln -sv &#x2F;usr&#x2F;local&#x2F;src&#x2F;jdk1.8.0_212 &#x2F;usr&#x2F;local&#x2F;jdk                                                                                                               1.3s<br> &#x3D;&gt; [4&#x2F;4] ADD profile &#x2F;etc&#x2F;profile                                                                                                                                            0.4s<br> &#x3D;&gt; exporting to docker image format                                                                                                                                         63.7s<br> &#x3D;&gt; &#x3D;&gt; exporting layers                                                                                                                                                      32.5s<br> &#x3D;&gt; &#x3D;&gt; exporting manifest sha256:f0abc92cff14eae87bef62805cada35428b7c82d9718303aed91c746a4a47272                                                                             0.1s<br> &#x3D;&gt; &#x3D;&gt; exporting config sha256:5c94a249a03f2a564bf979ed8aad16aa91a52e8ff0b2b6dae408f3a8c57e116d                                                                               0.1s<br> &#x3D;&gt; &#x3D;&gt; sending tarball                                                                                                                                                       31.0s<br>Loaded image: k8s-nginx.mooreyxia.com&#x2F;pub-images&#x2F;jdk-base:v8.212</p>
+<p>#上传<br>[root@K8s-master01 jdk-1.8.212]#nerdctl push  K8s-harbor01.mooreyxia.com&#x2F;pub-images&#x2F;jdk-base:v8.212</p>
+<p>#注意若上传遇到401 Unauthorized报错，是harboe服务器未采用新方式访问服务，需要重新生成harbor服务<br>[root@K8s-harbor01 harbor]#docker-compose  down -v<br>[root@K8s-harbor01 harbor]#.&#x2F;prepare<br>[root@K8s-harbor01 harbor]#docker-compose up -d<br>#如果还为解决，可重新生成harbor证书并分发 重启harbor服务即可我是moore,大家一起加油！！！</p>
+
+      
+       <hr><span style="font-style: italic;color: gray;"> 转载请注明来源，欢迎对文章中的引用来源进行考证，欢迎指出任何有错误或不够清晰的表达。可以在下面评论区评论，也可以邮件至 jaytp@qq.com </span>
+    </div>
+</article>
+
+
+<p>
+    <a  class="dashang" onclick="dashangToggle()">💰</a>
+</p>
+
+
+
+
+
+
+    
+
+
+
+
+    </div>
+    <div class="copyright">
+        <p class="footer-entry">
+    ©2016-2020 Yelog
+</p>
+<p class="footer-entry">Built with <a href="https://hexo.io/" target="_blank">Hexo</a> and <a href="https://github.com/yelog/hexo-theme-3-hexo" target="_blank">3-hexo</a> theme</p>
+
+    </div>
+    <div class="full-toc">
+        <button class="full" data-title="切换全屏 快捷键 s"><span class="min "></span></button>
+<a class="" id="rocket" ></a>
+
+    </div>
+</div>
+
+<div class="hide_box" onclick="dashangToggle()"></div>
+<div class="shang_box">
+    <a class="shang_close"  onclick="dashangToggle()">×</a>
+    <div class="shang_tit">
+        <p>Help us with donation</p>
+    </div>
+    <div class="shang_payimg">
+        <div class="pay_img">
+            <img src="/img/alipay.jpg" class="alipay" title="扫码支持">
+            <img src="/img/weixin.jpg" class="weixin" title="扫码支持">
+        </div>
+    </div>
+    <div class="shang_payselect">
+        <span><label><input type="radio" name="pay" checked value="alipay">alipay</label></span><span><label><input type="radio" name="pay" value="weixin">weixin</label></span>
+    </div>
+</div>
+
+
+</body>
+<script src="/js/jquery.pjax.js?v=1.1.0" ></script>
+
+<script src="/js/script.js?v=1.1.0" ></script>
+<script>
+    var img_resize = 'default';
+    function initArticle() {
+        /*渲染对应的表格样式*/
+        
+            $("#post .pjax table").addClass("green_title");
+        
+
+        /*渲染打赏样式*/
+        
+        $("input[name=pay]").on("click", function () {
+            if($("input[name=pay]:checked").val()=="weixin"){
+                $(".shang_box .shang_payimg .pay_img").addClass("weixin_img");
+            } else {
+                $(".shang_box .shang_payimg .pay_img").removeClass("weixin_img");
+            }
+        })
+        
+
+        /*高亮代码块行号*/
+        
+
+        /*访问数量*/
+        
+        $.getScript("//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js");
+        
+
+        /*代码高亮，行号对齐*/
+        $('.pre-numbering').css('line-height',$('.has-numbering').css('line-height'));
+
+        
+        
+    }
+
+    /*打赏页面隐藏与展示*/
+    
+    function dashangToggle() {
+        $(".shang_box").fadeToggle();
+        $(".hide_box").fadeToggle();
+    }
+    
+
+</script>
+
+<!--加入行号的高亮代码块样式-->
+
+<!--自定义样式设置-->
+<style>
+    
+    
+    .nav {
+        width: 542px;
+    }
+    .nav.fullscreen {
+        margin-left: -542px;
+    }
+    .nav-left {
+        width: 120px;
+    }
+    
+    
+    @media screen and (max-width: 1468px) {
+        .nav {
+            width: 492px;
+        }
+        .nav.fullscreen {
+            margin-left: -492px;
+        }
+        .nav-left {
+            width: 100px;
+        }
+    }
+    
+    
+    @media screen and (max-width: 1024px) {
+        .nav {
+            width: 492px;
+            margin-left: -492px
+        }
+        .nav.fullscreen {
+            margin-left: 0;
+        }
+    }
+    
+    @media screen and (max-width: 426px) {
+        .nav {
+            width: 100%;
+        }
+        .nav-left {
+            width: 100%;
+        }
+    }
+    
+    
+    .nav-right .title-list nav a .post-title, .nav-right .title-list #local-search-result a .post-title {
+        color: #383636;
+    }
+    
+    
+    .nav-right .title-list nav a .post-date, .nav-right .title-list #local-search-result a .post-date {
+        color: #5e5e5f;
+    }
+    
+    
+    .nav-right nav a.hover, #local-search-result a.hover{
+        background-color: #e2e0e0;
+    }
+    
+    
+
+    /*列表样式*/
+    
+
+    /* 背景图样式 */
+    
+    
+
+
+    /*引用块样式*/
+    
+
+    /*文章列表背景图*/
+    
+
+    
+</style>
+
+
+
+
+
+
+
+</html>

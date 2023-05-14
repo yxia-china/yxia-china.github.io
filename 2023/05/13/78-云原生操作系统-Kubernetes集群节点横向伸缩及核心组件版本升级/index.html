@@ -1,0 +1,1283 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>78-云原生操作系统-Kubernetes集群节点横向伸缩及核心组件版本升级 | Hexo</title>
+  <meta name="keywords" content="">
+  <meta name="description" content="78-云原生操作系统-Kubernetes集群节点横向伸缩及核心组件版本升级 | Hexo">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="description" content="基于现有虚拟机磁盘为模版创建新的虚拟机使用 virt-install 创建虚拟机• 虽然使用virt-manager 可以方便的管理虚拟机,但如果需要批量进行虚拟机的创建管理,命令行工具virtinstall更加方便和适合案例：利用 qemu-img命令创建虚拟磁盘#注意: qemu-img create 一定要确认对应路径下没有此文件,如果存在将覆盖原文件  确认现有的虚拟磁盘文件[root@u">
+<meta property="og:type" content="article">
+<meta property="og:title" content="42-KVM虚拟化-基于现有虚拟机磁盘为模版创建新的虚拟机">
+<meta property="og:url" content="http://example.com/2023/05/14/42-KVM%E8%99%9A%E6%8B%9F%E5%8C%96-%E5%9F%BA%E4%BA%8E%E7%8E%B0%E6%9C%89%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%A3%81%E7%9B%98%E4%B8%BA%E6%A8%A1%E7%89%88%E5%88%9B%E5%BB%BA%E6%96%B0%E7%9A%84%E8%99%9A%E6%8B%9F%E6%9C%BA/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="基于现有虚拟机磁盘为模版创建新的虚拟机使用 virt-install 创建虚拟机• 虽然使用virt-manager 可以方便的管理虚拟机,但如果需要批量进行虚拟机的创建管理,命令行工具virtinstall更加方便和适合案例：利用 qemu-img命令创建虚拟磁盘#注意: qemu-img create 一定要确认对应路径下没有此文件,如果存在将覆盖原文件  确认现有的虚拟磁盘文件[root@u">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="http://example.com/img/092d6b54082e04ec1c20121058c692bc5844b5.png">
+<meta property="og:image" content="http://example.com/img/f8bada3025892d742fe1746c42ead86f562ddc.png">
+<meta property="article:published_time" content="2023-05-14T08:21:34.888Z">
+<meta property="article:modified_time" content="2023-05-14T08:23:40.552Z">
+<meta property="article:author" content="John Doe">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/img/092d6b54082e04ec1c20121058c692bc5844b5.png">
+
+
+<link rel="icon" href="/img/avatar.jpg">
+
+<link href="/css/style.css?v=1.1.0" rel="stylesheet">
+
+<link href="/css/hl_theme/atom-light.css?v=1.1.0" rel="stylesheet">
+
+<link href="//cdn.jsdelivr.net/npm/animate.css@4.1.0/animate.min.css" rel="stylesheet">
+
+<script src="//cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js"></script>
+<script src="/js/titleTip.js?v=1.1.0" ></script>
+
+<script src="//cdn.jsdelivr.net/npm/highlightjs@9.16.2/highlight.pack.min.js"></script>
+<script>
+    hljs.initHighlightingOnLoad();
+</script>
+
+<script src="//cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.min.js"></script>
+
+
+
+<script src="//cdn.jsdelivr.net/npm/jquery.cookie@1.4.1/jquery.cookie.min.js" ></script>
+
+<script src="/js/iconfont.js?v=1.1.0" ></script>
+
+<meta name="generator" content="Hexo 6.3.0"></head>
+<div style="display: none">
+  <input class="theme_disqus_on" value="false">
+  <input class="theme_preload_comment" value="">
+  <input class="theme_blog_path" value="">
+  <input id="theme_shortcut" value="true" />
+  <input id="theme_highlight_on" value="true" />
+  <input id="theme_code_copy" value="true" />
+</div>
+
+
+
+<body>
+<aside class="nav">
+    <div class="nav-left">
+        <a href="/"
+   class="avatar_target">
+    <img class="avatar"
+         src="/img/avatar.jpg"/>
+</a>
+<div class="author">
+    <span>John Doe</span>
+</div>
+
+<div class="icon">
+    
+        
+            <a title="rss"
+               href="/atom.xml"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-rss"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="github"
+               href="https://github.com/yelog"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-github"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="facebook"
+               href="https://www.facebook.com/faker.tops"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-facebook"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+    
+        
+    
+        
+            <a title="instagram"
+               href="https://www.facebook.com/faker.tops"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-instagram"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="reddit"
+               href="https://www.reddit.com/user/yelog/"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-reddit"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="weibo"
+               href="http://weibo.com/u/2307534817"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-weibo"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="jianshu"
+               href="https://www.jianshu.com/u/ff56736de7cf"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-jianshu"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="zhihu"
+               href="https://www.zhihu.com/people/jaytp/activities"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-zhihu"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+    
+        
+            <a title="oschina"
+               href="https://my.oschina.net/yelog"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-oschina"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+    
+        
+            <a title="email"
+               href="mailto:jaytp@qq.com"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-email"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="qq"
+               href="http://wpa.qq.com/msgrd?v=3&uin=872336115&site=qq&menu=yes"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-qq"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="kugou"
+               href="https://www.kugou.com/"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-kugou"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="neteasemusic"
+               href="https://music.163.com/#/user/home?id=88151013"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-neteasemusic"></use>
+                    </svg>
+                
+            </a>
+        
+    
+</div>
+
+
+
+
+<ul>
+    <li>
+        <div class="all active" data-rel="All">All
+            
+                <small>(36)</small>
+            
+        </div>
+    </li>
+    
+        
+            
+                <li>
+                    <div data-rel="SRE linux云计算">
+                        
+                        SRE linux云计算
+                        <small>(11)</small>
+                        
+                    </div>
+                    
+                </li>
+            
+        
+    
+        
+            
+                <li>
+                    <div data-rel="云原生">
+                        
+                        云原生
+                        <small>(10)</small>
+                        
+                    </div>
+                    
+                </li>
+            
+        
+    
+        
+            
+                <li>
+                    <div data-rel="PMP管理">
+                        
+                        PMP管理
+                        <small>(1)</small>
+                        
+                    </div>
+                    
+                </li>
+            
+        
+    
+        
+            
+                <li>
+                    <div data-rel="Python 爬虫">
+                        
+                        Python 爬虫
+                        <small>(14)</small>
+                        
+                    </div>
+                    
+                </li>
+            
+        
+    
+</ul>
+<div class="left-bottom">
+    <div class="menus">
+        
+            
+            
+            
+    </div>
+    <div>
+        
+            <a class="about  hasFriend  site_url"
+               
+               href="/about">About</a>
+        
+        <a style="width: 50%"
+                
+                                           class="friends">Friends</a>
+        
+    </div>
+</div>
+<input type="hidden" id="yelog_site_posts_number" value="36">
+
+<div style="display: none">
+    <span id="busuanzi_value_site_uv"></span>
+    <span id="busuanzi_value_site_pv"></span>
+</div>
+
+    </div>
+    <div class="nav-right">
+        <div class="friends-area">
+    <div class="friends-title">
+        Links
+        <i class="iconfont icon-left"></i>
+    </div>
+    <div class="friends-content">
+        <ul>
+            
+            <li><a target="_blank" href="http://yelog.org/">叶落阁</a></li>
+            
+        </ul>
+    </div>
+</div>
+        <div class="title-list">
+    <div class="right-top">
+        <div id="default-panel">
+            <i class="iconfont icon-search" data-title="搜索 快捷键 i"></i>
+            <div class="right-title">All</div>
+            <i class="iconfont icon-file-tree" data-title="切换到大纲视图 快捷键 w"></i>
+        </div>
+        <div id="search-panel">
+            <i class="iconfont icon-left" data-title="返回"></i>
+            <input id="local-search-input" autocomplete="off"/>
+            <label class="border-line" for="input"></label>
+            <i class="iconfont icon-case-sensitive" data-title="大小写敏感"></i>
+            <i class="iconfont icon-tag" data-title="标签"></i>
+        </div>
+        <div id="outline-panel" style="display: none">
+            <div class="right-title">大纲</div>
+            <i class="iconfont icon-list" data-title="切换到文章列表"></i>
+        </div>
+    </div>
+
+    <div class="tags-list">
+    <input id="tag-search" />
+    <div class="tag-wrapper">
+        
+    </div>
+
+</div>
+
+    
+    <nav id="title-list-nav">
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/14/42-KVM%E8%99%9A%E6%8B%9F%E5%8C%96-%E5%9F%BA%E4%BA%8E%E7%8E%B0%E6%9C%89%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%A3%81%E7%9B%98%E4%B8%BA%E6%A8%A1%E7%89%88%E5%88%9B%E5%BB%BA%E6%96%B0%E7%9A%84%E8%99%9A%E6%8B%9F%E6%9C%BA/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="42-KVM虚拟化-基于现有虚拟机磁盘为模版创建新的虚拟机">42-KVM虚拟化-基于现有虚拟机磁盘为模版创建新的虚拟机</span>
+            <span class="post-date" title="2023-05-14 16:21:34">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%B8%89%E7%AB%A0-2-requests%20%E8%BF%9B%E9%98%B6%E2%80%A2%20%E7%88%AC%E5%8F%96%E6%9F%90%E8%A7%86%E9%A2%91%E7%BD%91%E7%9B%B8%E5%85%B3%E8%A7%86%E9%A2%91/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第三章-2-requests 进阶• 爬取某视频网相关视频">Python爬虫-第三章-2-requests 进阶• 爬取某视频网相关视频</span>
+            <span class="post-date" title="2023-05-14 16:20:20">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/14/44-KVM%E8%99%9A%E6%8B%9F%E5%8C%96-%E5%AD%98%E5%82%A8%E7%AE%A1%E7%90%86%E5%92%8C%E7%A3%81%E7%9B%98%E6%89%A9%E5%AE%B9/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="44-KVM虚拟化-存储管理和磁盘扩容">44-KVM虚拟化-存储管理和磁盘扩容</span>
+            <span class="post-date" title="2023-05-14 16:18:30">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%B8%89%E7%AB%A0-3-%E5%88%A9%E7%94%A8re%E6%A8%A1%E5%9D%97%E7%88%AC%E5%8F%96%E6%9F%90%E7%BD%91%E7%94%B5%E5%BD%B1%E6%8E%92%E8%A1%8C%E6%A6%9C/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第三章-3-利用re模块爬取某网电影排行榜">Python爬虫-第三章-3-利用re模块爬取某网电影排行榜</span>
+            <span class="post-date" title="2023-05-14 16:16:51">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/14/46-Docker-Container%E5%AE%B9%E5%99%A8%E7%AE%A1%E7%90%86%E5%90%84%E7%A7%8D%E6%93%8D%E4%BD%9C/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="46-Docker-Container容器管理各种操作">46-Docker-Container容器管理各种操作</span>
+            <span class="post-date" title="2023-05-14 16:14:04">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/14/47-Docker-Dockerfile%E9%95%9C%E5%83%8F%E5%88%9B%E5%BB%BA%E8%87%AA%E5%8A%A8%E5%8C%96%E7%94%9F%E4%BA%A7%E6%A1%88%E4%BE%8B/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="47-Docker-Dockerfile镜像创建自动化生产案例">47-Docker-Dockerfile镜像创建自动化生产案例</span>
+            <span class="post-date" title="2023-05-14 16:09:19">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/14/48-Docker-%E5%A4%9A%E5%AE%B9%E5%99%A8%E6%95%B0%E6%8D%AE%E5%85%B1%E4%BA%AB%E5%8F%8A%E6%8C%81%E4%B9%85%E5%8C%96/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="48-Docker-多容器数据共享及持久化">48-Docker-多容器数据共享及持久化</span>
+            <span class="post-date" title="2023-05-14 16:06:48">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%B8%89%E7%AB%A0-4-%E5%88%A9%E7%94%A8BeautifulSoup%E6%A8%A1%E5%9D%97%E7%88%AC%E5%8F%96%E6%9F%90%E7%BD%91%E5%A3%81%E7%BA%B8%E5%9B%BE%E5%BA%93%E5%9B%BE%E7%89%87/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第三章-4-利用BeautifulSoup模块爬取某网壁纸图库图片">Python爬虫-第三章-4-利用BeautifulSoup模块爬取某网壁纸图库图片</span>
+            <span class="post-date" title="2023-05-14 16:05:34">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%B8%89%E7%AB%A0-5-%E5%88%A9%E7%94%A8xpath%E7%88%AC%E5%8F%96%E6%9F%90%E5%85%AB%E6%88%92%E7%BD%91%E7%9B%B8%E5%85%B3%E8%AF%8D%E8%AF%AD%E5%85%AC%E5%8F%B8%E7%9A%84%E4%BF%A1%E6%81%AF%E5%92%8C%E4%BB%B7%E6%A0%BC/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第三章-5-利用xpath爬取某八戒网相关词语公司的信息和价格">Python爬虫-第三章-5-利用xpath爬取某八戒网相关词语公司的信息和价格</span>
+            <span class="post-date" title="2023-05-14 16:04:16">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%B8%89%E7%AB%A0-6-%E6%8A%93%E5%8F%96%E6%9F%90%E4%BA%91%E9%9F%B3%E4%B9%90%E8%AF%84%E8%AE%BA%E6%95%B0%E6%8D%AE/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第三章-6-抓取某云音乐评论数据">Python爬虫-第三章-6-抓取某云音乐评论数据</span>
+            <span class="post-date" title="2023-05-14 16:03:15">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-1-%E5%A4%9A%E7%BA%BF%E7%A8%8B%E5%A4%9A%E8%BF%9B%E7%A8%8B%E5%B9%B6%E5%8F%91%E7%88%AC%E5%8F%96%E2%85%A0/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-1-多线程多进程并发爬取Ⅰ">Python爬虫-第四章-1-多线程多进程并发爬取Ⅰ</span>
+            <span class="post-date" title="2023-05-14 16:01:27">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-1-%E5%A4%9A%E7%BA%BF%E7%A8%8B%E5%A4%9A%E8%BF%9B%E7%A8%8B%E5%B9%B6%E5%8F%91%E7%88%AC%E5%8F%96%E2%85%A1/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-1-多线程多进程并发爬取Ⅱ">Python爬虫-第四章-1-多线程多进程并发爬取Ⅱ</span>
+            <span class="post-date" title="2023-05-14 16:00:37">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-1-%E5%A4%9A%E7%BA%BF%E7%A8%8B%E5%A4%9A%E8%BF%9B%E7%A8%8B%E5%B9%B6%E5%8F%91%E7%88%AC%E5%8F%96%E2%85%A2-%E7%88%AC%E5%8F%96%E6%9F%90%E8%8F%9C%E5%B8%82%E5%9C%BA%E6%89%B9%E5%8F%91%E4%BB%B7%E6%95%B0%E6%8D%AE/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-1-多线程多进程并发爬取Ⅲ-爬取某菜市场批发价数据">Python爬虫-第四章-1-多线程多进程并发爬取Ⅲ-爬取某菜市场批发价数据</span>
+            <span class="post-date" title="2023-05-14 15:59:35">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-2-%E5%8D%8F%E7%A8%8B%E4%B8%8E%E5%BC%82%E6%AD%A5/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-2-协程与异步">Python爬虫-第四章-2-协程与异步</span>
+            <span class="post-date" title="2023-05-14 15:58:20">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/14/52-HAProxy-10%E7%A7%8D%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E8%B0%83%E5%BA%A6%E7%AE%97%E6%B3%95/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="52-HAProxy-10种负载均衡调度算法">52-HAProxy-10种负载均衡调度算法</span>
+            <span class="post-date" title="2023-05-14 15:56:12">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/14/55-Redis-%E7%BC%96%E8%AF%91%E9%83%A8%E7%BD%B2%E5%8F%8A%E6%95%B0%E6%8D%AE%E6%8C%81%E4%B9%85%E5%8C%96/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="55-Redis-编译部署及数据持久化">55-Redis-编译部署及数据持久化</span>
+            <span class="post-date" title="2023-05-14 15:54:02">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/14/56-Redis%E9%9B%86%E7%BE%A4-%E5%93%A8%E5%85%B5Sentinel%E6%90%AD%E5%BB%BA%E5%AE%9E%E7%8E%B0%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E9%AB%98%E5%8F%AF%E7%94%A8/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="56-Redis集群-哨兵Sentinel搭建实现负载均衡高可用">56-Redis集群-哨兵Sentinel搭建实现负载均衡高可用</span>
+            <span class="post-date" title="2023-05-14 15:41:50">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/14/998-%E6%90%AD%E5%BB%BA%E4%B8%80%E5%8F%B0%E7%A7%81%E7%94%A8%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%A8%E8%BF%87%E7%A8%8B/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="998-搭建一台私用服务器全过程">998-搭建一台私用服务器全过程</span>
+            <span class="post-date" title="2023-05-14 15:36:20">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/%20Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-3-%E5%A4%9A%E7%BA%BF%E7%A8%8B%E5%A4%9A%E8%BF%9B%E7%A8%8B%E6%8F%90%E5%8D%87%E4%BB%BB%E5%8A%A1%E6%89%A7%E8%A1%8C%E6%95%88%E7%8E%87/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-3-多线程多进程提升任务执行效率">Python爬虫-第四章-3-多线程多进程提升任务执行效率</span>
+            <span class="post-date" title="2023-05-14 15:35:16">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/%20Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-4-%E5%88%A9%E7%94%A8%E7%BA%BF%E7%A8%8B%E6%B1%A0%E5%92%8C%E8%BF%9B%E7%A8%8B%E6%B1%A0%E9%AB%98%E6%95%88%E7%88%AC%E5%8F%96%E5%8C%97%E4%BA%AC%E6%9F%90%E5%8F%91%E8%8F%9C%E5%9C%B0%E6%95%B0%E6%8D%AE/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-4-利用线程池和进程池高效爬取北京某发菜地数据">Python爬虫-第四章-4-利用线程池和进程池高效爬取北京某发菜地数据</span>
+            <span class="post-date" title="2023-05-14 15:34:07">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/13/%20Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-5-%E9%AB%98%E6%95%88%E6%8A%93%E5%8F%96%E8%A7%86%E9%A2%91%E7%BD%91%E7%AB%99%E8%A7%86%E9%A2%91%E8%B5%84%E6%BA%90%E8%87%B3%E6%9C%AC%E5%9C%B0/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-5-高效抓取视频网站视频资源至本地">Python爬虫-第四章-5-高效抓取视频网站视频资源至本地</span>
+            <span class="post-date" title="2023-05-13 20:13:14">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/13/%20Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%BA%94%E7%AB%A0-1-%E8%B6%85%E7%BA%A7%E9%B9%B0%E6%8F%92%E4%BB%B6%E5%AE%9E%E7%8E%B0%E8%87%AA%E5%8A%A8%E5%A1%AB%E5%86%99%E8%AF%86%E5%88%AB%E7%A0%81%E5%B9%B6%E7%99%BB%E5%BD%9512306%E7%BD%91%E7%AB%99/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第五章-1-超级鹰插件实现自动填写识别码并登录12306网站">Python爬虫-第五章-1-超级鹰插件实现自动填写识别码并登录12306网站</span>
+            <span class="post-date" title="2023-05-13 19:54:30">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/13/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%BA%94%E7%AB%A0-2-%E7%88%AC%E5%8F%96%E6%9F%90%E7%BD%91%E7%AB%99%E5%9B%BE%E5%BA%93/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第五章-2-爬取某网站图库">Python爬虫-第五章-2-爬取某网站图库</span>
+            <span class="post-date" title="2023-05-13 19:52:47">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/66-CICD%E6%8C%81%E7%BB%AD%E9%9B%86%E6%88%90%E5%B7%A5%E5%85%B7-Jenkins%E5%A3%B0%E6%98%8E%E5%BC%8FPipeline%E9%83%A8%E7%BD%B2JAVA%E7%A8%8B%E5%BA%8F%E7%94%9F%E4%BA%A7%E6%A1%88%E4%BE%8B(%E5%8C%85%E5%90%ABDocker%E6%A1%88%E4%BE%8B)/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="66-CICD持续集成工具-Jenkins声明式Pipeline部署JAVA程序生产案例(包含Docker案例)">66-CICD持续集成工具-Jenkins声明式Pipeline部署JAVA程序生产案例(包含Docker案例)</span>
+            <span class="post-date" title="2023-05-13 19:49:20">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/997-%E6%89%A9%E5%B1%95KVM%E8%99%9A%E6%8B%9F%E6%9C%BA%E9%80%BB%E8%BE%91%E5%8D%B7/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="67-日志分析系统ELK-ELK架构简述">67-日志分析系统ELK-ELK架构简述</span>
+            <span class="post-date" title="2023-05-13 19:47:57">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/67-%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90%E7%B3%BB%E7%BB%9FELK-ELK%E6%9E%B6%E6%9E%84%E7%AE%80%E8%BF%B0/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="67-日志分析系统ELK-ELK架构简述">67-日志分析系统ELK-ELK架构简述</span>
+            <span class="post-date" title="2023-05-13 19:46:06">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/68-%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90%E7%B3%BB%E7%BB%9FELK-Elasticsearch%E5%8D%95%E7%82%B9%E9%83%A8%E7%BD%B2%E5%92%8C%E9%85%8D%E7%BD%AE%E4%BC%98%E5%8C%96%EF%BC%88%E5%90%AB%E5%9F%BA%E4%BA%8EDocker%E5%8D%95%E7%82%B9%E9%83%A8%E7%BD%B2%E6%A1%88%E4%BE%8B%EF%BC%89/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="68-日志分析系统ELK-Elasticsearch单点部署和配置优化（含基于Docker单点部署案例）">68-日志分析系统ELK-Elasticsearch单点部署和配置优化（含基于Docker单点部署案例）</span>
+            <span class="post-date" title="2023-05-13 19:44:06">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/13/78-%E4%BA%91%E5%8E%9F%E7%94%9F%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-Kubernetes%E9%9B%86%E7%BE%A4%E8%8A%82%E7%82%B9%E6%A8%AA%E5%90%91%E4%BC%B8%E7%BC%A9%E5%8F%8A%E6%A0%B8%E5%BF%83%E7%BB%84%E4%BB%B6%E7%89%88%E6%9C%AC%E5%8D%87%E7%BA%A7/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="78-云原生操作系统-Kubernetes集群节点横向伸缩及核心组件版本升级">78-云原生操作系统-Kubernetes集群节点横向伸缩及核心组件版本升级</span>
+            <span class="post-date" title="2023-05-13 17:37:37">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/13/79-%E4%BA%91%E5%8E%9F%E7%94%9F%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-Kubectl%E5%91%BD%E4%BB%A4%E4%BB%A5%E5%8F%8AEtcd%E5%9F%BA%E4%BA%8E%E5%BF%AB%E7%85%A7%E7%9A%84%E6%95%B0%E6%8D%AE%E5%A4%87%E4%BB%BD%E4%B8%8E%E6%81%A2%E5%A4%8D/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="79-云原生操作系统-Kubectl命令以及Etcd基于快照的数据备份与恢复">79-云原生操作系统-Kubectl命令以及Etcd基于快照的数据备份与恢复</span>
+            <span class="post-date" title="2023-05-13 17:34:14">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All PMP管理 "
+           href="/2023/05/13/%E9%A2%84%E6%B5%8B%E5%9E%8B%E9%A1%B9%E7%9B%AE%E7%AE%A1%E7%90%86-6-%E9%A1%B9%E7%9B%AE%E8%BF%9B%E5%BA%A6%E7%AE%A1%E7%90%86%E2%85%A1/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="预测型项目管理-6-项目进度管理Ⅱ">预测型项目管理-6-项目进度管理Ⅱ</span>
+            <span class="post-date" title="2023-05-13 17:32:31">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/13/84-%E4%BA%91%E5%8E%9F%E7%94%9F%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-%E5%9F%BA%E4%BA%8Enerdctl%20+%20buildkitd%E6%9E%84%E5%BB%BA%E5%AE%B9%E5%99%A8%E9%95%9C%E5%83%8F20230513/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="84-云原生操作系统-基于nerdctl + buildkitd构建容器镜像">84-云原生操作系统-基于nerdctl + buildkitd构建容器镜像</span>
+            <span class="post-date" title="2023-05-13 17:22:54">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/13/86-%E4%BA%91%E5%8E%9F%E7%94%9F%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-Zookeeper%E9%9B%86%E7%BE%A4%E5%8F%8A%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%8A%A8%E6%80%81%E6%B3%A8%E5%86%8C%E5%92%8C%E5%8F%91%E7%8E%B0%E4%B8%9A%E5%8A%A1%E5%AE%B9%E5%99%A8%E5%8C%96%E6%A1%88%E4%BE%8B/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="86-云原生操作系统-Zookeeper集群及微服务动态注册和发现业务容器化案例">86-云原生操作系统-Zookeeper集群及微服务动态注册和发现业务容器化案例</span>
+            <span class="post-date" title="2023-05-13 17:13:23">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/13/87-%E4%BA%91%E5%8E%9F%E7%94%9F%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-Redis%E5%8D%95%E6%9C%BA%E5%92%8C%E9%9B%86%E7%BE%A4%E4%B8%9A%E5%8A%A1%E5%AE%B9%E5%99%A8%E5%8C%96%E6%A1%88%E4%BE%8B/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="87-云原生操作系统-Redis单机和集群业务容器化案例">87-云原生操作系统-Redis单机和集群业务容器化案例</span>
+            <span class="post-date" title="2023-05-13 17:08:49">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/997-%E4%BD%BF%E7%94%A8ChatGPT%E5%81%9A%E8%BF%90%E7%BB%B4%E5%BA%94%E7%94%A8%E5%B7%A5%E5%85%B7%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E8%A7%A3%E7%AD%94/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="997-使用ChatGPT做运维应用工具常见问题解答">997-使用ChatGPT做运维应用工具常见问题解答</span>
+            <span class="post-date" title="2023-05-13 15:49:52">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/%E5%A4%A7%E5%9E%8B%E4%BA%92%E8%81%94%E7%BD%91%E5%BE%AE%E6%9C%8D%E5%8A%A1%E6%9E%B6%E6%9E%84%E5%9B%BE/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="大型互联网微服务架构图">大型互联网微服务架构图</span>
+            <span class="post-date" title="2023-05-13 15:47:16">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/%E4%BA%91%E8%AE%A1%E7%AE%97%E6%9E%B6%E6%9E%84%E5%9B%BE/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="云计算架构图">云计算架构图</span>
+            <span class="post-date" title="2023-05-13 15:24:25">2023/05/13</span>
+        </a>
+        
+        <div id="no-item-tips">
+
+        </div>
+    </nav>
+    <div id="outline-list">
+    </div>
+</div>
+
+    </div>
+    <div class="hide-list">
+        <div class="semicircle" data-title="切换全屏 快捷键 s">
+            <div class="brackets first"><</div>
+            <div class="brackets">&gt;</div>
+        </div>
+    </div>
+</aside>
+<div id="post">
+    <div class="pjax">
+        <article id="post-78-云原生操作系统-Kubernetes集群节点横向伸缩及核心组件版本升级" class="article article-type-post" itemscope itemprop="blogPost">
+    
+        <h1 class="article-title">78-云原生操作系统-Kubernetes集群节点横向伸缩及核心组件版本升级</h1>
+    
+    <div class="article-meta">
+        
+        
+        
+        <span class="book">
+            <i class="iconfont icon-category"></i>
+            
+            
+            <a  data-rel="云原生">云原生</a>
+            
+        </span>
+        
+        
+    </div>
+    <div class="article-meta">
+        
+            Created At : <time class="date" title='Updated At: 2023-05-13 19:37:29'>2023-05-13 17:37</time>
+        
+    </div>
+    <div class="article-meta">
+        
+        
+        <span id="busuanzi_container_page_pv">
+            Views 👀 :<span id="busuanzi_value_page_pv">
+                <span class="count-comment">
+                    <span class="spinner">
+                      <div class="cube1"></div>
+                      <div class="cube2"></div>
+                    </span>
+                </span>
+            </span>
+        </span>
+        
+        
+    </div>
+    
+    <div class="toc-ref">
+    
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#master-node-s-set-unique-%E2%80%98k8s-nodename%E2%80%99-for-each-node"><span class="toc-text">master node(s), set unique ‘k8s_nodename’ for each node</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#CAUTION-%E2%80%98k8s-nodename%E2%80%99-must-consist-of-lower-case-alphanumeric-characters-%E2%80%98-%E2%80%98-or-%E2%80%98-%E2%80%99"><span class="toc-text">CAUTION: ‘k8s_nodename’ must consist of lower case alphanumeric characters, ‘-‘ or ‘.’,</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#and-must-start-and-end-with-an-alphanumeric-character"><span class="toc-text">and must start and end with an alphanumeric character</span></a></li></ol>
+    
+<style>
+    .left-col .switch-btn,
+    .left-col .switch-area {
+        display: none;
+    }
+    .toc-level-3 i,
+    .toc-level-3 ol {
+        display: none !important;
+    }
+</style>
+</div>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>集群节点伸缩管理<br>添加Master<br>• kubeasz部署的集群每个node上都有一个用nginx作为LB的组件<br>[root@K8s-noded01 ~]#cat &#x2F;etc&#x2F;kube-lb&#x2F;conf&#x2F;kube-lb.conf<br>user root;<br>worker_processes 1;</p>
+<p>error_log  &#x2F;etc&#x2F;kube-lb&#x2F;logs&#x2F;error.log warn;</p>
+<p>events {<br>    worker_connections  3000;<br>}</p>
+<p>stream {<br>    upstream backend {<br>        server 192.168.11.211:6443    max_fails&#x3D;2 fail_timeout&#x3D;3s;<br>        server 192.168.11.212:6443    max_fails&#x3D;2 fail_timeout&#x3D;3s;<br>    }</p>
+<pre><code>server &#123;
+    listen 127.0.0.1:6443;
+    proxy_connect_timeout 1s;
+    proxy_pass backend;
+&#125;
+</code></pre>
+<p>}• 进行Master伸缩变更时，nginx配置文件也会自动更新<br>#查看变更前的md5值<br>[root@K8s-noded01 ~]#ls -l &#x2F;etc&#x2F;kube-lb&#x2F;conf&#x2F;kube-lb.conf<br>-rw-r–r– 1 root root 407 Mar 26 13:45 &#x2F;etc&#x2F;kube-lb&#x2F;conf&#x2F;kube-lb.conf<br>[root@K8s-noded01 ~]#md5sum &#x2F;etc&#x2F;kube-lb&#x2F;conf&#x2F;kube-lb.conf<br>547a406d41656f940f37f3546420087f  &#x2F;etc&#x2F;kube-lb&#x2F;conf&#x2F;kube-lb.conf</p>
+<p>#在部署节点进行Master节点的横向扩展<br>[root@K8s-ansible kubeasz]#.&#x2F;ezctl add-master k8s-cluster1  192.168.11.213</p>
+<p>2023-03-27 11:50:27 INFO add 192.168.11.213 into ‘kube_master’ group<br>2023-03-27 11:50:27 INFO start to add a master node:192.168.11.213 into cluster:k8s-cluster1</p>
+<p>PLAY [192.168.11.213] ************************************************************************************************************************************************************</p>
+<p>TASK [Gathering Facts] ***********************************************************************************************************************************************************<br>ok: [192.168.11.213]</p>
+<p>TASK [prepare : apt更新缓存刷新] *******************************************************************************************************************************************************<br>changed: [192.168.11.213]</p>
+<p>TASK [prepare : 删除ubuntu默认安装] ****************************************************************************************************************************************************<br>changed: [192.168.11.213] &#x3D;&gt; (item&#x3D;ufw)<br>changed: [192.168.11.213] &#x3D;&gt; (item&#x3D;lxd)<br>changed: [192.168.11.213] &#x3D;&gt; (item&#x3D;lxcfs)<br>changed: [192.168.11.213] &#x3D;&gt; (item&#x3D;lxc-common)</p>
+<p>TASK [prepare : 安装 ubuntu&#x2F;debian基础软件] ********************************************************************************************************************************************<br>changed: [192.168.11.213]</p>
+<p>TASK [prepare : 准备 journal 日志相关目录] ***********************************************************************************************************************************************<br>changed: [192.168.11.213] &#x3D;&gt; (item&#x3D;&#x2F;etc&#x2F;systemd&#x2F;journald.conf.d)<br>ok: [192.168.11.213] &#x3D;&gt; (item&#x3D;&#x2F;var&#x2F;log&#x2F;journal)</p>
+<p>TASK [prepare : 优化设置 journal 日志] *************************************************************************************************************************************************<br>changed: [192.168.11.213]</p>
+<p>TASK [prepare : 重启 journald 服务] **************************************************************************************************************************************************<br>changed: [192.168.11.213]</p>
+<p>TASK [prepare : 禁用系统 swap] *******************************************************************************************************************************************************<br>changed: [192.168.11.213]</p>
+<p>TASK [prepare : 删除fstab swap 相关配置] ***********************************************************************************************************************************************<br>changed: [192.168.11.213]</p>
+<p>TASK [prepare : 转换内核版本为浮点数] ******************************************************************************************************************************************************<br>ok: [192.168.11.213]</p>
+<p>TASK [prepare : 加载内核模块] **********************************************************************************************************************************************************<br>changed: [192.168.11.213] &#x3D;&gt; (item&#x3D;br_netfilter)<br>changed: [192.168.11.213] &#x3D;&gt; (item&#x3D;ip_vs)<br>changed: [192.168.11.213] &#x3D;&gt; (item&#x3D;ip_vs_rr)<br>changed: [192.168.11.213] &#x3D;&gt; (item&#x3D;ip_vs_wrr)<br>changed: [192.168.11.213] &#x3D;&gt; (item&#x3D;ip_vs_sh)<br>ok: [192.168.11.213] &#x3D;&gt; (item&#x3D;nf_conntrack)</p>
+<p>TASK [prepare : 尝试加载nf_conntrack_ipv4] *******************************************************************************************************************************************<br>changed: [192.168.11.213]</p>
+<p>TASK [prepare : 启用systemd自动加载模块服务] ***********************************************************************************************************************************************<br>ok: [192.168.11.213]</p>
+<p>TASK [prepare : 增加内核模块开机加载配置] ****************************************************************************************************************************************************<br>changed: [192.168.11.213]</p>
+<p>TASK [prepare : 设置系统参数] **********************************************************************************************************************************************************<br>changed: [192.168.11.213]</p>
+<p>TASK [prepare : 生效系统参数] **********************************************************************************************************************************************************<br>changed: [192.168.11.213]</p>
+<p>TASK [prepare : 创建 systemd 配置目录] *************************************************************************************************************************************************<br>changed: [192.168.11.213]</p>
+<p>TASK [prepare : 设置系统 ulimits] ****************************************************************************************************************************************************<br>changed: [192.168.11.213]</p>
+<p>TASK [prepare : 把SCTP列入内核模块黑名单] **************************************************************************************************************************************************<br>changed: [192.168.11.213]</p>
+<p>TASK [prepare : prepare some dirs] ***********************************************************************************************************************************************<br>ok: [192.168.11.213] &#x3D;&gt; (item&#x3D;&#x2F;usr&#x2F;local&#x2F;bin)<br>changed: [192.168.11.213] &#x3D;&gt; (item&#x3D;&#x2F;etc&#x2F;kubernetes&#x2F;ssl)<br>changed: [192.168.11.213] &#x3D;&gt; (item&#x3D;&#x2F;root&#x2F;.kube)<br>changed: [192.168.11.213] &#x3D;&gt; (item&#x3D;&#x2F;etc&#x2F;cni&#x2F;net.d)</p>
+<p>TASK [prepare : symlink &#x2F;usr&#x2F;bin&#x2F;python -&gt; &#x2F;usr&#x2F;bin&#x2F;python3] *********************************************************************************************************************<br>changed: [192.168.11.213]</p>
+<p>TASK [prepare : 写入环境变量$PATH] *****************************************************************************************************************************************************<br>changed: [192.168.11.213]</p>
+<p>TASK [prepare : 添加 local registry hosts 解析] **************************************************************************************************************************************<br>changed: [192.168.11.213]</p>
+<p>TASK [containerd : 获取是否已经安装containerd] *******************************************************************************************************************************************<br>changed: [192.168.11.213]</p>
+<p>TASK [containerd : 准备containerd相关目录] *********************************************************************************************************************************************<br>ok: [192.168.11.213] &#x3D;&gt; (item&#x3D;&#x2F;usr&#x2F;local&#x2F;bin)<br>changed: [192.168.11.213] &#x3D;&gt; (item&#x3D;&#x2F;etc&#x2F;containerd)</p>
+<p>TASK [containerd : 加载内核模块 overlay] ***********************************************************************************************************************************************<br>changed: [192.168.11.213]</p>
+<p>TASK [containerd : 下载 containerd 二进制文件] ******************************************************************************************************************************************<br>changed: [192.168.11.213] &#x3D;&gt; (item&#x3D;containerd)<br>changed: [192.168.11.213] &#x3D;&gt; (item&#x3D;containerd-shim)<br>changed: [192.168.11.213] &#x3D;&gt; (item&#x3D;containerd-shim-runc-v1)<br>changed: [192.168.11.213] &#x3D;&gt; (item&#x3D;containerd-shim-runc-v2)<br>changed: [192.168.11.213] &#x3D;&gt; (item&#x3D;crictl)<br>changed: [192.168.11.213] &#x3D;&gt; (item&#x3D;ctr)<br>changed: [192.168.11.213] &#x3D;&gt; (item&#x3D;runc)</p>
+<p>TASK [containerd : 添加 crictl 自动补全] ***********************************************************************************************************************************************<br>changed: [192.168.11.213]</p>
+<p>TASK [containerd : 创建 containerd 配置文件] *******************************************************************************************************************************************<br>changed: [192.168.11.213]</p>
+<p>TASK [containerd : 创建systemd unit文件] *********************************************************************************************************************************************<br>changed: [192.168.11.213]</p>
+<p>TASK [containerd : 创建 crictl 配置] *************************************************************************************************************************************************<br>changed: [192.168.11.213]</p>
+<p>TASK [containerd : 开机启用 containerd 服务] *******************************************************************************************************************************************<br>changed: [192.168.11.213]</p>
+<p>TASK [containerd : 开启 containerd 服务] *********************************************************************************************************************************************<br>changed: [192.168.11.213]</p>
+<p>TASK [containerd : 轮询等待containerd服务运行] *******************************************************************************************************************************************<br>changed: [192.168.11.213]</p>
+<p>TASK [kube-lb : prepare some dirs] ***********************************************************************************************************************************************<br>changed: [192.168.11.213] &#x3D;&gt; (item&#x3D;&#x2F;etc&#x2F;kube-lb&#x2F;sbin)<br>changed: [192.168.11.213] &#x3D;&gt; (item&#x3D;&#x2F;etc&#x2F;kube-lb&#x2F;logs)<br>changed: [192.168.11.213] &#x3D;&gt; (item&#x3D;&#x2F;etc&#x2F;kube-lb&#x2F;conf)</p>
+<p>TASK [kube-lb : 下载二进制文件kube-lb(nginx)] *******************************************************************************************************************************************<br>changed: [192.168.11.213]</p>
+<p>TASK [kube-lb : 创建kube-lb的配置文件] **************************************************************************************************************************************************<br>changed: [192.168.11.213]</p>
+<p>TASK [kube-lb : 创建kube-lb的systemd unit文件] ****************************************************************************************************************************************<br>changed: [192.168.11.213]</p>
+<p>TASK [kube-lb : 开机启用kube-lb服务] ***************************************************************************************************************************************************<br>changed: [192.168.11.213]</p>
+<p>TASK [kube-lb : 开启kube-lb服务] *****************************************************************************************************************************************************<br>changed: [192.168.11.213]</p>
+<p>TASK [kube-lb : 以轮询的方式等待kube-lb服务启动] *********************************************************************************************************************************************<br>changed: [192.168.11.213]</p>
+<p>TASK [kube-master : 下载 kube_master 二进制] ******************************************************************************************************************************************<br>changed: [192.168.11.213] &#x3D;&gt; (item&#x3D;kube-apiserver)<br>changed: [192.168.11.213] &#x3D;&gt; (item&#x3D;kube-controller-manager)<br>changed: [192.168.11.213] &#x3D;&gt; (item&#x3D;kube-scheduler)<br>changed: [192.168.11.213] &#x3D;&gt; (item&#x3D;kubectl)</p>
+<p>TASK [kube-master : 分发controller&#x2F;scheduler kubeconfig配置文件] ***********************************************************************************************************************<br>changed: [192.168.11.213] &#x3D;&gt; (item&#x3D;kube-controller-manager.kubeconfig)<br>changed: [192.168.11.213] &#x3D;&gt; (item&#x3D;kube-scheduler.kubeconfig)</p>
+<p>TASK [kube-master : 创建 kubernetes 证书签名请求] ****************************************************************************************************************************************<br>changed: [192.168.11.213]</p>
+<p>TASK [kube-master : 创建 kubernetes 证书和私钥] *****************************************************************************************************************************************<br>changed: [192.168.11.213]</p>
+<p>TASK [kube-master : 创建 aggregator proxy证书签名请求] ***********************************************************************************************************************************<br>ok: [192.168.11.213]</p>
+<p>TASK [kube-master : 创建 aggregator-proxy证书和私钥] ************************************************************************************************************************************<br>changed: [192.168.11.213]</p>
+<p>TASK [kube-master : 分发 kubernetes证书] *********************************************************************************************************************************************<br>changed: [192.168.11.213] &#x3D;&gt; (item&#x3D;ca.pem)<br>changed: [192.168.11.213] &#x3D;&gt; (item&#x3D;ca-key.pem)<br>changed: [192.168.11.213] &#x3D;&gt; (item&#x3D;kubernetes.pem)<br>changed: [192.168.11.213] &#x3D;&gt; (item&#x3D;kubernetes-key.pem)<br>changed: [192.168.11.213] &#x3D;&gt; (item&#x3D;aggregator-proxy.pem)<br>changed: [192.168.11.213] &#x3D;&gt; (item&#x3D;aggregator-proxy-key.pem)</p>
+<p>TASK [kube-master : 替换 kubeconfig 的 apiserver 地址] ********************************************************************************************************************************<br>changed: [192.168.11.213] &#x3D;&gt; (item&#x3D;&#x2F;etc&#x2F;kubernetes&#x2F;kube-controller-manager.kubeconfig)<br>changed: [192.168.11.213] &#x3D;&gt; (item&#x3D;&#x2F;etc&#x2F;kubernetes&#x2F;kube-scheduler.kubeconfig)</p>
+<p>TASK [kube-master : 创建 master 服务的 systemd unit 文件] *******************************************************************************************************************************<br>changed: [192.168.11.213] &#x3D;&gt; (item&#x3D;kube-apiserver.service)<br>changed: [192.168.11.213] &#x3D;&gt; (item&#x3D;kube-controller-manager.service)<br>changed: [192.168.11.213] &#x3D;&gt; (item&#x3D;kube-scheduler.service)</p>
+<p>TASK [kube-master : enable master 服务] ********************************************************************************************************************************************<br>changed: [192.168.11.213]</p>
+<p>TASK [kube-master : 启动 master 服务] ************************************************************************************************************************************************<br>changed: [192.168.11.213]</p>
+<p>TASK [kube-master : 轮询等待kube-apiserver启动] ****************************************************************************************************************************************<br>changed: [192.168.11.213]</p>
+<p>TASK [kube-master : 轮询等待kube-controller-manager启动] *******************************************************************************************************************************<br>changed: [192.168.11.213]</p>
+<p>TASK [kube-master : 轮询等待kube-scheduler启动] ****************************************************************************************************************************************<br>changed: [192.168.11.213]</p>
+<p>TASK [kube-master : 复制kubectl.kubeconfig] ****************************************************************************************************************************************<br>changed: [192.168.11.213]</p>
+<p>TASK [kube-master : 替换 kubeconfig 的 apiserver 地址] ********************************************************************************************************************************<br>changed: [192.168.11.213]</p>
+<p>TASK [kube-master : 轮询等待master服务启动完成] ********************************************************************************************************************************************<br>changed: [192.168.11.213]</p>
+<p>TASK [kube-master : 获取user:kubernetes是否已经绑定对应角色] *********************************************************************************************************************************<br>changed: [192.168.11.213]</p>
+<p>TASK [kube-node : 创建kube_node 相关目录] **********************************************************************************************************************************************<br>changed: [192.168.11.213] &#x3D;&gt; (item&#x3D;&#x2F;var&#x2F;lib&#x2F;kubelet)<br>changed: [192.168.11.213] &#x3D;&gt; (item&#x3D;&#x2F;var&#x2F;lib&#x2F;kube-proxy)</p>
+<p>TASK [kube-node : 下载 kubelet,kube-proxy 二进制和基础 cni plugins] **********************************************************************************************************************<br>ok: [192.168.11.213] &#x3D;&gt; (item&#x3D;kubectl)<br>changed: [192.168.11.213] &#x3D;&gt; (item&#x3D;kubelet)<br>changed: [192.168.11.213] &#x3D;&gt; (item&#x3D;kube-proxy)<br>changed: [192.168.11.213] &#x3D;&gt; (item&#x3D;bridge)<br>changed: [192.168.11.213] &#x3D;&gt; (item&#x3D;host-local)<br>changed: [192.168.11.213] &#x3D;&gt; (item&#x3D;loopback)</p>
+<p>TASK [kube-node : 添加 kubectl 自动补全] ***********************************************************************************************************************************************<br>changed: [192.168.11.213]</p>
+<p>TASK [kube-node : 准备kubelet 证书签名请求] **********************************************************************************************************************************************<br>changed: [192.168.11.213]</p>
+<p>TASK [kube-node : 创建 kubelet 证书与私钥] **********************************************************************************************************************************************<br>changed: [192.168.11.213]</p>
+<p>TASK [kube-node : 设置集群参数] ********************************************************************************************************************************************************<br>changed: [192.168.11.213]</p>
+<p>TASK [kube-node : 设置客户端认证参数] *****************************************************************************************************************************************************<br>changed: [192.168.11.213]</p>
+<p>TASK [kube-node : 设置上下文参数] *******************************************************************************************************************************************************<br>changed: [192.168.11.213]</p>
+<p>TASK [kube-node : 选择默认上下文] *******************************************************************************************************************************************************<br>changed: [192.168.11.213]</p>
+<p>TASK [kube-node : 分发ca 证书] *******************************************************************************************************************************************************<br>ok: [192.168.11.213]</p>
+<p>TASK [kube-node : 分发kubelet 证书] **************************************************************************************************************************************************<br>changed: [192.168.11.213] &#x3D;&gt; (item&#x3D;kubelet.pem)<br>changed: [192.168.11.213] &#x3D;&gt; (item&#x3D;kubelet-key.pem)</p>
+<p>TASK [kube-node : 分发kubeconfig] **************************************************************************************************************************************************<br>changed: [192.168.11.213]</p>
+<p>TASK [kube-node : 准备 cni配置文件] ****************************************************************************************************************************************************<br>changed: [192.168.11.213]</p>
+<p>TASK [kube-node : 创建kubelet的配置文件] ************************************************************************************************************************************************<br>changed: [192.168.11.213]</p>
+<p>TASK [kube-node : 创建kubelet的systemd unit文件] **************************************************************************************************************************************<br>changed: [192.168.11.213]</p>
+<p>TASK [kube-node : 开机启用kubelet 服务] ************************************************************************************************************************************************<br>changed: [192.168.11.213]</p>
+<p>TASK [kube-node : 开启kubelet 服务] **************************************************************************************************************************************************<br>changed: [192.168.11.213]</p>
+<p>TASK [kube-node : 分发 kube-proxy.kubeconfig配置文件] **********************************************************************************************************************************<br>changed: [192.168.11.213]</p>
+<p>TASK [kube-node : 替换 kube-proxy.kubeconfig 的 apiserver 地址] ***********************************************************************************************************************<br>changed: [192.168.11.213]</p>
+<p>TASK [kube-node : 创建kube-proxy 配置] ***********************************************************************************************************************************************<br>changed: [192.168.11.213]</p>
+<p>TASK [kube-node : 创建kube-proxy 服务文件] *********************************************************************************************************************************************<br>changed: [192.168.11.213]</p>
+<p>TASK [kube-node : 开机启用kube-proxy 服务] *********************************************************************************************************************************************<br>changed: [192.168.11.213]</p>
+<p>TASK [kube-node : 开启kube-proxy 服务] ***********************************************************************************************************************************************<br>changed: [192.168.11.213]</p>
+<p>TASK [kube-node : 轮询等待kube-proxy启动] **********************************************************************************************************************************************<br>changed: [192.168.11.213]</p>
+<p>TASK [kube-node : 轮询等待kubelet启动] *************************************************************************************************************************************************<br>changed: [192.168.11.213]<br>FAILED - RETRYING: 轮询等待node达到Ready状态 (8 retries left).</p>
+<p>TASK [kube-node : 轮询等待node达到Ready状态] *********************************************************************************************************************************************<br>changed: [192.168.11.213]</p>
+<p>TASK [kube-node : Setting worker role name] **************************************************************************************************************************************<br>changed: [192.168.11.213]</p>
+<p>TASK [kube-node : Setting master role name] **************************************************************************************************************************************<br>changed: [192.168.11.213]</p>
+<p>TASK [kube-node : Making master nodes SchedulingDisabled] ************************************************************************************************************************<br>changed: [192.168.11.213]</p>
+<p>TASK [calico : 创建calico 证书请求] ****************************************************************************************************************************************************<br>ok: [192.168.11.213]</p>
+<p>TASK [calico : 创建 calico证书和私钥] ***************************************************************************************************************************************************<br>changed: [192.168.11.213]</p>
+<p>TASK [calico : 删除旧 calico-etcd-secrets] ******************************************************************************************************************************************<br>changed: [192.168.11.213]</p>
+<p>TASK [calico : 创建 calico-etcd-secrets] *******************************************************************************************************************************************<br>changed: [192.168.11.213]</p>
+<p>TASK [calico : 配置 calico DaemonSet yaml文件] ***************************************************************************************************************************************<br>changed: [192.168.11.213]</p>
+<p>TASK [calico : 运行 calico网络] ******************************************************************************************************************************************************<br>changed: [192.168.11.213]</p>
+<p>TASK [calico : 在节点创建相关目录] ********************************************************************************************************************************************************<br>changed: [192.168.11.213] &#x3D;&gt; (item&#x3D;&#x2F;etc&#x2F;calico&#x2F;ssl)</p>
+<p>TASK [calico : 分发calico证书相关] *****************************************************************************************************************************************************<br>changed: [192.168.11.213] &#x3D;&gt; (item&#x3D;ca.pem)<br>changed: [192.168.11.213] &#x3D;&gt; (item&#x3D;calico.pem)<br>changed: [192.168.11.213] &#x3D;&gt; (item&#x3D;calico-key.pem)</p>
+<p>TASK [calico : 删除默认cni配置] ********************************************************************************************************************************************************<br>changed: [192.168.11.213]</p>
+<p>TASK [calico : 下载calicoctl 客户端] **************************************************************************************************************************************************<br>changed: [192.168.11.213] &#x3D;&gt; (item&#x3D;calicoctl)</p>
+<p>TASK [calico : 准备 calicoctl配置文件] *************************************************************************************************************************************************<br>changed: [192.168.11.213]<br>FAILED - RETRYING: 轮询等待calico-node 运行 (15 retries left).</p>
+<p>TASK [calico : 轮询等待calico-node 运行] ***********************************************************************************************************************************************<br>changed: [192.168.11.213]</p>
+<p>PLAY RECAP ***********************************************************************************************************************************************************************<br>192.168.11.213             : ok&#x3D;100  changed&#x3D;94   unreachable&#x3D;0    failed&#x3D;0    skipped&#x3D;156  rescued&#x3D;0    ignored&#x3D;0   </p>
+<p>2023-03-27 11:54:07 INFO reconfigure and restart ‘kube-lb’ service</p>
+<p>PLAY [kube_master,kube_node,etcd,ex_lb,chrony] ***********************************************************************************************************************************</p>
+<p>TASK [Gathering Facts] ***********************************************************************************************************************************************************<br>ok: [192.168.11.213]<br>ok: [192.168.11.211]<br>ok: [192.168.11.214]<br>ok: [192.168.11.212]<br>ok: [192.168.11.215]<br>ok: [192.168.11.217]<br>ok: [192.168.11.218]<br>ok: [192.168.11.219]</p>
+<p>PLAY [localhost] *****************************************************************************************************************************************************************</p>
+<p>TASK [Gathering Facts] ***********************************************************************************************************************************************************<br>ok: [localhost]</p>
+<p>PLAY [kube_master,kube_node,etcd] ************************************************************************************************************************************************</p>
+<p>PLAY [etcd] **********************************************************************************************************************************************************************</p>
+<p>PLAY [kube_master,kube_node] *****************************************************************************************************************************************************</p>
+<p>PLAY [kube_master] ***************************************************************************************************************************************************************</p>
+<p>TASK [kube-lb : 创建kube-lb的配置文件] **************************************************************************************************************************************************<br>ok: [192.168.11.213]<br>changed: [192.168.11.211]<br>changed: [192.168.11.212]</p>
+<p>TASK [kube-lb : 创建kube-lb的systemd unit文件] ****************************************************************************************************************************************<br>ok: [192.168.11.213]<br>ok: [192.168.11.211]<br>ok: [192.168.11.212]</p>
+<p>TASK [kube-lb : 开启kube-lb服务] *****************************************************************************************************************************************************<br>changed: [192.168.11.213]<br>changed: [192.168.11.212]<br>changed: [192.168.11.211]</p>
+<p>TASK [kube-lb : 以轮询的方式等待kube-lb服务启动] *********************************************************************************************************************************************<br>changed: [192.168.11.213]<br>changed: [192.168.11.212]<br>changed: [192.168.11.211]</p>
+<p>PLAY [kube_node] *****************************************************************************************************************************************************************</p>
+<p>TASK [kube-lb : 创建kube-lb的配置文件] **************************************************************************************************************************************************<br>changed: [192.168.11.214]<br>changed: [192.168.11.215]</p>
+<p>TASK [kube-lb : 创建kube-lb的systemd unit文件] ****************************************************************************************************************************************<br>ok: [192.168.11.215]<br>ok: [192.168.11.214]</p>
+<p>TASK [kube-lb : 开启kube-lb服务] *****************************************************************************************************************************************************<br>changed: [192.168.11.215]<br>changed: [192.168.11.214]</p>
+<p>TASK [kube-lb : 以轮询的方式等待kube-lb服务启动] *********************************************************************************************************************************************<br>changed: [192.168.11.215]<br>changed: [192.168.11.214]</p>
+<p>PLAY [kube_master,kube_node] *****************************************************************************************************************************************************</p>
+<p>PLAY [localhost] *****************************************************************************************************************************************************************</p>
+<p>PLAY RECAP ***********************************************************************************************************************************************************************<br>192.168.11.211             : ok&#x3D;5    changed&#x3D;3    unreachable&#x3D;0    failed&#x3D;0    skipped&#x3D;2    rescued&#x3D;0    ignored&#x3D;0<br>192.168.11.212             : ok&#x3D;5    changed&#x3D;3    unreachable&#x3D;0    failed&#x3D;0    skipped&#x3D;2    rescued&#x3D;0    ignored&#x3D;0<br>192.168.11.213             : ok&#x3D;5    changed&#x3D;2    unreachable&#x3D;0    failed&#x3D;0    skipped&#x3D;2    rescued&#x3D;0    ignored&#x3D;0<br>192.168.11.214             : ok&#x3D;5    changed&#x3D;3    unreachable&#x3D;0    failed&#x3D;0    skipped&#x3D;2    rescued&#x3D;0    ignored&#x3D;0<br>192.168.11.215             : ok&#x3D;5    changed&#x3D;3    unreachable&#x3D;0    failed&#x3D;0    skipped&#x3D;2    rescued&#x3D;0    ignored&#x3D;0<br>192.168.11.217             : ok&#x3D;1    changed&#x3D;0    unreachable&#x3D;0    failed&#x3D;0    skipped&#x3D;2    rescued&#x3D;0    ignored&#x3D;0<br>192.168.11.218             : ok&#x3D;1    changed&#x3D;0    unreachable&#x3D;0    failed&#x3D;0    skipped&#x3D;2    rescued&#x3D;0    ignored&#x3D;0<br>192.168.11.219             : ok&#x3D;1    changed&#x3D;0    unreachable&#x3D;0    failed&#x3D;0    skipped&#x3D;2    rescued&#x3D;0    ignored&#x3D;0<br>localhost                  : ok&#x3D;1    changed&#x3D;0    unreachable&#x3D;0    failed&#x3D;0    skipped&#x3D;0    rescued&#x3D;0    ignored&#x3D;0   </p>
+<p>2023-03-27 11:54:29 INFO reconfigure and restart ‘ex-lb’ service</p>
+<p>PLAY [ex_lb] *********************************************************************************************************************************************************************<br>skipping: no hosts matched</p>
+<p>PLAY RECAP ***********************************************************************************************************************************************************************</p>
+<p>#确认master已被添加到集群中<br>[root@K8s-ansible kubeasz]#kubectl get node<br>NAME             STATUS                     ROLES    AGE     VERSION<br>192.168.11.211   Ready,SchedulingDisabled   master   22h     v1.24.10<br>192.168.11.212   Ready,SchedulingDisabled   master   22h     v1.24.10<br>192.168.11.213   Ready,SchedulingDisabled   master   3m24s   v1.24.10 –&gt; 新建master<br>192.168.11.214   Ready                      node     22h     v1.24.10<br>192.168.11.215   Ready                      node     22h     v1.24.10</p>
+<p>#此时kubeasz的hosts配置文件中master地址被添加<br>[root@K8s-ansible kubeasz]#cat clusters&#x2F;k8s-cluster1&#x2F;hosts<br>….</p>
+<h1 id="master-node-s-set-unique-‘k8s-nodename’-for-each-node"><a href="#master-node-s-set-unique-‘k8s-nodename’-for-each-node" class="headerlink" title="master node(s), set unique ‘k8s_nodename’ for each node"></a>master node(s), set unique ‘k8s_nodename’ for each node</h1><h1 id="CAUTION-‘k8s-nodename’-must-consist-of-lower-case-alphanumeric-characters-‘-‘-or-‘-’"><a href="#CAUTION-‘k8s-nodename’-must-consist-of-lower-case-alphanumeric-characters-‘-‘-or-‘-’" class="headerlink" title="CAUTION: ‘k8s_nodename’ must consist of lower case alphanumeric characters, ‘-‘ or ‘.’,"></a>CAUTION: ‘k8s_nodename’ must consist of lower case alphanumeric characters, ‘-‘ or ‘.’,</h1><h1 id="and-must-start-and-end-with-an-alphanumeric-character"><a href="#and-must-start-and-end-with-an-alphanumeric-character" class="headerlink" title="and must start and end with an alphanumeric character"></a>and must start and end with an alphanumeric character</h1><p>[kube_master]<br>192.168.11.213<br>192.168.11.211<br>192.168.11.212 </p>
+<p>#node节点上LB配置也添加了新的IP<br>[root@K8s-noded01 ~]#cat &#x2F;etc&#x2F;kube-lb&#x2F;conf&#x2F;kube-lb.conf<br>user root;<br>worker_processes 1;</p>
+<p>error_log  &#x2F;etc&#x2F;kube-lb&#x2F;logs&#x2F;error.log warn;</p>
+<p>events {<br>    worker_connections  3000;<br>}</p>
+<p>stream {<br>    upstream backend {<br>        server 192.168.11.213:6443    max_fails&#x3D;2 fail_timeout&#x3D;3s;<br>        server 192.168.11.211:6443    max_fails&#x3D;2 fail_timeout&#x3D;3s;<br>        server 192.168.11.212:6443    max_fails&#x3D;2 fail_timeout&#x3D;3s;<br>    }</p>
+<pre><code>server &#123;
+    listen 127.0.0.1:6443;
+    proxy_connect_timeout 1s;
+    proxy_pass backend;
+&#125;
+</code></pre>
+<p>}<br>[root@K8s-noded01 ~]#ls -l &#x2F;etc&#x2F;kube-lb&#x2F;conf&#x2F;kube-lb.conf<br>-rw-r–r– 1 root root 474 Mar 27 11:54 &#x2F;etc&#x2F;kube-lb&#x2F;conf&#x2F;kube-lb.conf<br>[root@K8s-noded01 ~]#md5sum &#x2F;etc&#x2F;kube-lb&#x2F;conf&#x2F;kube-lb.conf<br>9a9749a8eb227729ff9db1d7d5368d07  &#x2F;etc&#x2F;kube-lb&#x2F;conf&#x2F;kube-lb.conf添加Node<br>• 横向扩展Node节点<br>[root@K8s-ansible kubeasz]#.&#x2F;ezctl add-node k8s-cluster1  192.168.11.216</p>
+<p>2023-03-27 12:02:15 INFO add 192.168.11.216 into ‘kube_node’ group<br>2023-03-27 12:02:15 INFO start to add a work node:192.168.11.216 into cluster:k8s-cluster1</p>
+<p>PLAY [192.168.11.216] ************************************************************************************************************************************************************</p>
+<p>TASK [Gathering Facts] ***********************************************************************************************************************************************************<br>ok: [192.168.11.216]</p>
+<p>TASK [prepare : apt更新缓存刷新] *******************************************************************************************************************************************************<br>changed: [192.168.11.216]</p>
+<p>TASK [prepare : 删除ubuntu默认安装] ****************************************************************************************************************************************************<br>changed: [192.168.11.216] &#x3D;&gt; (item&#x3D;ufw)<br>changed: [192.168.11.216] &#x3D;&gt; (item&#x3D;lxd)<br>changed: [192.168.11.216] &#x3D;&gt; (item&#x3D;lxcfs)<br>changed: [192.168.11.216] &#x3D;&gt; (item&#x3D;lxc-common)</p>
+<p>TASK [prepare : 安装 ubuntu&#x2F;debian基础软件] ********************************************************************************************************************************************<br>changed: [192.168.11.216]</p>
+<p>TASK [prepare : 准备 journal 日志相关目录] ***********************************************************************************************************************************************<br>changed: [192.168.11.216] &#x3D;&gt; (item&#x3D;&#x2F;etc&#x2F;systemd&#x2F;journald.conf.d)<br>ok: [192.168.11.216] &#x3D;&gt; (item&#x3D;&#x2F;var&#x2F;log&#x2F;journal)</p>
+<p>TASK [prepare : 优化设置 journal 日志] *************************************************************************************************************************************************<br>changed: [192.168.11.216]</p>
+<p>TASK [prepare : 重启 journald 服务] **************************************************************************************************************************************************<br>changed: [192.168.11.216]</p>
+<p>TASK [prepare : 禁用系统 swap] *******************************************************************************************************************************************************<br>changed: [192.168.11.216]</p>
+<p>TASK [prepare : 删除fstab swap 相关配置] ***********************************************************************************************************************************************<br>changed: [192.168.11.216]</p>
+<p>TASK [prepare : 转换内核版本为浮点数] ******************************************************************************************************************************************************<br>ok: [192.168.11.216]</p>
+<p>TASK [prepare : 加载内核模块] **********************************************************************************************************************************************************<br>changed: [192.168.11.216] &#x3D;&gt; (item&#x3D;br_netfilter)<br>changed: [192.168.11.216] &#x3D;&gt; (item&#x3D;ip_vs)<br>changed: [192.168.11.216] &#x3D;&gt; (item&#x3D;ip_vs_rr)<br>changed: [192.168.11.216] &#x3D;&gt; (item&#x3D;ip_vs_wrr)<br>changed: [192.168.11.216] &#x3D;&gt; (item&#x3D;ip_vs_sh)<br>ok: [192.168.11.216] &#x3D;&gt; (item&#x3D;nf_conntrack)</p>
+<p>TASK [prepare : 尝试加载nf_conntrack_ipv4] *******************************************************************************************************************************************<br>changed: [192.168.11.216]</p>
+<p>TASK [prepare : 启用systemd自动加载模块服务] ***********************************************************************************************************************************************<br>ok: [192.168.11.216]</p>
+<p>TASK [prepare : 增加内核模块开机加载配置] ****************************************************************************************************************************************************<br>changed: [192.168.11.216]</p>
+<p>TASK [prepare : 设置系统参数] **********************************************************************************************************************************************************<br>changed: [192.168.11.216]</p>
+<p>TASK [prepare : 生效系统参数] **********************************************************************************************************************************************************<br>changed: [192.168.11.216]</p>
+<p>TASK [prepare : 创建 systemd 配置目录] *************************************************************************************************************************************************<br>changed: [192.168.11.216]</p>
+<p>TASK [prepare : 设置系统 ulimits] ****************************************************************************************************************************************************<br>changed: [192.168.11.216]</p>
+<p>TASK [prepare : 把SCTP列入内核模块黑名单] **************************************************************************************************************************************************<br>changed: [192.168.11.216]</p>
+<p>TASK [prepare : prepare some dirs] ***********************************************************************************************************************************************<br>ok: [192.168.11.216] &#x3D;&gt; (item&#x3D;&#x2F;usr&#x2F;local&#x2F;bin)<br>changed: [192.168.11.216] &#x3D;&gt; (item&#x3D;&#x2F;etc&#x2F;kubernetes&#x2F;ssl)<br>changed: [192.168.11.216] &#x3D;&gt; (item&#x3D;&#x2F;root&#x2F;.kube)<br>changed: [192.168.11.216] &#x3D;&gt; (item&#x3D;&#x2F;etc&#x2F;cni&#x2F;net.d)</p>
+<p>TASK [prepare : symlink &#x2F;usr&#x2F;bin&#x2F;python -&gt; &#x2F;usr&#x2F;bin&#x2F;python3] *********************************************************************************************************************<br>changed: [192.168.11.216]</p>
+<p>TASK [prepare : 写入环境变量$PATH] *****************************************************************************************************************************************************<br>changed: [192.168.11.216]</p>
+<p>TASK [prepare : 添加 local registry hosts 解析] **************************************************************************************************************************************<br>changed: [192.168.11.216]</p>
+<p>TASK [containerd : 获取是否已经安装containerd] *******************************************************************************************************************************************<br>changed: [192.168.11.216]</p>
+<p>TASK [containerd : 准备containerd相关目录] *********************************************************************************************************************************************<br>ok: [192.168.11.216] &#x3D;&gt; (item&#x3D;&#x2F;usr&#x2F;local&#x2F;bin)<br>changed: [192.168.11.216] &#x3D;&gt; (item&#x3D;&#x2F;etc&#x2F;containerd)</p>
+<p>TASK [containerd : 加载内核模块 overlay] ***********************************************************************************************************************************************<br>changed: [192.168.11.216]</p>
+<p>TASK [containerd : 下载 containerd 二进制文件] ******************************************************************************************************************************************<br>changed: [192.168.11.216] &#x3D;&gt; (item&#x3D;containerd)<br>changed: [192.168.11.216] &#x3D;&gt; (item&#x3D;containerd-shim)<br>changed: [192.168.11.216] &#x3D;&gt; (item&#x3D;containerd-shim-runc-v1)<br>changed: [192.168.11.216] &#x3D;&gt; (item&#x3D;containerd-shim-runc-v2)<br>changed: [192.168.11.216] &#x3D;&gt; (item&#x3D;crictl)<br>changed: [192.168.11.216] &#x3D;&gt; (item&#x3D;ctr)<br>changed: [192.168.11.216] &#x3D;&gt; (item&#x3D;runc)</p>
+<p>TASK [containerd : 添加 crictl 自动补全] ***********************************************************************************************************************************************<br>changed: [192.168.11.216]</p>
+<p>TASK [containerd : 创建 containerd 配置文件] *******************************************************************************************************************************************<br>changed: [192.168.11.216]</p>
+<p>TASK [containerd : 创建systemd unit文件] *********************************************************************************************************************************************<br>changed: [192.168.11.216]</p>
+<p>TASK [containerd : 创建 crictl 配置] *************************************************************************************************************************************************<br>changed: [192.168.11.216]</p>
+<p>TASK [containerd : 开机启用 containerd 服务] *******************************************************************************************************************************************<br>changed: [192.168.11.216]</p>
+<p>TASK [containerd : 开启 containerd 服务] *********************************************************************************************************************************************<br>changed: [192.168.11.216]</p>
+<p>TASK [containerd : 轮询等待containerd服务运行] *******************************************************************************************************************************************<br>changed: [192.168.11.216]</p>
+<p>TASK [kube-lb : prepare some dirs] ***********************************************************************************************************************************************<br>changed: [192.168.11.216] &#x3D;&gt; (item&#x3D;&#x2F;etc&#x2F;kube-lb&#x2F;sbin)<br>changed: [192.168.11.216] &#x3D;&gt; (item&#x3D;&#x2F;etc&#x2F;kube-lb&#x2F;logs)<br>changed: [192.168.11.216] &#x3D;&gt; (item&#x3D;&#x2F;etc&#x2F;kube-lb&#x2F;conf)</p>
+<p>TASK [kube-lb : 下载二进制文件kube-lb(nginx)] *******************************************************************************************************************************************<br>changed: [192.168.11.216]</p>
+<p>TASK [kube-lb : 创建kube-lb的配置文件] **************************************************************************************************************************************************<br>changed: [192.168.11.216]</p>
+<p>TASK [kube-lb : 创建kube-lb的systemd unit文件] ****************************************************************************************************************************************<br>changed: [192.168.11.216]</p>
+<p>TASK [kube-lb : 开机启用kube-lb服务] ***************************************************************************************************************************************************<br>changed: [192.168.11.216]</p>
+<p>TASK [kube-lb : 开启kube-lb服务] *****************************************************************************************************************************************************<br>changed: [192.168.11.216]</p>
+<p>TASK [kube-lb : 以轮询的方式等待kube-lb服务启动] *********************************************************************************************************************************************<br>changed: [192.168.11.216]</p>
+<p>TASK [kube-node : 创建kube_node 相关目录] **********************************************************************************************************************************************<br>changed: [192.168.11.216] &#x3D;&gt; (item&#x3D;&#x2F;var&#x2F;lib&#x2F;kubelet)<br>changed: [192.168.11.216] &#x3D;&gt; (item&#x3D;&#x2F;var&#x2F;lib&#x2F;kube-proxy)</p>
+<p>TASK [kube-node : 下载 kubelet,kube-proxy 二进制和基础 cni plugins] **********************************************************************************************************************<br>changed: [192.168.11.216] &#x3D;&gt; (item&#x3D;kubectl)<br>changed: [192.168.11.216] &#x3D;&gt; (item&#x3D;kubelet)<br>changed: [192.168.11.216] &#x3D;&gt; (item&#x3D;kube-proxy)<br>changed: [192.168.11.216] &#x3D;&gt; (item&#x3D;bridge)<br>changed: [192.168.11.216] &#x3D;&gt; (item&#x3D;host-local)<br>changed: [192.168.11.216] &#x3D;&gt; (item&#x3D;loopback)</p>
+<p>TASK [kube-node : 添加 kubectl 自动补全] ***********************************************************************************************************************************************<br>changed: [192.168.11.216]</p>
+<p>TASK [kube-node : 准备kubelet 证书签名请求] **********************************************************************************************************************************************<br>changed: [192.168.11.216]</p>
+<p>TASK [kube-node : 创建 kubelet 证书与私钥] **********************************************************************************************************************************************<br>changed: [192.168.11.216]</p>
+<p>TASK [kube-node : 设置集群参数] ********************************************************************************************************************************************************<br>changed: [192.168.11.216]</p>
+<p>TASK [kube-node : 设置客户端认证参数] *****************************************************************************************************************************************************<br>changed: [192.168.11.216]</p>
+<p>TASK [kube-node : 设置上下文参数] *******************************************************************************************************************************************************<br>changed: [192.168.11.216]</p>
+<p>TASK [kube-node : 选择默认上下文] *******************************************************************************************************************************************************<br>changed: [192.168.11.216]</p>
+<p>TASK [kube-node : 分发ca 证书] *******************************************************************************************************************************************************<br>changed: [192.168.11.216]</p>
+<p>TASK [kube-node : 分发kubelet 证书] **************************************************************************************************************************************************<br>changed: [192.168.11.216] &#x3D;&gt; (item&#x3D;kubelet.pem)<br>changed: [192.168.11.216] &#x3D;&gt; (item&#x3D;kubelet-key.pem)</p>
+<p>TASK [kube-node : 分发kubeconfig] **************************************************************************************************************************************************<br>changed: [192.168.11.216]</p>
+<p>TASK [kube-node : 准备 cni配置文件] ****************************************************************************************************************************************************<br>changed: [192.168.11.216]</p>
+<p>TASK [kube-node : 创建kubelet的配置文件] ************************************************************************************************************************************************<br>changed: [192.168.11.216]</p>
+<p>TASK [kube-node : 创建kubelet的systemd unit文件] **************************************************************************************************************************************<br>changed: [192.168.11.216]</p>
+<p>TASK [kube-node : 开机启用kubelet 服务] ************************************************************************************************************************************************<br>changed: [192.168.11.216]</p>
+<p>TASK [kube-node : 开启kubelet 服务] **************************************************************************************************************************************************<br>changed: [192.168.11.216]</p>
+<p>TASK [kube-node : 分发 kube-proxy.kubeconfig配置文件] **********************************************************************************************************************************<br>changed: [192.168.11.216]</p>
+<p>TASK [kube-node : 替换 kube-proxy.kubeconfig 的 apiserver 地址] ***********************************************************************************************************************<br>changed: [192.168.11.216]</p>
+<p>TASK [kube-node : 创建kube-proxy 配置] ***********************************************************************************************************************************************<br>changed: [192.168.11.216]</p>
+<p>TASK [kube-node : 创建kube-proxy 服务文件] *********************************************************************************************************************************************<br>changed: [192.168.11.216]</p>
+<p>TASK [kube-node : 开机启用kube-proxy 服务] *********************************************************************************************************************************************<br>changed: [192.168.11.216]</p>
+<p>TASK [kube-node : 开启kube-proxy 服务] ***********************************************************************************************************************************************<br>changed: [192.168.11.216]</p>
+<p>TASK [kube-node : 轮询等待kube-proxy启动] **********************************************************************************************************************************************<br>changed: [192.168.11.216]</p>
+<p>TASK [kube-node : 轮询等待kubelet启动] *************************************************************************************************************************************************<br>changed: [192.168.11.216]</p>
+<p>TASK [kube-node : 轮询等待node达到Ready状态] *********************************************************************************************************************************************<br>changed: [192.168.11.216]</p>
+<p>TASK [kube-node : Setting worker role name] **************************************************************************************************************************************<br>changed: [192.168.11.216]</p>
+<p>TASK [calico : 创建calico 证书请求] ****************************************************************************************************************************************************<br>ok: [192.168.11.216]</p>
+<p>TASK [calico : 创建 calico证书和私钥] ***************************************************************************************************************************************************<br>changed: [192.168.11.216]</p>
+<p>TASK [calico : 删除旧 calico-etcd-secrets] ******************************************************************************************************************************************<br>changed: [192.168.11.216]</p>
+<p>TASK [calico : 创建 calico-etcd-secrets] *******************************************************************************************************************************************<br>changed: [192.168.11.216]</p>
+<p>TASK [calico : 配置 calico DaemonSet yaml文件] ***************************************************************************************************************************************<br>ok: [192.168.11.216]</p>
+<p>TASK [calico : 运行 calico网络] ******************************************************************************************************************************************************<br>changed: [192.168.11.216]</p>
+<p>TASK [calico : 在节点创建相关目录] ********************************************************************************************************************************************************<br>changed: [192.168.11.216] &#x3D;&gt; (item&#x3D;&#x2F;etc&#x2F;calico&#x2F;ssl)</p>
+<p>TASK [calico : 分发calico证书相关] *****************************************************************************************************************************************************<br>changed: [192.168.11.216] &#x3D;&gt; (item&#x3D;ca.pem)<br>changed: [192.168.11.216] &#x3D;&gt; (item&#x3D;calico.pem)<br>changed: [192.168.11.216] &#x3D;&gt; (item&#x3D;calico-key.pem)</p>
+<p>TASK [calico : 删除默认cni配置] ********************************************************************************************************************************************************<br>changed: [192.168.11.216]</p>
+<p>TASK [calico : 下载calicoctl 客户端] **************************************************************************************************************************************************<br>changed: [192.168.11.216] &#x3D;&gt; (item&#x3D;calicoctl)</p>
+<p>TASK [calico : 准备 calicoctl配置文件] *************************************************************************************************************************************************<br>changed: [192.168.11.216]<br>FAILED - RETRYING: 轮询等待calico-node 运行 (15 retries left).<br>FAILED - RETRYING: 轮询等待calico-node 运行 (14 retries left).</p>
+<p>TASK [calico : 轮询等待calico-node 运行] ***********************************************************************************************************************************************<br>changed: [192.168.11.216]</p>
+<p>PLAY RECAP ***********************************************************************************************************************************************************************<br>192.168.11.216             : ok&#x3D;80   changed&#x3D;75   unreachable&#x3D;0    failed&#x3D;0    skipped&#x3D;157  rescued&#x3D;0    ignored&#x3D;0   </p>
+<p>#确认Node节点添加成功<br>[root@K8s-ansible kubeasz]#kubectl get node<br>NAME             STATUS                     ROLES    AGE     VERSION<br>192.168.11.211   Ready,SchedulingDisabled   master   22h     v1.24.10<br>192.168.11.212   Ready,SchedulingDisabled   master   22h     v1.24.10<br>192.168.11.213   Ready,SchedulingDisabled   master   13m     v1.24.10<br>192.168.11.214   Ready                      node     22h     v1.24.10<br>192.168.11.215   Ready                      node     22h     v1.24.10<br>192.168.11.216   Ready                      node     2m30s   v1.24.10 –&gt; 新的Node集群版本升级<br>下载指定版本的二进制包<br><img src="/../img/493a067598357977c741564f2570064574738e.png"><br><img src="/../img/431f7a31695258841df411f24c2b8fc7a8d5d3.png"></p>
+<p>#下载变更的二进制文件<br>[root@K8s-ansible data]#wget <a target="_blank" rel="noopener" href="https://dl.k8s.io/v1.26.3/kubernetes.tar.gz">https://dl.k8s.io/v1.26.3/kubernetes.tar.gz</a><br>[root@K8s-ansible data]#wget <a target="_blank" rel="noopener" href="https://dl.k8s.io/v1.26.3/kubernetes-client-linux-amd64.tar.gz">https://dl.k8s.io/v1.26.3/kubernetes-client-linux-amd64.tar.gz</a><br>[root@K8s-ansible data]#wget <a target="_blank" rel="noopener" href="https://dl.k8s.io/v1.26.3/kubernetes-server-linux-amd64.tar.gz">https://dl.k8s.io/v1.26.3/kubernetes-server-linux-amd64.tar.gz</a><br>[root@K8s-ansible data]#wget <a target="_blank" rel="noopener" href="https://dl.k8s.io/v1.26.3/kubernetes-node-linux-amd64.tar.gz">https://dl.k8s.io/v1.26.3/kubernetes-node-linux-amd64.tar.gz</a><br>[root@K8s-ansible data]#ls<br>kubernetes-client-linux-amd64.tar.gz  kubernetes-node-linux-amd64.tar.gz  kubernetes-server-linux-amd64.tar.gz  kubernetes.tar.gz<br>[root@K8s-ansible data]#mv kubernetes-client-linux-amd64.tar.gz  kubernetes-node-linux-amd64.tar.gz  kubernetes-server-linux-amd64.tar.gz  kubernetes.tar.gz &#x2F;usr&#x2F;local&#x2F;src<br>[root@K8s-ansible data]#cd &#x2F;usr&#x2F;local&#x2F;src&#x2F;<br>[root@K8s-ansible src]#ls<br>kubernetes-client-linux-amd64.tar.gz  kubernetes-node-linux-amd64.tar.gz  kubernetes-server-linux-amd64.tar.gz  kubernetes.tar.gz<br>#解压<br>[root@K8s-ansible src]#tar xf kubernetes-client-linux-amd64.tar.gz<br>[root@K8s-ansible src]#tar xf kubernetes-node-linux-amd64.tar.gz<br>[root@K8s-ansible src]#tar xf kubernetes-server-linux-amd64.tar.gz<br>[root@K8s-ansible src]#tar xf kubernetes.tar.gz<br>[root@K8s-ansible src]#ll<br>total 501192<br>drwxr-xr-x  3 root root      4096 Mar 27 12:36 .&#x2F;<br>drwxr-xr-x 10 root root      4096 Aug  9  2022 ..&#x2F;<br>drwxr-xr-x 10 root root      4096 Mar 15 14:01 kubernetes&#x2F;<br>-rw-r–r–  1 root root  33016823 Mar 17 19:05 kubernetes-client-linux-amd64.tar.gz<br>-rw-r–r–  1 root root 130544073 Mar 17 19:05 kubernetes-node-linux-amd64.tar.gz<br>-rw-r–r–  1 root root 349110643 Mar 17 19:05 kubernetes-server-linux-amd64.tar.gz<br>-rw-r–r–  1 root root    528218 Mar 17 19:05 kubernetes.tar.gz<br>#进入kubernetes目录确认版本<br>[root@K8s-ansible kubernetes]#ll<br>total 37372<br>drwxr-xr-x 10 root root     4096 Mar 15 14:01 .&#x2F;<br>drwxr-xr-x  3 root root     4096 Mar 27 12:36 ..&#x2F;<br>drwxr-xr-x  4 root root     4096 Mar 15 14:01 LICENSES&#x2F;<br>-rw-r–r–  1 root root     4269 Mar 15 14:01 README.md<br>drwxr-xr-x  2 root root     4096 Mar 15 13:55 addons&#x2F;<br>drwxr-xr-x  3 root root     4096 Mar 15 14:01 client&#x2F;<br>drwxr-xr-x  9 root root     4096 Mar 15 14:01 cluster&#x2F;<br>drwxr-xr-x  2 root root     4096 Mar 15 14:01 docs&#x2F;<br>drwxr-xr-x  3 root root     4096 Mar 15 14:01 hack&#x2F;<br>-rw-r–r–  1 root root 38208750 Mar 15 13:55 kubernetes-src.tar.gz<br>drwxr-xr-x  3 root root     4096 Mar 15 13:54 node&#x2F;<br>drwxr-xr-x  3 root root     4096 Mar 15 14:01 server&#x2F;<br>-rw-r–r–  1 root root        8 Mar 15 14:01 version<br>[root@K8s-ansible kubernetes]#.&#x2F;server&#x2F;bin&#x2F;kube-apiserver –version<br>Kubernetes v1.26.3节点逐个进行版本升级<br>• 升级Master节点<br>#Kubernetes的组件默认都在&#x2F;usr&#x2F;local&#x2F;bin下面，升级就是将其中的主要文件替换成为新版，然后运行<br>[root@K8s-master01 ~]#ll &#x2F;usr&#x2F;local&#x2F;bin&#x2F;<br>total 897540<br>drwxr-xr-x  2 root root      4096 Mar 27 11:55 .&#x2F;<br>drwxr-xr-x 10 root root      4096 Aug  9  2022 ..&#x2F;<br>-rwxr-xr-x  1 root root   3780654 Mar 26 14:15 bandwidth*<br>-rwxr-xr-x  1 root root   4221977 Mar 26 13:21 bridge*<br>-rwsr-xr-x  1 root root  58076620 Mar 26 14:15 calico*<br>-rwsr-xr-x  1 root root  58076620 Mar 26 14:15 calico-ipam*<br>-rwxr-xr-x  1 root root  59499254 Mar 26 14:14 calicoctl*<br>-rwxr-xr-x  1 root root  51529720 Mar 26 12:37 containerd*<br>-rwxr-xr-x  1 root root   7254016 Mar 26 12:37 containerd-shim*<br>-rwxr-xr-x  1 root root   9359360 Mar 26 12:37 containerd-shim-runc-v1*<br>-rwxr-xr-x  1 root root   9375744 Mar 26 12:37 containerd-shim-runc-v2*<br>-rwxr-xr-x  1 root root  52586151 Mar 26 12:37 crictl*<br>-rwxr-xr-x  1 root root  26712216 Mar 26 12:37 ctr*<br>-rwxr-xr-x  1 root root   2474798 Mar 26 14:15 flannel*<br>-rwxr-xr-x  1 root root   3241605 Mar 26 13:21 host-local*<br>-rwsr-xr-x  1 root root  58076620 Mar 26 14:15 install*<br>-rwxr-xr-x  1 root root 126513152 Mar 26 13:20 kube-apiserver*<br>-rwxr-xr-x  1 root root 116121600 Mar 26 13:20 kube-controller-manager*<br>-rwxr-xr-x  1 root root  42123264 Mar 26 13:21 kube-proxy*<br>-rwxr-xr-x  1 root root  47529984 Mar 26 13:21 kube-scheduler*<br>-rwxr-xr-x  1 root root  46067712 Mar 26 13:21 kubectl*<br>-rwxr-xr-x  1 root root 116628888 Mar 26 13:21 kubelet*<br>-rwxr-xr-x  1 root root   3295519 Mar 26 13:21 loopback*<br>-rwxr-xr-x  1 root root   3679140 Mar 26 14:15 portmap*<br>-rwxr-xr-x  1 root root   9431456 Mar 26 12:37 runc*<br>-rwxr-xr-x  1 root root   3379564 Mar 26 14:15 tuning*</p>
+<p>#关闭Node节点上向Master节点的调度，所有Node节点都需要设置<br>[root@K8s-noded01 ~]#vim &#x2F;etc&#x2F;kube-lb&#x2F;conf&#x2F;kube-lb.conf<br>[root@K8s-noded01 ~]#cat &#x2F;etc&#x2F;kube-lb&#x2F;conf&#x2F;kube-lb.conf<br>user root;<br>worker_processes 1;</p>
+<p>error_log  &#x2F;etc&#x2F;kube-lb&#x2F;logs&#x2F;error.log warn;</p>
+<p>events {<br>    worker_connections  3000;<br>}</p>
+<p>stream {<br>    upstream backend {<br>        server 192.168.11.213:6443    max_fails&#x3D;2 fail_timeout&#x3D;3s;<br>       # server 192.168.11.211:6443    max_fails&#x3D;2 fail_timeout&#x3D;3s; #注释掉对Master节点的调度<br>        server 192.168.11.212:6443    max_fails&#x3D;2 fail_timeout&#x3D;3s;<br>    }</p>
+<pre><code>server &#123;
+    listen 127.0.0.1:6443;
+    proxy_connect_timeout 1s;
+    proxy_pass backend;
+&#125;
+</code></pre>
+<p>}<br>[root@K8s-noded01 ~]#systemctl reload kube-lb.service </p>
+<p>#关闭Master节点上的kubernetes服务<br>[root@K8s-master01 ~]#systemctl stop kube-apiserver.service kube-controller-manager.service kube-scheduler.service kube-proxy.service kubelet.service </p>
+<p>#将提前下载的二进制升级包复制到Master节点的组件目录下替换旧版<br>[root@K8s-ansible bin]#pwd<br>&#x2F;usr&#x2F;local&#x2F;src&#x2F;kubernetes&#x2F;server&#x2F;bin<br>[root@K8s-ansible bin]#scp kube-apiserver kube-controller-manager kube-scheduler kube-proxy kubelet kubectl 192.168.11.211:&#x2F;usr&#x2F;local&#x2F;bin&#x2F;<br>kube-apiserver                                                                                                                                  100%  124MB 173.8MB&#x2F;s   00:00<br>kube-controller-manager                                                                                                                         100%  114MB 252.7MB&#x2F;s   00:00<br>kube-scheduler                                                                                                                                  100%   50MB 237.5MB&#x2F;s   00:00<br>kube-proxy                                                                                                                                      100%   43MB 267.3MB&#x2F;s   00:00<br>kubelet                                                                                                                                         100%  116MB 249.5MB&#x2F;s   00:00<br>kubectl                                                                                                                                         100%   46MB 199.5MB&#x2F;s   00:00    </p>
+<p>#确认替换为新版<br>[root@K8s-master01 ~]#&#x2F;usr&#x2F;local&#x2F;bin&#x2F;kube-apiserver –version<br>Kubernetes v1.26.3</p>
+<p>#重启服务<br>[root@K8s-master01 ~]#systemctl start kube-apiserver.service kube-controller-manager.service kube-scheduler.service kube-proxy.service kubelet.service </p>
+<p>#确认版本升级<br>[root@K8s-ansible bin]#kubectl get node<br>NAME             STATUS                     ROLES    AGE    VERSION<br>192.168.11.211   Ready,SchedulingDisabled   master   24h    v1.26.3 #版本升级成功<br>192.168.11.212   Ready,SchedulingDisabled   master   24h    v1.24.10<br>192.168.11.213   Ready,SchedulingDisabled   master   111m   v1.24.10<br>192.168.11.214   Ready                      node     23h    v1.24.10<br>192.168.11.215   Ready                      node     23h    v1.24.10<br>192.168.11.216   Ready                      node     100m   v1.24.10</p>
+<p>#Master升级完成后放开Node对节点的调度<br>[root@K8s-noded01 ~]#cat &#x2F;etc&#x2F;kube-lb&#x2F;conf&#x2F;kube-lb.conf<br>user root;<br>worker_processes 1;</p>
+<p>error_log  &#x2F;etc&#x2F;kube-lb&#x2F;logs&#x2F;error.log warn;</p>
+<p>events {<br>    worker_connections  3000;<br>}</p>
+<p>stream {<br>    upstream backend {<br>        server 192.168.11.213:6443    max_fails&#x3D;2 fail_timeout&#x3D;3s;<br>        server 192.168.11.211:6443    max_fails&#x3D;2 fail_timeout&#x3D;3s;<br>        server 192.168.11.212:6443    max_fails&#x3D;2 fail_timeout&#x3D;3s;<br>    }</p>
+<pre><code>server &#123;
+    listen 127.0.0.1:6443;
+    proxy_connect_timeout 1s;
+    proxy_pass backend;
+&#125;
+</code></pre>
+<p>}<br>#之后以相同的方式对其他Master节点进行全部升级即可<br>[root@K8s-ansible bin]#kubectl get node<br>NAME             STATUS                     ROLES    AGE    VERSION<br>192.168.11.211   Ready,SchedulingDisabled   master   24h    v1.26.3<br>192.168.11.212   Ready,SchedulingDisabled   master   24h    v1.26.3<br>192.168.11.213   Ready,SchedulingDisabled   master   120m   v1.26.3<br>192.168.11.214   Ready                      node     24h    v1.24.10<br>192.168.11.215   Ready                      node     24h    v1.24.10<br>192.168.11.216   Ready                      node     109m   v1.24.10• 升级Node节点<br>注意：Node节点有正在运行的Pod服务，此时对Node升级需要对需要升级节点的Pod进行驱逐，Pod会在其他Node节点重新创建并运行，确保Node节点Pod驱逐干净了再进行升级<br>#驱逐业务容器Pod，注意要保证有Node节点运行，以免升级时业务容器的出现丢失问题<br>[root@K8s-ansible bin]#kubectl drain 192.168.11.214 –ignore-daemonsets  –force<br>node&#x2F;192.168.11.214 already cordoned<br>WARNING: ignoring DaemonSet-managed Pods: kube-system&#x2F;calico-node-s6hp4; deleting Pods that declare no controller: myserver&#x2F;net-test1, myserver&#x2F;net-test3, myserver&#x2F;net-test4<br>evicting pod myserver&#x2F;net-test1<br>evicting pod default&#x2F;demoapp-78b49597cf-4ql4c<br>evicting pod myserver&#x2F;net-test3<br>evicting pod myserver&#x2F;net-test4<br>pod&#x2F;demoapp-78b49597cf-4ql4c evicted<br>pod&#x2F;net-test4 evicted<br>pod&#x2F;net-test1 evicted<br>pod&#x2F;net-test3 evicted<br>node&#x2F;192.168.11.214 drained</p>
+<p>#停止Node节点的Kubernetes服务<br>[root@K8s-noded01 ~]#systemctl stop kubelet.service kube-proxy.service </p>
+<p>#替换新版服务文件<br>[root@K8s-ansible bin]#scp kube-proxy kubelet kubectl 192.168.11.214:&#x2F;usr&#x2F;local&#x2F;bin&#x2F;<br>kube-proxy                                                                                                                                      100%   43MB 104.6MB&#x2F;s   00:00<br>kubelet                                                                                                                                         100%  116MB 243.2MB&#x2F;s   00:00<br>kubectl                                                                                                                                         100%   46MB 242.5MB&#x2F;s   00:00    </p>
+<p>#重启Node节点Kubernetes服务<br>[root@K8s-noded01 ~]#systemctl start kubelet.service kube-proxy.service </p>
+<p>#确认Node节点升级成功<br>[root@K8s-ansible bin]#kubectl get node<br>NAME             STATUS                     ROLES    AGE    VERSION<br>…<br>192.168.11.214   Ready,SchedulingDisabled   node     24h    v1.26.3 #升级成功<br>192.168.11.215   Ready                      node     24h    v1.24.10<br>192.168.11.216   Ready                      node     130m   v1.24.10</p>
+<p>#恢复Node节点的调度服务【取消SchedulingDisabled】<br>[root@K8s-ansible bin]#kubectl uncordon 192.168.11.214<br>node&#x2F;192.168.11.214 uncordoned<br>[root@K8s-ansible bin]#kubectl get node<br>NAME             STATUS                     ROLES    AGE    VERSION<br>…<br>192.168.11.214   Ready                      node     24h    v1.26.3<br>192.168.11.215   Ready                      node     24h    v1.24.10<br>192.168.11.216   Ready                      node     130m   v1.24.10</p>
+<p>#其他Node节点同样升级即可<br>[root@K8s-ansible bin]#kubectl get node<br>NAME             STATUS                     ROLES    AGE    VERSION<br>192.168.11.211   Ready,SchedulingDisabled   master   25h    v1.26.3<br>192.168.11.212   Ready,SchedulingDisabled   master   25h    v1.26.3<br>192.168.11.213   Ready,SchedulingDisabled   master   153m   v1.26.3<br>192.168.11.214   Ready                      node     24h    v1.26.3<br>192.168.11.215   Ready                      node     24h    v1.26.3<br>192.168.11.216   Ready                      node     142m   v1.26.3• 对kubeasz的服务文件更新<br>#新版本文件同样需要对kubeasz中的bin文件做替换，以免部署节点对后续的节点管理使用旧版<br>[root@K8s-ansible bin]#\cp kube-apiserver kube-controller-manager kube-scheduler kube-proxy kubelet kubectl &#x2F;etc&#x2F;kubeasz&#x2F;bin&#x2F;</p>
+<p>#确认版本<br>[root@K8s-ansible bin]#&#x2F;etc&#x2F;kubeasz&#x2F;bin&#x2F;kube-apiserver –version<br>Kubernetes v1.26.3• 升级Containerd及runc<br>注意：升级containerd-正常情况下，先驱逐pod，然后将服务停止或重启服务器，然后替换二进制再启动服务<br>#查看当前Containerd版本 - 1.6.14<br>[root@K8s-ansible bin]#kubectl get node -o wide<br>NAME             STATUS                     ROLES    AGE    VERSION   INTERNAL-IP      EXTERNAL-IP   OS-IMAGE             KERNEL-VERSION      CONTAINER-RUNTIME<br>192.168.11.211   Ready,SchedulingDisabled   master   25h    v1.26.3   192.168.11.211   <none>        Ubuntu 22.04.1 LTS   5.15.0-60-generic   containerd:&#x2F;&#x2F;1.6.14<br>192.168.11.212   Ready,SchedulingDisabled   master   25h    v1.26.3   192.168.11.212   <none>        Ubuntu 22.04.1 LTS   5.15.0-60-generic   containerd:&#x2F;&#x2F;1.6.14<br>192.168.11.213   Ready,SchedulingDisabled   master   154m   v1.26.3   192.168.11.213   <none>        Ubuntu 22.04.1 LTS   5.15.0-60-generic   containerd:&#x2F;&#x2F;1.6.14<br>192.168.11.214   Ready                      node     24h    v1.26.3   192.168.11.214   <none>        Ubuntu 22.04.1 LTS   5.15.0-60-generic   containerd:&#x2F;&#x2F;1.6.14<br>192.168.11.215   Ready                      node     24h    v1.26.3   192.168.11.215   <none>        Ubuntu 22.04.1 LTS   5.15.0-60-generic   containerd:&#x2F;&#x2F;1.6.14<br>192.168.11.216   Ready                      node     143m   v1.26.3   192.168.11.216   <none>        Ubuntu 22.04.1 LTS   5.15.0-67-generic   containerd:&#x2F;&#x2F;1.6.14</p>
+<p>#查看当前runc版本<br>[root@K8s-ansible bin]#&#x2F;etc&#x2F;kubeasz&#x2F;bin&#x2F;runc –version<br>runc version 1.1.4<br>commit: v1.1.4-0-g5fd4c4d1<br>spec: 1.0.2-dev<br>go: go1.18.9<br>libseccomp: 2.5.1下载指定版本的containerd二进制安装包到本地<br><img src="/../img/e3dae06950f81225ee308892d9eb9ea65aa33c.png"></p>
+<p>[root@K8s-ansible src]#wget <a target="_blank" rel="noopener" href="https://github.com/containerd/containerd/releases/download/v1.7.0/containerd-1.7.0-linux-amd64.tar.gz">https://github.com/containerd/containerd/releases/download/v1.7.0/containerd-1.7.0-linux-amd64.tar.gz</a><br>[root@K8s-ansible src]#tar xvf containerd-1.7.0-linux-amd64.tar.gz<br>bin&#x2F;<br>bin&#x2F;containerd-shim-runc-v1<br>bin&#x2F;containerd<br>bin&#x2F;containerd-shim-runc-v2<br>bin&#x2F;containerd-shim<br>bin&#x2F;ctr<br>bin&#x2F;containerd-stress<br>下载指定版本的containerd二进制安装包到本地<br><img src="/../img/d219f1d10e894f099905484858be5a796f922c.png"><br>[root@K8s-ansible bin]#wget <a target="_blank" rel="noopener" href="https://github.com/opencontainers/runc/releases/download/v1.1.4/runc.amd64">https://github.com/opencontainers/runc/releases/download/v1.1.4/runc.amd64</a><br>[root@K8s-ansible bin]#ls<br>containerd  containerd-shim  containerd-shim-runc-v1  containerd-shim-runc-v2  containerd-stress  ctr  runc.amd64<br>[root@K8s-ansible bin]#mv runc.amd64 runc<br>[root@K8s-ansible bin]#chmod a+x runc<br>[root@K8s-ansible bin]#ls<br>containerd  containerd-shim  containerd-shim-runc-v1  containerd-shim-runc-v2  containerd-stress  ctr  runc将上述文件全部复制到containerd服务文件目录下<br>#可以参考kubeasz中对containerd配置文件<br>[root@K8s-ansible src]#cat &#x2F;etc&#x2F;kubeasz&#x2F;roles&#x2F;containerd&#x2F;tasks&#x2F;main.yml </p>
+<ul>
+<li><p>name: 获取是否已经安装containerd<br>shell: ‘systemctl is-active containerd || echo “NoFound”‘<br>register: containerd_svc</p>
+</li>
+<li><p>block:</p>
+<ul>
+<li><p>name: 准备containerd相关目录<br>file: name&#x3D; state&#x3D;directory<br>with_items:</p>
+<ul>
+<li>““</li>
+<li>“&#x2F;etc&#x2F;containerd”</li>
+</ul>
+</li>
+<li><p>name: 加载内核模块 overlay<br>modprobe: name&#x3D;overlay state&#x3D;present</p>
+</li>
+<li><p>name: 下载 containerd 二进制文件<br>copy: src&#x3D;&#x2F;bin&#x2F;containerd-bin&#x2F; dest&#x3D;&#x2F; mode&#x3D;0755<br>with_items:</p>
+<ul>
+<li>containerd</li>
+<li>containerd-shim</li>
+<li>containerd-shim-runc-v1</li>
+<li>containerd-shim-runc-v2</li>
+<li>crictl</li>
+<li>ctr</li>
+<li>runc<br>tags: upgrade</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p>#containerd-bin目录下可以升级其他客户端工具包括crictl,nerdctl，升级方式相同，此处省略<br>[root@K8s-ansible bin]#ll &#x2F;etc&#x2F;kubeasz&#x2F;bin&#x2F;containerd-bin&#x2F;<br>total 184576<br>drwxr-xr-x 2 root root     4096 Jan 26 01:51 .&#x2F;<br>drwxr-xr-x 3 root root     4096 Mar 26 03:49 ..&#x2F;<br>-rwxr-xr-x 1 root root 51529720 Dec 19 16:53 containerd*<br>-rwxr-xr-x 1 root root  7254016 Dec 19 16:53 containerd-shim*<br>-rwxr-xr-x 1 root root  9359360 Dec 19 16:53 containerd-shim-runc-v1*<br>-rwxr-xr-x 1 root root  9375744 Dec 19 16:53 containerd-shim-runc-v2*<br>-rwxr-xr-x 1 root root 22735256 Dec 19 16:53 containerd-stress*<br>-rwxr-xr-x 1 root root 52586151 Dec 14 07:20 crictl*<br>-rwxr-xr-x 1 root root 26712216 Dec 19 16:53 ctr*<br>-rwxr-xr-x 1 root root  9431456 Aug 25  2022 runc*</p>
+<p>#复制到kubeasz的配置文件目录下，保证部署节点的文件为最新<br>[root@K8s-ansible bin]#\cp .&#x2F;* &#x2F;etc&#x2F;kubeasz&#x2F;bin&#x2F;containerd-bin&#x2F;</p>
+<p>#升级目标主机的containerd和runc<br>#有些网络组件会处于持续运行中，shim处于占用状态无法更换<br>[root@K8s-ansible bin]#scp .&#x2F;* 192.168.11.214:&#x2F;usr&#x2F;local&#x2F;bin&#x2F;<br>scp: &#x2F;usr&#x2F;local&#x2F;bin&#x2F;&#x2F;containerd: Text file busy<br>containerd-shim                                                                                                                                 100% 6404KB  21.3MB&#x2F;s   00:00<br>containerd-shim-runc-v1                                                                                                                         100% 8072KB 115.1MB&#x2F;s   00:00<br>scp: &#x2F;usr&#x2F;local&#x2F;bin&#x2F;&#x2F;containerd-shim-runc-v2: Text file busy<br>containerd-stress                                                                                                                               100%   24MB 131.4MB&#x2F;s   00:00<br>ctr                                                                                                                                             100%   26MB 111.9MB&#x2F;s   00:00<br>runc                                                                                                                                            100% 9210KB 135.2MB&#x2F;s   00:00    </p>
+<p>[root@K8s-noded01 ~]#ps -ef |grep shim<br>root       10336       1  0 11:53 ?        00:00:30 &#x2F;usr&#x2F;local&#x2F;bin&#x2F;containerd-shim-runc-v2 -namespace k8s.io -id 40d15251108e419658a2bd03b0bb037da819a21ba6fdbfa512c05819cb291f6f -address &#x2F;run&#x2F;containerd&#x2F;containerd.sock<br>root      118347       1  0 14:25 ?        00:00:08 &#x2F;usr&#x2F;local&#x2F;bin&#x2F;containerd-shim-runc-v2 -namespace k8s.io -id 53c56ddd73945287d1b41f40a07d5129e49f344a005bc1c1fa9092f060f82095 -address &#x2F;run&#x2F;containerd&#x2F;containerd.sock<br>root      118428       1  0 14:25 ?        00:00:02 &#x2F;usr&#x2F;local&#x2F;bin&#x2F;containerd-shim-runc-v2 -namespace k8s.io -id f203f805388e906a12cf7d18cc165d86a550ce6df11edd6286c1aa1efed5e471 -address &#x2F;run&#x2F;containerd&#x2F;containerd.sock<br>root      118489       1  0 14:25 ?        00:00:02 &#x2F;usr&#x2F;local&#x2F;bin&#x2F;containerd-shim-runc-v2 -namespace k8s.io -id 22a63c331d8d5effb6d62aba6fa8edb4b73eb964f7991cf300cd46c22af5dd30 -address &#x2F;run&#x2F;containerd&#x2F;containerd.sock<br>root      165217   86752  0 15:27 pts&#x2F;1    00:00:00 grep –color&#x3D;auto shim</p>
+<p>#停止使用shim的服务(会导致业务容器无法对外提供访问)<br>[root@K8s-noded01 ~]#systemctl disable kubelet.service kube-proxy.service containerd.service<br>Removed &#x2F;etc&#x2F;systemd&#x2F;system&#x2F;multi-user.target.wants&#x2F;kube-proxy.service.<br>Removed &#x2F;etc&#x2F;systemd&#x2F;system&#x2F;multi-user.target.wants&#x2F;kubelet.service.<br>Removed &#x2F;etc&#x2F;systemd&#x2F;system&#x2F;multi-user.target.wants&#x2F;containerd.service.<br>[root@K8s-noded01 ~]#reboot</p>
+<p>#再次替换为新版<br>[root@K8s-ansible bin]#scp .&#x2F;* 192.168.11.214:&#x2F;usr&#x2F;local&#x2F;bin&#x2F;<br>containerd                                                                                                                                      100%   52MB  98.4MB&#x2F;s   00:00<br>containerd-shim                                                                                                                                 100% 6404KB 233.7MB&#x2F;s   00:00<br>containerd-shim-runc-v1                                                                                                                         100% 8072KB 244.1MB&#x2F;s   00:00<br>containerd-shim-runc-v2                                                                                                                         100%   11MB 249.4MB&#x2F;s   00:00<br>containerd-stress                                                                                                                               100%   24MB 247.6MB&#x2F;s   00:00<br>ctr                                                                                                                                             100%   26MB 257.7MB&#x2F;s   00:00<br>runc                                                                                                                                            100% 9210KB 243.6MB&#x2F;s   00:00 </p>
+<p>#重启目标主机的kubelet，kube-proxy，containerd<br>[root@K8s-noded01 ~]#systemctl enable –now kubelet.service kube-proxy.service containerd.service<br>Created symlink &#x2F;etc&#x2F;systemd&#x2F;system&#x2F;multi-user.target.wants&#x2F;kubelet.service → &#x2F;etc&#x2F;systemd&#x2F;system&#x2F;kubelet.service.<br>Created symlink &#x2F;etc&#x2F;systemd&#x2F;system&#x2F;multi-user.target.wants&#x2F;kube-proxy.service → &#x2F;etc&#x2F;systemd&#x2F;system&#x2F;kube-proxy.service.<br>Created symlink &#x2F;etc&#x2F;systemd&#x2F;system&#x2F;multi-user.target.wants&#x2F;containerd.service → &#x2F;etc&#x2F;systemd&#x2F;system&#x2F;containerd.service.</p>
+<p>#确认升级 - Node节点都升级1.7.0<br>[root@K8s-ansible bin]#kubectl get node -o wide<br>NAME             STATUS                     ROLES    AGE     VERSION   INTERNAL-IP      EXTERNAL-IP   OS-IMAGE             KERNEL-VERSION      CONTAINER-RUNTIME<br>192.168.11.211   Ready,SchedulingDisabled   master   26h     v1.26.3   192.168.11.211   <none>        Ubuntu 22.04.1 LTS   5.15.0-60-generic   containerd:&#x2F;&#x2F;1.6.14<br>192.168.11.212   Ready,SchedulingDisabled   master   26h     v1.26.3   192.168.11.212   <none>        Ubuntu 22.04.1 LTS   5.15.0-60-generic   containerd:&#x2F;&#x2F;1.6.14<br>192.168.11.213   Ready,SchedulingDisabled   master   3h48m   v1.26.3   192.168.11.213   <none>        Ubuntu 22.04.1 LTS   5.15.0-60-generic   containerd:&#x2F;&#x2F;1.6.14<br>192.168.11.214   Ready                      node     25h     v1.26.3   192.168.11.214   <none>        Ubuntu 22.04.1 LTS   5.15.0-67-generic   containerd:&#x2F;&#x2F;1.7.0<br>192.168.11.215   Ready                      node     25h     v1.26.3   192.168.11.215   <none>        Ubuntu 22.04.1 LTS   5.15.0-67-generic   containerd:&#x2F;&#x2F;1.7.0<br>192.168.11.216   Ready                      node     3h37m   v1.26.3   192.168.11.216   <none>        Ubuntu 22.04.1 LTS   5.15.0-67-generic   containerd:&#x2F;&#x2F;1.7.0</p>
+<p>#其他节点同样配置即可<br>[root@K8s-ansible bin]#kubectl get node -o wide<br>NAME             STATUS                     ROLES    AGE     VERSION   INTERNAL-IP      EXTERNAL-IP   OS-IMAGE             KERNEL-VERSION      CONTAINER-RUNTIME<br>192.168.11.211   Ready,SchedulingDisabled   master   26h     v1.26.3   192.168.11.211   <none>        Ubuntu 22.04.1 LTS   5.15.0-67-generic   containerd:&#x2F;&#x2F;1.7.0<br>192.168.11.212   Ready,SchedulingDisabled   master   26h     v1.26.3   192.168.11.212   <none>        Ubuntu 22.04.1 LTS   5.15.0-67-generic   containerd:&#x2F;&#x2F;1.7.0<br>192.168.11.213   Ready,SchedulingDisabled   master   3h54m   v1.26.3   192.168.11.213   <none>        Ubuntu 22.04.1 LTS   5.15.0-60-generic   containerd:&#x2F;&#x2F;1.7.0<br>192.168.11.214   Ready                      node     26h     v1.26.3   192.168.11.214   <none>        Ubuntu 22.04.1 LTS   5.15.0-67-generic   containerd:&#x2F;&#x2F;1.7.0<br>192.168.11.215   Ready                      node     26h     v1.26.3   192.168.11.215   <none>        Ubuntu 22.04.1 LTS   5.15.0-67-generic   containerd:&#x2F;&#x2F;1.7.0<br>192.168.11.216   Ready                      node     3h43m   v1.26.3   192.168.11.216   <none>        Ubuntu 22.04.1 LTS   5.15.0-67-generic   containerd:&#x2F;&#x2F;1.7.0我是moore,大家一起加油！！！</p>
+
+      
+       <hr><span style="font-style: italic;color: gray;"> 转载请注明来源，欢迎对文章中的引用来源进行考证，欢迎指出任何有错误或不够清晰的表达。可以在下面评论区评论，也可以邮件至 jaytp@qq.com </span>
+    </div>
+</article>
+
+
+<p>
+    <a  class="dashang" onclick="dashangToggle()">💰</a>
+</p>
+
+
+
+
+
+
+    
+
+
+
+
+    </div>
+    <div class="copyright">
+        <p class="footer-entry">
+    ©2016-2020 Yelog
+</p>
+<p class="footer-entry">Built with <a href="https://hexo.io/" target="_blank">Hexo</a> and <a href="https://github.com/yelog/hexo-theme-3-hexo" target="_blank">3-hexo</a> theme</p>
+
+    </div>
+    <div class="full-toc">
+        <button class="full" data-title="切换全屏 快捷键 s"><span class="min "></span></button>
+<a class="" id="rocket" ></a>
+
+    </div>
+</div>
+
+<div class="hide_box" onclick="dashangToggle()"></div>
+<div class="shang_box">
+    <a class="shang_close"  onclick="dashangToggle()">×</a>
+    <div class="shang_tit">
+        <p>Help us with donation</p>
+    </div>
+    <div class="shang_payimg">
+        <div class="pay_img">
+            <img src="/img/alipay.jpg" class="alipay" title="扫码支持">
+            <img src="/img/weixin.jpg" class="weixin" title="扫码支持">
+        </div>
+    </div>
+    <div class="shang_payselect">
+        <span><label><input type="radio" name="pay" checked value="alipay">alipay</label></span><span><label><input type="radio" name="pay" value="weixin">weixin</label></span>
+    </div>
+</div>
+
+
+</body>
+<script src="/js/jquery.pjax.js?v=1.1.0" ></script>
+
+<script src="/js/script.js?v=1.1.0" ></script>
+<script>
+    var img_resize = 'default';
+    function initArticle() {
+        /*渲染对应的表格样式*/
+        
+            $("#post .pjax table").addClass("green_title");
+        
+
+        /*渲染打赏样式*/
+        
+        $("input[name=pay]").on("click", function () {
+            if($("input[name=pay]:checked").val()=="weixin"){
+                $(".shang_box .shang_payimg .pay_img").addClass("weixin_img");
+            } else {
+                $(".shang_box .shang_payimg .pay_img").removeClass("weixin_img");
+            }
+        })
+        
+
+        /*高亮代码块行号*/
+        
+
+        /*访问数量*/
+        
+        $.getScript("//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js");
+        
+
+        /*代码高亮，行号对齐*/
+        $('.pre-numbering').css('line-height',$('.has-numbering').css('line-height'));
+
+        
+        
+    }
+
+    /*打赏页面隐藏与展示*/
+    
+    function dashangToggle() {
+        $(".shang_box").fadeToggle();
+        $(".hide_box").fadeToggle();
+    }
+    
+
+</script>
+
+<!--加入行号的高亮代码块样式-->
+
+<!--自定义样式设置-->
+<style>
+    
+    
+    .nav {
+        width: 542px;
+    }
+    .nav.fullscreen {
+        margin-left: -542px;
+    }
+    .nav-left {
+        width: 120px;
+    }
+    
+    
+    @media screen and (max-width: 1468px) {
+        .nav {
+            width: 492px;
+        }
+        .nav.fullscreen {
+            margin-left: -492px;
+        }
+        .nav-left {
+            width: 100px;
+        }
+    }
+    
+    
+    @media screen and (max-width: 1024px) {
+        .nav {
+            width: 492px;
+            margin-left: -492px
+        }
+        .nav.fullscreen {
+            margin-left: 0;
+        }
+    }
+    
+    @media screen and (max-width: 426px) {
+        .nav {
+            width: 100%;
+        }
+        .nav-left {
+            width: 100%;
+        }
+    }
+    
+    
+    .nav-right .title-list nav a .post-title, .nav-right .title-list #local-search-result a .post-title {
+        color: #383636;
+    }
+    
+    
+    .nav-right .title-list nav a .post-date, .nav-right .title-list #local-search-result a .post-date {
+        color: #5e5e5f;
+    }
+    
+    
+    .nav-right nav a.hover, #local-search-result a.hover{
+        background-color: #e2e0e0;
+    }
+    
+    
+
+    /*列表样式*/
+    
+
+    /* 背景图样式 */
+    
+    
+
+
+    /*引用块样式*/
+    
+
+    /*文章列表背景图*/
+    
+
+    
+</style>
+
+
+
+
+
+
+
+</html>

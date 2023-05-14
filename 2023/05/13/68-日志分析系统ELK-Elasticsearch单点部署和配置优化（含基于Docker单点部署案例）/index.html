@@ -1,0 +1,1071 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>68-日志分析系统ELK-Elasticsearch单点部署和配置优化（含基于Docker单点部署案例） | Hexo</title>
+  <meta name="keywords" content="">
+  <meta name="description" content="68-日志分析系统ELK-Elasticsearch单点部署和配置优化（含基于Docker单点部署案例） | Hexo">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="description" content="基于现有虚拟机磁盘为模版创建新的虚拟机使用 virt-install 创建虚拟机• 虽然使用virt-manager 可以方便的管理虚拟机,但如果需要批量进行虚拟机的创建管理,命令行工具virtinstall更加方便和适合案例：利用 qemu-img命令创建虚拟磁盘#注意: qemu-img create 一定要确认对应路径下没有此文件,如果存在将覆盖原文件  确认现有的虚拟磁盘文件[root@u">
+<meta property="og:type" content="article">
+<meta property="og:title" content="42-KVM虚拟化-基于现有虚拟机磁盘为模版创建新的虚拟机">
+<meta property="og:url" content="http://example.com/2023/05/14/42-KVM%E8%99%9A%E6%8B%9F%E5%8C%96-%E5%9F%BA%E4%BA%8E%E7%8E%B0%E6%9C%89%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%A3%81%E7%9B%98%E4%B8%BA%E6%A8%A1%E7%89%88%E5%88%9B%E5%BB%BA%E6%96%B0%E7%9A%84%E8%99%9A%E6%8B%9F%E6%9C%BA/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="基于现有虚拟机磁盘为模版创建新的虚拟机使用 virt-install 创建虚拟机• 虽然使用virt-manager 可以方便的管理虚拟机,但如果需要批量进行虚拟机的创建管理,命令行工具virtinstall更加方便和适合案例：利用 qemu-img命令创建虚拟磁盘#注意: qemu-img create 一定要确认对应路径下没有此文件,如果存在将覆盖原文件  确认现有的虚拟磁盘文件[root@u">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="http://example.com/img/092d6b54082e04ec1c20121058c692bc5844b5.png">
+<meta property="og:image" content="http://example.com/img/f8bada3025892d742fe1746c42ead86f562ddc.png">
+<meta property="article:published_time" content="2023-05-14T08:21:34.888Z">
+<meta property="article:modified_time" content="2023-05-14T08:23:40.552Z">
+<meta property="article:author" content="John Doe">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/img/092d6b54082e04ec1c20121058c692bc5844b5.png">
+
+
+<link rel="icon" href="/img/avatar.jpg">
+
+<link href="/css/style.css?v=1.1.0" rel="stylesheet">
+
+<link href="/css/hl_theme/atom-light.css?v=1.1.0" rel="stylesheet">
+
+<link href="//cdn.jsdelivr.net/npm/animate.css@4.1.0/animate.min.css" rel="stylesheet">
+
+<script src="//cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js"></script>
+<script src="/js/titleTip.js?v=1.1.0" ></script>
+
+<script src="//cdn.jsdelivr.net/npm/highlightjs@9.16.2/highlight.pack.min.js"></script>
+<script>
+    hljs.initHighlightingOnLoad();
+</script>
+
+<script src="//cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.min.js"></script>
+
+
+
+<script src="//cdn.jsdelivr.net/npm/jquery.cookie@1.4.1/jquery.cookie.min.js" ></script>
+
+<script src="/js/iconfont.js?v=1.1.0" ></script>
+
+<meta name="generator" content="Hexo 6.3.0"></head>
+<div style="display: none">
+  <input class="theme_disqus_on" value="false">
+  <input class="theme_preload_comment" value="">
+  <input class="theme_blog_path" value="">
+  <input id="theme_shortcut" value="true" />
+  <input id="theme_highlight_on" value="true" />
+  <input id="theme_code_copy" value="true" />
+</div>
+
+
+
+<body>
+<aside class="nav">
+    <div class="nav-left">
+        <a href="/"
+   class="avatar_target">
+    <img class="avatar"
+         src="/img/avatar.jpg"/>
+</a>
+<div class="author">
+    <span>John Doe</span>
+</div>
+
+<div class="icon">
+    
+        
+            <a title="rss"
+               href="/atom.xml"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-rss"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="github"
+               href="https://github.com/yelog"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-github"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="facebook"
+               href="https://www.facebook.com/faker.tops"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-facebook"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+    
+        
+    
+        
+            <a title="instagram"
+               href="https://www.facebook.com/faker.tops"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-instagram"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="reddit"
+               href="https://www.reddit.com/user/yelog/"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-reddit"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="weibo"
+               href="http://weibo.com/u/2307534817"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-weibo"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="jianshu"
+               href="https://www.jianshu.com/u/ff56736de7cf"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-jianshu"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="zhihu"
+               href="https://www.zhihu.com/people/jaytp/activities"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-zhihu"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+    
+        
+            <a title="oschina"
+               href="https://my.oschina.net/yelog"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-oschina"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+    
+        
+            <a title="email"
+               href="mailto:jaytp@qq.com"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-email"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="qq"
+               href="http://wpa.qq.com/msgrd?v=3&uin=872336115&site=qq&menu=yes"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-qq"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="kugou"
+               href="https://www.kugou.com/"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-kugou"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="neteasemusic"
+               href="https://music.163.com/#/user/home?id=88151013"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-neteasemusic"></use>
+                    </svg>
+                
+            </a>
+        
+    
+</div>
+
+
+
+
+<ul>
+    <li>
+        <div class="all active" data-rel="All">All
+            
+                <small>(36)</small>
+            
+        </div>
+    </li>
+    
+        
+            
+                <li>
+                    <div data-rel="SRE linux云计算">
+                        
+                        SRE linux云计算
+                        <small>(11)</small>
+                        
+                    </div>
+                    
+                </li>
+            
+        
+    
+        
+            
+                <li>
+                    <div data-rel="云原生">
+                        
+                        云原生
+                        <small>(10)</small>
+                        
+                    </div>
+                    
+                </li>
+            
+        
+    
+        
+            
+                <li>
+                    <div data-rel="PMP管理">
+                        
+                        PMP管理
+                        <small>(1)</small>
+                        
+                    </div>
+                    
+                </li>
+            
+        
+    
+        
+            
+                <li>
+                    <div data-rel="Python 爬虫">
+                        
+                        Python 爬虫
+                        <small>(14)</small>
+                        
+                    </div>
+                    
+                </li>
+            
+        
+    
+</ul>
+<div class="left-bottom">
+    <div class="menus">
+        
+            
+            
+            
+    </div>
+    <div>
+        
+            <a class="about  hasFriend  site_url"
+               
+               href="/about">About</a>
+        
+        <a style="width: 50%"
+                
+                                           class="friends">Friends</a>
+        
+    </div>
+</div>
+<input type="hidden" id="yelog_site_posts_number" value="36">
+
+<div style="display: none">
+    <span id="busuanzi_value_site_uv"></span>
+    <span id="busuanzi_value_site_pv"></span>
+</div>
+
+    </div>
+    <div class="nav-right">
+        <div class="friends-area">
+    <div class="friends-title">
+        Links
+        <i class="iconfont icon-left"></i>
+    </div>
+    <div class="friends-content">
+        <ul>
+            
+            <li><a target="_blank" href="http://yelog.org/">叶落阁</a></li>
+            
+        </ul>
+    </div>
+</div>
+        <div class="title-list">
+    <div class="right-top">
+        <div id="default-panel">
+            <i class="iconfont icon-search" data-title="搜索 快捷键 i"></i>
+            <div class="right-title">All</div>
+            <i class="iconfont icon-file-tree" data-title="切换到大纲视图 快捷键 w"></i>
+        </div>
+        <div id="search-panel">
+            <i class="iconfont icon-left" data-title="返回"></i>
+            <input id="local-search-input" autocomplete="off"/>
+            <label class="border-line" for="input"></label>
+            <i class="iconfont icon-case-sensitive" data-title="大小写敏感"></i>
+            <i class="iconfont icon-tag" data-title="标签"></i>
+        </div>
+        <div id="outline-panel" style="display: none">
+            <div class="right-title">大纲</div>
+            <i class="iconfont icon-list" data-title="切换到文章列表"></i>
+        </div>
+    </div>
+
+    <div class="tags-list">
+    <input id="tag-search" />
+    <div class="tag-wrapper">
+        
+    </div>
+
+</div>
+
+    
+    <nav id="title-list-nav">
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/14/42-KVM%E8%99%9A%E6%8B%9F%E5%8C%96-%E5%9F%BA%E4%BA%8E%E7%8E%B0%E6%9C%89%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%A3%81%E7%9B%98%E4%B8%BA%E6%A8%A1%E7%89%88%E5%88%9B%E5%BB%BA%E6%96%B0%E7%9A%84%E8%99%9A%E6%8B%9F%E6%9C%BA/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="42-KVM虚拟化-基于现有虚拟机磁盘为模版创建新的虚拟机">42-KVM虚拟化-基于现有虚拟机磁盘为模版创建新的虚拟机</span>
+            <span class="post-date" title="2023-05-14 16:21:34">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%B8%89%E7%AB%A0-2-requests%20%E8%BF%9B%E9%98%B6%E2%80%A2%20%E7%88%AC%E5%8F%96%E6%9F%90%E8%A7%86%E9%A2%91%E7%BD%91%E7%9B%B8%E5%85%B3%E8%A7%86%E9%A2%91/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第三章-2-requests 进阶• 爬取某视频网相关视频">Python爬虫-第三章-2-requests 进阶• 爬取某视频网相关视频</span>
+            <span class="post-date" title="2023-05-14 16:20:20">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/14/44-KVM%E8%99%9A%E6%8B%9F%E5%8C%96-%E5%AD%98%E5%82%A8%E7%AE%A1%E7%90%86%E5%92%8C%E7%A3%81%E7%9B%98%E6%89%A9%E5%AE%B9/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="44-KVM虚拟化-存储管理和磁盘扩容">44-KVM虚拟化-存储管理和磁盘扩容</span>
+            <span class="post-date" title="2023-05-14 16:18:30">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%B8%89%E7%AB%A0-3-%E5%88%A9%E7%94%A8re%E6%A8%A1%E5%9D%97%E7%88%AC%E5%8F%96%E6%9F%90%E7%BD%91%E7%94%B5%E5%BD%B1%E6%8E%92%E8%A1%8C%E6%A6%9C/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第三章-3-利用re模块爬取某网电影排行榜">Python爬虫-第三章-3-利用re模块爬取某网电影排行榜</span>
+            <span class="post-date" title="2023-05-14 16:16:51">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/14/46-Docker-Container%E5%AE%B9%E5%99%A8%E7%AE%A1%E7%90%86%E5%90%84%E7%A7%8D%E6%93%8D%E4%BD%9C/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="46-Docker-Container容器管理各种操作">46-Docker-Container容器管理各种操作</span>
+            <span class="post-date" title="2023-05-14 16:14:04">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/14/47-Docker-Dockerfile%E9%95%9C%E5%83%8F%E5%88%9B%E5%BB%BA%E8%87%AA%E5%8A%A8%E5%8C%96%E7%94%9F%E4%BA%A7%E6%A1%88%E4%BE%8B/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="47-Docker-Dockerfile镜像创建自动化生产案例">47-Docker-Dockerfile镜像创建自动化生产案例</span>
+            <span class="post-date" title="2023-05-14 16:09:19">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/14/48-Docker-%E5%A4%9A%E5%AE%B9%E5%99%A8%E6%95%B0%E6%8D%AE%E5%85%B1%E4%BA%AB%E5%8F%8A%E6%8C%81%E4%B9%85%E5%8C%96/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="48-Docker-多容器数据共享及持久化">48-Docker-多容器数据共享及持久化</span>
+            <span class="post-date" title="2023-05-14 16:06:48">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%B8%89%E7%AB%A0-4-%E5%88%A9%E7%94%A8BeautifulSoup%E6%A8%A1%E5%9D%97%E7%88%AC%E5%8F%96%E6%9F%90%E7%BD%91%E5%A3%81%E7%BA%B8%E5%9B%BE%E5%BA%93%E5%9B%BE%E7%89%87/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第三章-4-利用BeautifulSoup模块爬取某网壁纸图库图片">Python爬虫-第三章-4-利用BeautifulSoup模块爬取某网壁纸图库图片</span>
+            <span class="post-date" title="2023-05-14 16:05:34">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%B8%89%E7%AB%A0-5-%E5%88%A9%E7%94%A8xpath%E7%88%AC%E5%8F%96%E6%9F%90%E5%85%AB%E6%88%92%E7%BD%91%E7%9B%B8%E5%85%B3%E8%AF%8D%E8%AF%AD%E5%85%AC%E5%8F%B8%E7%9A%84%E4%BF%A1%E6%81%AF%E5%92%8C%E4%BB%B7%E6%A0%BC/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第三章-5-利用xpath爬取某八戒网相关词语公司的信息和价格">Python爬虫-第三章-5-利用xpath爬取某八戒网相关词语公司的信息和价格</span>
+            <span class="post-date" title="2023-05-14 16:04:16">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%B8%89%E7%AB%A0-6-%E6%8A%93%E5%8F%96%E6%9F%90%E4%BA%91%E9%9F%B3%E4%B9%90%E8%AF%84%E8%AE%BA%E6%95%B0%E6%8D%AE/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第三章-6-抓取某云音乐评论数据">Python爬虫-第三章-6-抓取某云音乐评论数据</span>
+            <span class="post-date" title="2023-05-14 16:03:15">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-1-%E5%A4%9A%E7%BA%BF%E7%A8%8B%E5%A4%9A%E8%BF%9B%E7%A8%8B%E5%B9%B6%E5%8F%91%E7%88%AC%E5%8F%96%E2%85%A0/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-1-多线程多进程并发爬取Ⅰ">Python爬虫-第四章-1-多线程多进程并发爬取Ⅰ</span>
+            <span class="post-date" title="2023-05-14 16:01:27">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-1-%E5%A4%9A%E7%BA%BF%E7%A8%8B%E5%A4%9A%E8%BF%9B%E7%A8%8B%E5%B9%B6%E5%8F%91%E7%88%AC%E5%8F%96%E2%85%A1/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-1-多线程多进程并发爬取Ⅱ">Python爬虫-第四章-1-多线程多进程并发爬取Ⅱ</span>
+            <span class="post-date" title="2023-05-14 16:00:37">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-1-%E5%A4%9A%E7%BA%BF%E7%A8%8B%E5%A4%9A%E8%BF%9B%E7%A8%8B%E5%B9%B6%E5%8F%91%E7%88%AC%E5%8F%96%E2%85%A2-%E7%88%AC%E5%8F%96%E6%9F%90%E8%8F%9C%E5%B8%82%E5%9C%BA%E6%89%B9%E5%8F%91%E4%BB%B7%E6%95%B0%E6%8D%AE/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-1-多线程多进程并发爬取Ⅲ-爬取某菜市场批发价数据">Python爬虫-第四章-1-多线程多进程并发爬取Ⅲ-爬取某菜市场批发价数据</span>
+            <span class="post-date" title="2023-05-14 15:59:35">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-2-%E5%8D%8F%E7%A8%8B%E4%B8%8E%E5%BC%82%E6%AD%A5/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-2-协程与异步">Python爬虫-第四章-2-协程与异步</span>
+            <span class="post-date" title="2023-05-14 15:58:20">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/14/52-HAProxy-10%E7%A7%8D%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E8%B0%83%E5%BA%A6%E7%AE%97%E6%B3%95/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="52-HAProxy-10种负载均衡调度算法">52-HAProxy-10种负载均衡调度算法</span>
+            <span class="post-date" title="2023-05-14 15:56:12">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/14/55-Redis-%E7%BC%96%E8%AF%91%E9%83%A8%E7%BD%B2%E5%8F%8A%E6%95%B0%E6%8D%AE%E6%8C%81%E4%B9%85%E5%8C%96/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="55-Redis-编译部署及数据持久化">55-Redis-编译部署及数据持久化</span>
+            <span class="post-date" title="2023-05-14 15:54:02">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/14/56-Redis%E9%9B%86%E7%BE%A4-%E5%93%A8%E5%85%B5Sentinel%E6%90%AD%E5%BB%BA%E5%AE%9E%E7%8E%B0%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E9%AB%98%E5%8F%AF%E7%94%A8/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="56-Redis集群-哨兵Sentinel搭建实现负载均衡高可用">56-Redis集群-哨兵Sentinel搭建实现负载均衡高可用</span>
+            <span class="post-date" title="2023-05-14 15:41:50">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/14/998-%E6%90%AD%E5%BB%BA%E4%B8%80%E5%8F%B0%E7%A7%81%E7%94%A8%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%A8%E8%BF%87%E7%A8%8B/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="998-搭建一台私用服务器全过程">998-搭建一台私用服务器全过程</span>
+            <span class="post-date" title="2023-05-14 15:36:20">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/%20Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-3-%E5%A4%9A%E7%BA%BF%E7%A8%8B%E5%A4%9A%E8%BF%9B%E7%A8%8B%E6%8F%90%E5%8D%87%E4%BB%BB%E5%8A%A1%E6%89%A7%E8%A1%8C%E6%95%88%E7%8E%87/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-3-多线程多进程提升任务执行效率">Python爬虫-第四章-3-多线程多进程提升任务执行效率</span>
+            <span class="post-date" title="2023-05-14 15:35:16">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/%20Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-4-%E5%88%A9%E7%94%A8%E7%BA%BF%E7%A8%8B%E6%B1%A0%E5%92%8C%E8%BF%9B%E7%A8%8B%E6%B1%A0%E9%AB%98%E6%95%88%E7%88%AC%E5%8F%96%E5%8C%97%E4%BA%AC%E6%9F%90%E5%8F%91%E8%8F%9C%E5%9C%B0%E6%95%B0%E6%8D%AE/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-4-利用线程池和进程池高效爬取北京某发菜地数据">Python爬虫-第四章-4-利用线程池和进程池高效爬取北京某发菜地数据</span>
+            <span class="post-date" title="2023-05-14 15:34:07">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/13/%20Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-5-%E9%AB%98%E6%95%88%E6%8A%93%E5%8F%96%E8%A7%86%E9%A2%91%E7%BD%91%E7%AB%99%E8%A7%86%E9%A2%91%E8%B5%84%E6%BA%90%E8%87%B3%E6%9C%AC%E5%9C%B0/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-5-高效抓取视频网站视频资源至本地">Python爬虫-第四章-5-高效抓取视频网站视频资源至本地</span>
+            <span class="post-date" title="2023-05-13 20:13:14">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/13/%20Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%BA%94%E7%AB%A0-1-%E8%B6%85%E7%BA%A7%E9%B9%B0%E6%8F%92%E4%BB%B6%E5%AE%9E%E7%8E%B0%E8%87%AA%E5%8A%A8%E5%A1%AB%E5%86%99%E8%AF%86%E5%88%AB%E7%A0%81%E5%B9%B6%E7%99%BB%E5%BD%9512306%E7%BD%91%E7%AB%99/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第五章-1-超级鹰插件实现自动填写识别码并登录12306网站">Python爬虫-第五章-1-超级鹰插件实现自动填写识别码并登录12306网站</span>
+            <span class="post-date" title="2023-05-13 19:54:30">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/13/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%BA%94%E7%AB%A0-2-%E7%88%AC%E5%8F%96%E6%9F%90%E7%BD%91%E7%AB%99%E5%9B%BE%E5%BA%93/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第五章-2-爬取某网站图库">Python爬虫-第五章-2-爬取某网站图库</span>
+            <span class="post-date" title="2023-05-13 19:52:47">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/66-CICD%E6%8C%81%E7%BB%AD%E9%9B%86%E6%88%90%E5%B7%A5%E5%85%B7-Jenkins%E5%A3%B0%E6%98%8E%E5%BC%8FPipeline%E9%83%A8%E7%BD%B2JAVA%E7%A8%8B%E5%BA%8F%E7%94%9F%E4%BA%A7%E6%A1%88%E4%BE%8B(%E5%8C%85%E5%90%ABDocker%E6%A1%88%E4%BE%8B)/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="66-CICD持续集成工具-Jenkins声明式Pipeline部署JAVA程序生产案例(包含Docker案例)">66-CICD持续集成工具-Jenkins声明式Pipeline部署JAVA程序生产案例(包含Docker案例)</span>
+            <span class="post-date" title="2023-05-13 19:49:20">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/997-%E6%89%A9%E5%B1%95KVM%E8%99%9A%E6%8B%9F%E6%9C%BA%E9%80%BB%E8%BE%91%E5%8D%B7/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="67-日志分析系统ELK-ELK架构简述">67-日志分析系统ELK-ELK架构简述</span>
+            <span class="post-date" title="2023-05-13 19:47:57">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/67-%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90%E7%B3%BB%E7%BB%9FELK-ELK%E6%9E%B6%E6%9E%84%E7%AE%80%E8%BF%B0/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="67-日志分析系统ELK-ELK架构简述">67-日志分析系统ELK-ELK架构简述</span>
+            <span class="post-date" title="2023-05-13 19:46:06">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/68-%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90%E7%B3%BB%E7%BB%9FELK-Elasticsearch%E5%8D%95%E7%82%B9%E9%83%A8%E7%BD%B2%E5%92%8C%E9%85%8D%E7%BD%AE%E4%BC%98%E5%8C%96%EF%BC%88%E5%90%AB%E5%9F%BA%E4%BA%8EDocker%E5%8D%95%E7%82%B9%E9%83%A8%E7%BD%B2%E6%A1%88%E4%BE%8B%EF%BC%89/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="68-日志分析系统ELK-Elasticsearch单点部署和配置优化（含基于Docker单点部署案例）">68-日志分析系统ELK-Elasticsearch单点部署和配置优化（含基于Docker单点部署案例）</span>
+            <span class="post-date" title="2023-05-13 19:44:06">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/13/78-%E4%BA%91%E5%8E%9F%E7%94%9F%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-Kubernetes%E9%9B%86%E7%BE%A4%E8%8A%82%E7%82%B9%E6%A8%AA%E5%90%91%E4%BC%B8%E7%BC%A9%E5%8F%8A%E6%A0%B8%E5%BF%83%E7%BB%84%E4%BB%B6%E7%89%88%E6%9C%AC%E5%8D%87%E7%BA%A7/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="78-云原生操作系统-Kubernetes集群节点横向伸缩及核心组件版本升级">78-云原生操作系统-Kubernetes集群节点横向伸缩及核心组件版本升级</span>
+            <span class="post-date" title="2023-05-13 17:37:37">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/13/79-%E4%BA%91%E5%8E%9F%E7%94%9F%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-Kubectl%E5%91%BD%E4%BB%A4%E4%BB%A5%E5%8F%8AEtcd%E5%9F%BA%E4%BA%8E%E5%BF%AB%E7%85%A7%E7%9A%84%E6%95%B0%E6%8D%AE%E5%A4%87%E4%BB%BD%E4%B8%8E%E6%81%A2%E5%A4%8D/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="79-云原生操作系统-Kubectl命令以及Etcd基于快照的数据备份与恢复">79-云原生操作系统-Kubectl命令以及Etcd基于快照的数据备份与恢复</span>
+            <span class="post-date" title="2023-05-13 17:34:14">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All PMP管理 "
+           href="/2023/05/13/%E9%A2%84%E6%B5%8B%E5%9E%8B%E9%A1%B9%E7%9B%AE%E7%AE%A1%E7%90%86-6-%E9%A1%B9%E7%9B%AE%E8%BF%9B%E5%BA%A6%E7%AE%A1%E7%90%86%E2%85%A1/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="预测型项目管理-6-项目进度管理Ⅱ">预测型项目管理-6-项目进度管理Ⅱ</span>
+            <span class="post-date" title="2023-05-13 17:32:31">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/13/84-%E4%BA%91%E5%8E%9F%E7%94%9F%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-%E5%9F%BA%E4%BA%8Enerdctl%20+%20buildkitd%E6%9E%84%E5%BB%BA%E5%AE%B9%E5%99%A8%E9%95%9C%E5%83%8F20230513/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="84-云原生操作系统-基于nerdctl + buildkitd构建容器镜像">84-云原生操作系统-基于nerdctl + buildkitd构建容器镜像</span>
+            <span class="post-date" title="2023-05-13 17:22:54">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/13/86-%E4%BA%91%E5%8E%9F%E7%94%9F%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-Zookeeper%E9%9B%86%E7%BE%A4%E5%8F%8A%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%8A%A8%E6%80%81%E6%B3%A8%E5%86%8C%E5%92%8C%E5%8F%91%E7%8E%B0%E4%B8%9A%E5%8A%A1%E5%AE%B9%E5%99%A8%E5%8C%96%E6%A1%88%E4%BE%8B/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="86-云原生操作系统-Zookeeper集群及微服务动态注册和发现业务容器化案例">86-云原生操作系统-Zookeeper集群及微服务动态注册和发现业务容器化案例</span>
+            <span class="post-date" title="2023-05-13 17:13:23">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/13/87-%E4%BA%91%E5%8E%9F%E7%94%9F%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-Redis%E5%8D%95%E6%9C%BA%E5%92%8C%E9%9B%86%E7%BE%A4%E4%B8%9A%E5%8A%A1%E5%AE%B9%E5%99%A8%E5%8C%96%E6%A1%88%E4%BE%8B/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="87-云原生操作系统-Redis单机和集群业务容器化案例">87-云原生操作系统-Redis单机和集群业务容器化案例</span>
+            <span class="post-date" title="2023-05-13 17:08:49">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/997-%E4%BD%BF%E7%94%A8ChatGPT%E5%81%9A%E8%BF%90%E7%BB%B4%E5%BA%94%E7%94%A8%E5%B7%A5%E5%85%B7%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E8%A7%A3%E7%AD%94/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="997-使用ChatGPT做运维应用工具常见问题解答">997-使用ChatGPT做运维应用工具常见问题解答</span>
+            <span class="post-date" title="2023-05-13 15:49:52">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/%E5%A4%A7%E5%9E%8B%E4%BA%92%E8%81%94%E7%BD%91%E5%BE%AE%E6%9C%8D%E5%8A%A1%E6%9E%B6%E6%9E%84%E5%9B%BE/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="大型互联网微服务架构图">大型互联网微服务架构图</span>
+            <span class="post-date" title="2023-05-13 15:47:16">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/%E4%BA%91%E8%AE%A1%E7%AE%97%E6%9E%B6%E6%9E%84%E5%9B%BE/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="云计算架构图">云计算架构图</span>
+            <span class="post-date" title="2023-05-13 15:24:25">2023/05/13</span>
+        </a>
+        
+        <div id="no-item-tips">
+
+        </div>
+    </nav>
+    <div id="outline-list">
+    </div>
+</div>
+
+    </div>
+    <div class="hide-list">
+        <div class="semicircle" data-title="切换全屏 快捷键 s">
+            <div class="brackets first"><</div>
+            <div class="brackets">&gt;</div>
+        </div>
+    </div>
+</aside>
+<div id="post">
+    <div class="pjax">
+        <article id="post-68-日志分析系统ELK-Elasticsearch单点部署和配置优化（含基于Docker单点部署案例）" class="article article-type-post" itemscope itemprop="blogPost">
+    
+        <h1 class="article-title">68-日志分析系统ELK-Elasticsearch单点部署和配置优化（含基于Docker单点部署案例）</h1>
+    
+    <div class="article-meta">
+        
+        
+        
+        <span class="book">
+            <i class="iconfont icon-category"></i>
+            
+            
+            <a  data-rel="SRE linux云计算">SRE linux云计算</a>
+            
+        </span>
+        
+        
+    </div>
+    <div class="article-meta">
+        
+            Created At : <time class="date" title='Updated At: 2023-05-13 19:44:31'>2023-05-13 19:44</time>
+        
+    </div>
+    <div class="article-meta">
+        
+        
+        <span id="busuanzi_container_page_pv">
+            Views 👀 :<span id="busuanzi_value_page_pv">
+                <span class="count-comment">
+                    <span class="spinner">
+                      <div class="cube1"></div>
+                      <div class="cube2"></div>
+                    </span>
+                </span>
+            </span>
+        </span>
+        
+        
+    </div>
+    
+    <div class="toc-ref">
+    
+        <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#NOT-starting-on-installation-please-execute-the-following-statements-to-configure-elasticsearch-service-to-start-automatically-using-systemd"><span class="toc-text">NOT starting on installation, please execute the following statements to configure elasticsearch service to start automatically using systemd</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#You-can-start-elasticsearch-service-by-executing"><span class="toc-text">You can start elasticsearch service by executing</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#the-elasticsearch-process-currently-sends-the-notifications-back-to-systemd"><span class="toc-text">the elasticsearch process currently sends the notifications back to systemd</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#and-for-some-reason-exec-does-not-work-even-though-it-is-a-child-We-should-change"><span class="toc-text">and for some reason exec does not work (even though it is a child). We should change</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#this-notify-access-back-to-main-the-default-see-https-github-com-elastic-elasticsearch-issues-86475"><span class="toc-text">this notify access back to main (the default), see https:&#x2F;&#x2F;github.com&#x2F;elastic&#x2F;elasticsearch&#x2F;issues&#x2F;86475</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#StandardOutput-is-configured-to-redirect-to-journalctl-since"><span class="toc-text">StandardOutput is configured to redirect to journalctl since</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#some-error-messages-may-be-logged-in-standard-output-before"><span class="toc-text">some error messages may be logged in standard output before</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#elasticsearch-logging-system-is-initialized-Elasticsearch"><span class="toc-text">elasticsearch logging system is initialized. Elasticsearch</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#stores-its-logs-in-x2F-var-x2F-log-x2F-elasticsearch-and-does-not-use"><span class="toc-text">stores its logs in &#x2F;var&#x2F;log&#x2F;elasticsearch and does not use</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#journalctl-by-default-If-you-also-want-to-enable-journalctl"><span class="toc-text">journalctl by default. If you also want to enable journalctl</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#logging-you-can-simply-remove-the-%E2%80%9Cquiet%E2%80%9D-option-from-ExecStart"><span class="toc-text">logging, you can simply remove the “quiet” option from ExecStart.</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Specifies-the-maximum-file-descriptor-number-that-can-be-opened-by-this-process"><span class="toc-text">Specifies the maximum file descriptor number that can be opened by this process</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Specifies-the-maximum-number-of-processes"><span class="toc-text">Specifies the maximum number of processes</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Specifies-the-maximum-size-of-virtual-memory"><span class="toc-text">Specifies the maximum size of virtual memory</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Specifies-the-maximum-file-size"><span class="toc-text">Specifies the maximum file size</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Disable-timeout-logic-and-wait-until-process-is-stopped"><span class="toc-text">Disable timeout logic and wait until process is stopped</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#SIGTERM-signal-is-used-to-stop-the-Java-process"><span class="toc-text">SIGTERM signal is used to stop the Java process</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Send-the-signal-only-to-the-JVM-rather-than-its-control-group"><span class="toc-text">Send the signal only to the JVM rather than its control group</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Java-process-is-never-killed"><span class="toc-text">Java process is never killed</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#When-a-JVM-receives-a-SIGTERM-signal-it-exits-with-code-143"><span class="toc-text">When a JVM receives a SIGTERM signal it exits with code 143</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Allow-a-slow-startup-before-the-systemd-notifier-module-kicks-in-to-extend-the-timeout"><span class="toc-text">Allow a slow startup before the systemd notifier module kicks in to extend the timeout</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Built-for-packages-8-6-1-packages"><span class="toc-text">Built for packages-8.6.1 (packages)</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#This-wrapper-script-allows-SystemD-to-feed-a-file-containing-a-passphrase-into"><span class="toc-text">This wrapper script allows SystemD to feed a file containing a passphrase into</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#the-main-Elasticsearch-startup-script"><span class="toc-text">the main Elasticsearch startup script</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Xms4g"><span class="toc-text">-Xms4g</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Xmx4g"><span class="toc-text">-Xmx4g</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-Elasticsearch-Configuration-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D"><span class="toc-text">&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D; Elasticsearch Configuration &#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-text"></span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#NOTE-Elasticsearch-comes-with-reasonable-defaults-for-most-settings"><span class="toc-text">NOTE: Elasticsearch comes with reasonable defaults for most settings.</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Before-you-set-out-to-tweak-and-tune-the-configuration-make-sure-you"><span class="toc-text">Before you set out to tweak and tune the configuration, make sure you</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#understand-what-are-you-trying-to-accomplish-and-the-consequences"><span class="toc-text">understand what are you trying to accomplish and the consequences.</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#-1"><span class="toc-text"></span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#The-primary-way-of-configuring-a-node-is-via-this-file-This-template-lists"><span class="toc-text">The primary way of configuring a node is via this file. This template lists</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#the-most-important-settings-you-may-want-to-configure-for-a-production-cluster"><span class="toc-text">the most important settings you may want to configure for a production cluster.</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#-2"><span class="toc-text"></span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Please-consult-the-documentation-for-further-information-on-configuration-options"><span class="toc-text">Please consult the documentation for further information on configuration options:</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#https-www-elastic-co-guide-en-elasticsearch-reference-index-html"><span class="toc-text">https:&#x2F;&#x2F;www.elastic.co&#x2F;guide&#x2F;en&#x2F;elasticsearch&#x2F;reference&#x2F;index.html</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#-3"><span class="toc-text"></span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94-Cluster-%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%93"><span class="toc-text">———————————- Cluster ———————————–</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#-4"><span class="toc-text"></span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Use-a-descriptive-name-for-your-cluster"><span class="toc-text">Use a descriptive name for your cluster:</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#-5"><span class="toc-text"></span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94-Node-%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94"><span class="toc-text">———————————— Node ————————————</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#-6"><span class="toc-text"></span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Use-a-descriptive-name-for-the-node"><span class="toc-text">Use a descriptive name for the node:</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#-7"><span class="toc-text"></span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Add-custom-attributes-to-the-node"><span class="toc-text">Add custom attributes to the node:</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#-8"><span class="toc-text"></span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%93-Paths-%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94"><span class="toc-text">———————————– Paths ————————————</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#-9"><span class="toc-text"></span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Path-to-directory-where-to-store-the-data-separate-multiple-locations-by-comma"><span class="toc-text">Path to directory where to store the data (separate multiple locations by comma):</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#-10"><span class="toc-text"></span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Path-to-log-files"><span class="toc-text">Path to log files:</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#-11"><span class="toc-text"></span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%93-Memory-%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%93"><span class="toc-text">———————————– Memory ———————————–</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#-12"><span class="toc-text"></span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Lock-the-memory-on-startup"><span class="toc-text">Lock the memory on startup:</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#-13"><span class="toc-text"></span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Make-sure-that-the-heap-size-is-set-to-about-half-the-memory-available"><span class="toc-text">Make sure that the heap size is set to about half the memory available</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#on-the-system-and-that-the-owner-of-the-process-is-allowed-to-use-this"><span class="toc-text">on the system and that the owner of the process is allowed to use this</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#limit"><span class="toc-text">limit.</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#-14"><span class="toc-text"></span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Elasticsearch-performs-poorly-when-the-system-is-swapping-the-memory"><span class="toc-text">Elasticsearch performs poorly when the system is swapping the memory.</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#-15"><span class="toc-text"></span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94-Network-%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%93"><span class="toc-text">———————————- Network ———————————–</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#-16"><span class="toc-text"></span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#By-default-Elasticsearch-is-only-accessible-on-localhost-Set-a-different"><span class="toc-text">By default Elasticsearch is only accessible on localhost. Set a different</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#address-here-to-expose-this-node-on-the-network"><span class="toc-text">address here to expose this node on the network:</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#-17"><span class="toc-text"></span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#By-default-Elasticsearch-listens-for-HTTP-traffic-on-the-first-free-port-it"><span class="toc-text">By default Elasticsearch listens for HTTP traffic on the first free port it</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#finds-starting-at-9200-Set-a-specific-HTTP-port-here"><span class="toc-text">finds starting at 9200. Set a specific HTTP port here:</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#-18"><span class="toc-text"></span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#For-more-information-consult-the-network-module-documentation"><span class="toc-text">For more information, consult the network module documentation.</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#-19"><span class="toc-text"></span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94-Discovery-%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94"><span class="toc-text">——————————— Discovery ———————————-</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#-20"><span class="toc-text"></span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Pass-an-initial-list-of-hosts-to-perform-discovery-when-this-node-is-started"><span class="toc-text">Pass an initial list of hosts to perform discovery when this node is started:</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#The-default-list-of-hosts-is-%E2%80%9C127-0-0-1%E2%80%9D-%E2%80%9C-1-%E2%80%9D"><span class="toc-text">The default list of hosts is [“127.0.0.1”, “[::1]”]</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#-21"><span class="toc-text"></span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Bootstrap-the-cluster-using-an-initial-set-of-master-eligible-nodes"><span class="toc-text">Bootstrap the cluster using an initial set of master-eligible nodes:</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#-22"><span class="toc-text"></span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#For-more-information-consult-the-discovery-and-cluster-formation-module-documentation"><span class="toc-text">For more information, consult the discovery and cluster formation module documentation.</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#-23"><span class="toc-text"></span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94-Readiness-%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94"><span class="toc-text">——————————— Readiness ———————————-</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#-24"><span class="toc-text"></span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Enable-an-unauthenticated-TCP-readiness-endpoint-on-localhost"><span class="toc-text">Enable an unauthenticated TCP readiness endpoint on localhost</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#-25"><span class="toc-text"></span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94-Various-%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%93"><span class="toc-text">———————————- Various ———————————–</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#-26"><span class="toc-text"></span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Allow-wildcard-deletion-of-indices"><span class="toc-text">Allow wildcard deletion of indices:</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#-27"><span class="toc-text"></span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#The-following-settings-TLS-certificates-and-keys-have-been-automatically"><span class="toc-text">The following settings, TLS certificates, and keys have been automatically</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#generated-to-configure-Elasticsearch-security-features-on-23-02-2023-14-03-48"><span class="toc-text">generated to configure Elasticsearch security features on 23-02-2023 14:03:48</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#-28"><span class="toc-text"></span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%93"><span class="toc-text">——————————————————————————–</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Enable-security-features"><span class="toc-text">Enable security features</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Enable-encryption-for-HTTP-API-client-connections-such-as-Kibana-Logstash-and-Agents"><span class="toc-text">Enable encryption for HTTP API client connections, such as Kibana, Logstash, and Agents</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Enable-encryption-and-mutual-authentication-between-cluster-nodes"><span class="toc-text">Enable encryption and mutual authentication between cluster nodes</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Create-a-new-cluster-with-the-current-node-only"><span class="toc-text">Create a new cluster with the current node only</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Additional-nodes-can-still-join-the-cluster-later"><span class="toc-text">Additional nodes can still join the cluster later</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Allow-HTTP-API-connections-from-anywhere"><span class="toc-text">Allow HTTP API connections from anywhere</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Connections-are-encrypted-and-require-user-authentication"><span class="toc-text">Connections are encrypted and require user authentication</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Allow-other-nodes-to-join-the-cluster-from-anywhere"><span class="toc-text">Allow other nodes to join the cluster from anywhere</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Connections-are-encrypted-and-mutually-authenticated"><span class="toc-text">Connections are encrypted and mutually authenticated</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#The-following-settings-TLS-certificates-and-keys-have-been-automatically-1"><span class="toc-text">The following settings, TLS certificates, and keys have been automatically</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#generated-to-configure-Elasticsearch-security-features-on-24-02-2023-07-00-40"><span class="toc-text">generated to configure Elasticsearch security features on 24-02-2023 07:00:40</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#-29"><span class="toc-text"></span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%93-1"><span class="toc-text">——————————————————————————–</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Enable-security-features-1"><span class="toc-text">Enable security features</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Enable-encryption-for-HTTP-API-client-connections-such-as-Kibana-Logstash-and-Agents-1"><span class="toc-text">Enable encryption for HTTP API client connections, such as Kibana, Logstash, and Agents</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Enable-encryption-and-mutual-authentication-between-cluster-nodes-1"><span class="toc-text">Enable encryption and mutual authentication between cluster nodes</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#The-following-settings-TLS-certificates-and-keys-have-been-automatically-2"><span class="toc-text">The following settings, TLS certificates, and keys have been automatically</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#generated-to-configure-Elasticsearch-security-features-on-24-02-2023-07-00-40-1"><span class="toc-text">generated to configure Elasticsearch security features on 24-02-2023 07:00:40</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#-30"><span class="toc-text"></span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%94%E2%80%93-2"><span class="toc-text">——————————————————————————–</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Enable-security-features-2"><span class="toc-text">Enable security features</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Enable-encryption-for-HTTP-API-client-connections-such-as-Kibana-Logstash-and-Agents-2"><span class="toc-text">Enable encryption for HTTP API client connections, such as Kibana, Logstash, and Agents</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Enable-encryption-and-mutual-authentication-between-cluster-nodes-2"><span class="toc-text">Enable encryption and mutual authentication between cluster nodes</span></a>
+    
+<style>
+    .left-col .switch-btn,
+    .left-col .switch-area {
+        display: none;
+    }
+    .toc-level-3 i,
+    .toc-level-3 ol {
+        display: none !important;
+    }
+</style>
+</div>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>Elasticsearch单点安装及优化<br>• 安装前环境初始化<br>CPU 2C<br>内存4G或更多<br>操作系统: Ubuntu20.04,Ubuntu18.04,Rocky8.X,Centos 7.X<br>操作系统盘50G<br>主机名设置规则为nodeX.mooreyxia.org<br>*生产环境建议准备单独的数据磁盘</p>
+<p>[root@ubuntu2204 ~]#hostnamectl set-hostname es-node1.mooreyxia.org• 关闭防火墙和SELinux<br>#RHEL系列的系统执行下以下配置<br>[root@es-node1 ~]# systemctl disable firewalld<br>[root@es-node1 ~]# systemctl disable NetworkManager<br>[root@es-node1 ~]# sed -i ‘&#x2F;SELINUX&#x2F;s&#x2F;enforcing&#x2F;disabled&#x2F;‘ &#x2F;etc&#x2F;selinux&#x2F;config<br>[root@es-node1 ~]# reboot• 各服务器配置本地域名解析<br>[root@es-node1 ~]#cat &#x2F;etc&#x2F;hosts<br>…</p>
+<p>192.168.11.200 es-node1.mooreyxia.org• 优化资源限制配置<br>• 内核参数 vm.max_map_count 用于限制一个进程可以拥有的虚拟内存容量<br>• 包安装会自动修改此配置<br>#查看默认值<br>[root@es-node1 ~]#sysctl -a |grep vm.max_map_count<br>vm.max_map_count &#x3D; 65530<br>#修改配置<br>[root@es-node1 ~]#echo “vm.max_map_count &#x3D; 262144” &gt;&gt; &#x2F;etc&#x2F;sysctl.conf<br>[root@es-node1 ~]#sysctl -p<br>vm.max_map_count &#x3D; 262144<br>#设置系统最大打开的文件描述符数，旧版本的ubuntu比较小需要修改，新版已经优化过了<br>#旧版更改<br>[root@es-node1 ~]#echo “fs.file-max &#x3D; 1000000” &gt;&gt; &#x2F;etc&#x2F;sysctl.conf<br>[root@es-node1 ~]#sysctl -p<br>#新版查看 - 足够大不用修改<br>[root@es-node1 ~]#sysctl fs.file-max<br>fs.file-max &#x3D; 9223372036854775807• linux内核优化 - 通用<br>[root@es-node1 ~]#vim &#x2F;etc&#x2F;security&#x2F;limits.conf</p>
+<ul>
+<li>soft core unlimited</li>
+<li>hard core unlimited</li>
+<li>soft nproc 1000000  –调大打开进程数</li>
+<li>hard nproc 1000000</li>
+<li>soft nofile 1000000  –调大打开文件数</li>
+<li>hard nofile 1000000</li>
+<li>soft memlock 32000  –调大进程锁</li>
+<li>hard memlock 32000</li>
+<li>soft msgqueue 8192000  –调大消息队列</li>
+<li>hard msgqueue 8192000• 安装JAVA环境（Elasticsearch包安装分包含JAVA版和不包含）<br>• 1.x 2.x 5.x 6.x都没有集成JDK的安装包，也就是需要自己安装java环境<br>• 7.x的安装包分为带JDK和不带JDK两种包，带JDK的包在安装时不需要再安装java，如果不带JDK的包仍然需要自己去安装java</li>
+</ul>
+<p>#官网JAVA版支持说明<br><a target="_blank" rel="noopener" href="https://www.elastic.co/cn/support/matrix#matrix_jvm">https://www.elastic.co/cn/support/matrix#matrix_jvm</a></p>
+<p>#根据Elasticsearch版本选择JDK<br>#包安装 apt install openjdk-version-jdk<br>#二进制安装并自定义环境变量<br>[root@es-node1 ~]# tar xvf jdk-8u121-linux-x64.tar.gz -C &#x2F;usr&#x2F;local&#x2F;<br>[root@es-node1 ~]# ln -sv &#x2F;usr&#x2F;local&#x2F;jdk1.8.0_121 &#x2F;usr&#x2F;local&#x2F;jdk<br>[root@es-node1 ~]# ln -sv &#x2F;usr&#x2F;local&#x2F;jdk&#x2F;bin&#x2F;java &#x2F;usr&#x2F;bin&#x2F;<br>[root@es-node1 ~]# vim &#x2F;etc&#x2F;profile<br>export HISTTIMEFORMAT&#x3D;”%F %T <code>whoami</code> “<br>export JAVA_HOME&#x3D;&#x2F;usr&#x2F;local&#x2F;jdk<br>export<br>CLASSPATH&#x3D;.:$JAVA_HOME&#x2F;jre&#x2F;lib&#x2F;rt.jar:$JAVA_HOME&#x2F;lib&#x2F;dt.jar:$JAVA_HOME&#x2F;lib&#x2F;tools<br>.jar<br>export PATH&#x3D;$PATH:$JAVA_HOME&#x2F;bin<br>[root@es-node1 ~]# source &#x2F;etc&#x2F;profile<br>[root@es-node1 ~]# java -version<br>java version “1.8.0_121” #确认可以出现当前的java版本号<br>Java(TM) SE Runtime Environment (build 1.8.0_121-b13)<br>Java HotSpot(TM) 64-Bit Server VM (build 25.121-b13, mixed mode)• 包安装 Elasticsearch<br>#包含JDK的版本下载<br><a target="_blank" rel="noopener" href="https://www.elastic.co/downloads/elasticsearch">https://www.elastic.co/downloads/elasticsearch</a><br><a target="_blank" rel="noopener" href="https://mirrors.tuna.tsinghua.edu.cn/elasticstack/">https://mirrors.tuna.tsinghua.edu.cn/elasticstack/</a><br>#不包含JDK的版本下载<br><a target="_blank" rel="noopener" href="https://www.elastic.co/cn/downloads/elasticsearch-no-jdk">https://www.elastic.co/cn/downloads/elasticsearch-no-jdk</a></p>
+<p>#这里选择带JDK版本<br>[root@es-node1 ~]#wget <a target="_blank" rel="noopener" href="https://mirrors.tuna.tsinghua.edu.cn/elasticstack/8.x/apt/pool/main/e/elasticsearch/elasticsearch-8.6.1-amd64.deb;dpkg">https://mirrors.tuna.tsinghua.edu.cn/elasticstack/8.x/apt/pool/main/e/elasticsearch/elasticsearch-8.6.1-amd64.deb;dpkg</a> -i elasticsearch-8.6.1-amd64.deb<br>–2023-02-23 14:03:15–  <a target="_blank" rel="noopener" href="https://mirrors.tuna.tsinghua.edu.cn/elasticstack/8.x/apt/pool/main/e/elasticsearch/elasticsearch-8.6.1-amd64.deb">https://mirrors.tuna.tsinghua.edu.cn/elasticstack/8.x/apt/pool/main/e/elasticsearch/elasticsearch-8.6.1-amd64.deb</a><br>Resolving mirrors.tuna.tsinghua.edu.cn (mirrors.tuna.tsinghua.edu.cn)… 2402:f000:1:400::2, 101.6.15.130<br>Connecting to mirrors.tuna.tsinghua.edu.cn (mirrors.tuna.tsinghua.edu.cn)|2402:f000:1:400::2|:443… connected.<br>HTTP request sent, awaiting response… 200 OK<br>Length: 581827662 (555M) [application&#x2F;octet-stream]<br>Saving to: ‘elasticsearch-8.6.1-amd64.deb’</p>
+<p>elasticsearch-8.6.1-amd64.deb                 100%[&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&gt;] 554.87M  66.3MB&#x2F;s    in 8.7s    </p>
+<p>2023-02-23 14:03:24 (63.7 MB&#x2F;s) - ‘elasticsearch-8.6.1-amd64.deb’ saved [581827662&#x2F;581827662]</p>
+<p>Selecting previously unselected package elasticsearch.<br>(Reading database … 70905 files and directories currently installed.)<br>Preparing to unpack elasticsearch-8.6.1-amd64.deb …<br>Creating elasticsearch group… OK<br>Creating elasticsearch user… OK<br>Unpacking elasticsearch (8.6.1) …<br>Setting up elasticsearch (8.6.1) …<br>————————— Security autoconfiguration information ——————————</p>
+<p>Authentication and authorization are enabled.<br>TLS for the transport and HTTP layers is enabled and configured.</p>
+<p>The generated password for the elastic built-in superuser is : FyYEor0UlIk4&#x3D;oKH1ndN #注意这里是内置的密码</p>
+<p>If this node should join an existing cluster, you can reconfigure this with<br>‘&#x2F;usr&#x2F;share&#x2F;elasticsearch&#x2F;bin&#x2F;elasticsearch-reconfigure-node –enrollment-token <token-here>‘<br>after creating an enrollment token on your existing cluster. #这里配置集群</p>
+<p>You can complete the following actions at any time:</p>
+<p>Reset the password of the elastic built-in superuser with<br>‘&#x2F;usr&#x2F;share&#x2F;elasticsearch&#x2F;bin&#x2F;elasticsearch-reset-password -u elastic’. #这里可以重设密码</p>
+<p>Generate an enrollment token for Kibana instances with<br> ‘&#x2F;usr&#x2F;share&#x2F;elasticsearch&#x2F;bin&#x2F;elasticsearch-create-enrollment-token -s kibana’.  #这里可以访问Kibana令牌</p>
+<p>Generate an enrollment token for Elasticsearch nodes with<br>‘&#x2F;usr&#x2F;share&#x2F;elasticsearch&#x2F;bin&#x2F;elasticsearch-create-enrollment-token -s node’. #这里可以访问Elasticsearch令牌</p>
+<hr>
+<h3 id="NOT-starting-on-installation-please-execute-the-following-statements-to-configure-elasticsearch-service-to-start-automatically-using-systemd"><a href="#NOT-starting-on-installation-please-execute-the-following-statements-to-configure-elasticsearch-service-to-start-automatically-using-systemd" class="headerlink" title="NOT starting on installation, please execute the following statements to configure elasticsearch service to start automatically using systemd"></a>NOT starting on installation, please execute the following statements to configure elasticsearch service to start automatically using systemd</h3><p> sudo systemctl daemon-reload<br> sudo systemctl enable elasticsearch.service</p>
+<h3 id="You-can-start-elasticsearch-service-by-executing"><a href="#You-can-start-elasticsearch-service-by-executing" class="headerlink" title="You can start elasticsearch service by executing"></a>You can start elasticsearch service by executing</h3><p> sudo systemctl start elasticsearch.service</p>
+<p>#安装完毕后查看服务情况<br>[root@es-node1 ~]#systemctl status elasticsearch.service<br>○ elasticsearch.service - Elasticsearch<br>     Loaded: loaded (&#x2F;lib&#x2F;systemd&#x2F;system&#x2F;elasticsearch.service; disabled; vendor preset: enabled)<br>     Active: inactive (dead)<br>       Docs: <a target="_blank" rel="noopener" href="https://www.elastic.co/">https://www.elastic.co</a><br>[root@es-node1 ~]#cat &#x2F;lib&#x2F;systemd&#x2F;system&#x2F;elasticsearch.service<br>[Unit]<br>Description&#x3D;Elasticsearch<br>Documentation&#x3D;<a target="_blank" rel="noopener" href="https://www.elastic.co/">https://www.elastic.co</a><br>Wants&#x3D;network-online.target<br>After&#x3D;network-online.target</p>
+<p>[Service]<br>Type&#x3D;notify</p>
+<h1 id="the-elasticsearch-process-currently-sends-the-notifications-back-to-systemd"><a href="#the-elasticsearch-process-currently-sends-the-notifications-back-to-systemd" class="headerlink" title="the elasticsearch process currently sends the notifications back to systemd"></a>the elasticsearch process currently sends the notifications back to systemd</h1><h1 id="and-for-some-reason-exec-does-not-work-even-though-it-is-a-child-We-should-change"><a href="#and-for-some-reason-exec-does-not-work-even-though-it-is-a-child-We-should-change" class="headerlink" title="and for some reason exec does not work (even though it is a child). We should change"></a>and for some reason exec does not work (even though it is a child). We should change</h1><h1 id="this-notify-access-back-to-main-the-default-see-https-github-com-elastic-elasticsearch-issues-86475"><a href="#this-notify-access-back-to-main-the-default-see-https-github-com-elastic-elasticsearch-issues-86475" class="headerlink" title="this notify access back to main (the default), see https://github.com/elastic/elasticsearch/issues/86475"></a>this notify access back to main (the default), see <a target="_blank" rel="noopener" href="https://github.com/elastic/elasticsearch/issues/86475">https://github.com/elastic/elasticsearch/issues/86475</a></h1><p>NotifyAccess&#x3D;all<br>RuntimeDirectory&#x3D;elasticsearch<br>PrivateTmp&#x3D;true<br>Environment&#x3D;ES_HOME&#x3D;&#x2F;usr&#x2F;share&#x2F;elasticsearch<br>Environment&#x3D;ES_PATH_CONF&#x3D;&#x2F;etc&#x2F;elasticsearch<br>Environment&#x3D;PID_DIR&#x3D;&#x2F;var&#x2F;run&#x2F;elasticsearch<br>Environment&#x3D;ES_SD_NOTIFY&#x3D;true<br>EnvironmentFile&#x3D;-&#x2F;etc&#x2F;default&#x2F;elasticsearch</p>
+<p>WorkingDirectory&#x3D;&#x2F;usr&#x2F;share&#x2F;elasticsearch</p>
+<p>User&#x3D;elasticsearch<br>Group&#x3D;elasticsearch</p>
+<p>ExecStart&#x3D;&#x2F;usr&#x2F;share&#x2F;elasticsearch&#x2F;bin&#x2F;systemd-entrypoint -p ${PID_DIR}&#x2F;elasticsearch.pid –quiet #这里有个脚本，可以查看下</p>
+<h1 id="StandardOutput-is-configured-to-redirect-to-journalctl-since"><a href="#StandardOutput-is-configured-to-redirect-to-journalctl-since" class="headerlink" title="StandardOutput is configured to redirect to journalctl since"></a>StandardOutput is configured to redirect to journalctl since</h1><h1 id="some-error-messages-may-be-logged-in-standard-output-before"><a href="#some-error-messages-may-be-logged-in-standard-output-before" class="headerlink" title="some error messages may be logged in standard output before"></a>some error messages may be logged in standard output before</h1><h1 id="elasticsearch-logging-system-is-initialized-Elasticsearch"><a href="#elasticsearch-logging-system-is-initialized-Elasticsearch" class="headerlink" title="elasticsearch logging system is initialized. Elasticsearch"></a>elasticsearch logging system is initialized. Elasticsearch</h1><h1 id="stores-its-logs-in-x2F-var-x2F-log-x2F-elasticsearch-and-does-not-use"><a href="#stores-its-logs-in-x2F-var-x2F-log-x2F-elasticsearch-and-does-not-use" class="headerlink" title="stores its logs in &#x2F;var&#x2F;log&#x2F;elasticsearch and does not use"></a>stores its logs in &#x2F;var&#x2F;log&#x2F;elasticsearch and does not use</h1><h1 id="journalctl-by-default-If-you-also-want-to-enable-journalctl"><a href="#journalctl-by-default-If-you-also-want-to-enable-journalctl" class="headerlink" title="journalctl by default. If you also want to enable journalctl"></a>journalctl by default. If you also want to enable journalctl</h1><h1 id="logging-you-can-simply-remove-the-“quiet”-option-from-ExecStart"><a href="#logging-you-can-simply-remove-the-“quiet”-option-from-ExecStart" class="headerlink" title="logging, you can simply remove the “quiet” option from ExecStart."></a>logging, you can simply remove the “quiet” option from ExecStart.</h1><p>StandardOutput&#x3D;journal<br>StandardError&#x3D;inherit</p>
+<h1 id="Specifies-the-maximum-file-descriptor-number-that-can-be-opened-by-this-process"><a href="#Specifies-the-maximum-file-descriptor-number-that-can-be-opened-by-this-process" class="headerlink" title="Specifies the maximum file descriptor number that can be opened by this process"></a>Specifies the maximum file descriptor number that can be opened by this process</h1><p>LimitNOFILE&#x3D;65535</p>
+<h1 id="Specifies-the-maximum-number-of-processes"><a href="#Specifies-the-maximum-number-of-processes" class="headerlink" title="Specifies the maximum number of processes"></a>Specifies the maximum number of processes</h1><p>LimitNPROC&#x3D;4096</p>
+<h1 id="Specifies-the-maximum-size-of-virtual-memory"><a href="#Specifies-the-maximum-size-of-virtual-memory" class="headerlink" title="Specifies the maximum size of virtual memory"></a>Specifies the maximum size of virtual memory</h1><p>LimitAS&#x3D;infinity</p>
+<h1 id="Specifies-the-maximum-file-size"><a href="#Specifies-the-maximum-file-size" class="headerlink" title="Specifies the maximum file size"></a>Specifies the maximum file size</h1><p>LimitFSIZE&#x3D;infinity</p>
+<h1 id="Disable-timeout-logic-and-wait-until-process-is-stopped"><a href="#Disable-timeout-logic-and-wait-until-process-is-stopped" class="headerlink" title="Disable timeout logic and wait until process is stopped"></a>Disable timeout logic and wait until process is stopped</h1><p>TimeoutStopSec&#x3D;0</p>
+<h1 id="SIGTERM-signal-is-used-to-stop-the-Java-process"><a href="#SIGTERM-signal-is-used-to-stop-the-Java-process" class="headerlink" title="SIGTERM signal is used to stop the Java process"></a>SIGTERM signal is used to stop the Java process</h1><p>KillSignal&#x3D;SIGTERM</p>
+<h1 id="Send-the-signal-only-to-the-JVM-rather-than-its-control-group"><a href="#Send-the-signal-only-to-the-JVM-rather-than-its-control-group" class="headerlink" title="Send the signal only to the JVM rather than its control group"></a>Send the signal only to the JVM rather than its control group</h1><p>KillMode&#x3D;process</p>
+<h1 id="Java-process-is-never-killed"><a href="#Java-process-is-never-killed" class="headerlink" title="Java process is never killed"></a>Java process is never killed</h1><p>SendSIGKILL&#x3D;no</p>
+<h1 id="When-a-JVM-receives-a-SIGTERM-signal-it-exits-with-code-143"><a href="#When-a-JVM-receives-a-SIGTERM-signal-it-exits-with-code-143" class="headerlink" title="When a JVM receives a SIGTERM signal it exits with code 143"></a>When a JVM receives a SIGTERM signal it exits with code 143</h1><p>SuccessExitStatus&#x3D;143</p>
+<h1 id="Allow-a-slow-startup-before-the-systemd-notifier-module-kicks-in-to-extend-the-timeout"><a href="#Allow-a-slow-startup-before-the-systemd-notifier-module-kicks-in-to-extend-the-timeout" class="headerlink" title="Allow a slow startup before the systemd notifier module kicks in to extend the timeout"></a>Allow a slow startup before the systemd notifier module kicks in to extend the timeout</h1><p>TimeoutStartSec&#x3D;75</p>
+<p>[Install]<br>WantedBy&#x3D;multi-user.target</p>
+<h1 id="Built-for-packages-8-6-1-packages"><a href="#Built-for-packages-8-6-1-packages" class="headerlink" title="Built for packages-8.6.1 (packages)"></a>Built for packages-8.6.1 (packages)</h1><p>#查看service中的启动脚本内容<br>[root@es-node1 ~]#file &#x2F;usr&#x2F;share&#x2F;elasticsearch&#x2F;bin&#x2F;systemd-entrypoint<br>&#x2F;usr&#x2F;share&#x2F;elasticsearch&#x2F;bin&#x2F;systemd-entrypoint: POSIX shell script, ASCII text executable<br>[root@es-node1 ~]#cat &#x2F;usr&#x2F;share&#x2F;elasticsearch&#x2F;bin&#x2F;systemd-entrypoint<br>#!&#x2F;bin&#x2F;sh</p>
+<h1 id="This-wrapper-script-allows-SystemD-to-feed-a-file-containing-a-passphrase-into"><a href="#This-wrapper-script-allows-SystemD-to-feed-a-file-containing-a-passphrase-into" class="headerlink" title="This wrapper script allows SystemD to feed a file containing a passphrase into"></a>This wrapper script allows SystemD to feed a file containing a passphrase into</h1><h1 id="the-main-Elasticsearch-startup-script"><a href="#the-main-Elasticsearch-startup-script" class="headerlink" title="the main Elasticsearch startup script"></a>the main Elasticsearch startup script</h1><p>if [ -n “$ES_KEYSTORE_PASSPHRASE_FILE” ] ; then<br>  #发现这里内嵌了elasticsearch的一个执行程序，查看一下<br>  exec &#x2F;usr&#x2F;share&#x2F;elasticsearch&#x2F;bin&#x2F;elasticsearch “$@” &lt; “$ES_KEYSTORE_PASSPHRASE_FILE”<br>else<br>  exec &#x2F;usr&#x2F;share&#x2F;elasticsearch&#x2F;bin&#x2F;elasticsearch “$@”<br>fi</p>
+<p>#查看elasticsearch执行程序<br>[root@es-node1 ~]#file &#x2F;usr&#x2F;share&#x2F;elasticsearch&#x2F;bin&#x2F;elasticsearch<br>&#x2F;usr&#x2F;share&#x2F;elasticsearch&#x2F;bin&#x2F;elasticsearch: Bourne-Again shell script, ASCII text executable<br>[root@es-node1 ~]#cat &#x2F;usr&#x2F;share&#x2F;elasticsearch&#x2F;bin&#x2F;elasticsearch<br>#!&#x2F;bin&#x2F;bash</p>
+<p>CLI_NAME&#x3D;server<br>CLI_LIBS&#x3D;lib&#x2F;tools&#x2F;server-cli<br>source “<code>dirname &quot;$0&quot;</code>“&#x2F;elasticsearch-cli• 启动Elasticsearch服务<br>[root@es-node1 ~]#systemctl enable –now elasticsearch.service<br>Created symlink &#x2F;etc&#x2F;systemd&#x2F;system&#x2F;multi-user.target.wants&#x2F;elasticsearch.service → &#x2F;lib&#x2F;systemd&#x2F;system&#x2F;elasticsearch.service.<br>[root@es-node1 ~]#systemctl status elasticsearch.service<br>● elasticsearch.service - Elasticsearch<br>     Loaded: loaded (&#x2F;lib&#x2F;systemd&#x2F;system&#x2F;elasticsearch.service; enabled; vendor preset: enabled)<br>     Active: active (running) since Thu 2023-02-23 14:16:21 UTC; 36s ago<br>       Docs: <a target="_blank" rel="noopener" href="https://www.elastic.co/">https://www.elastic.co</a><br>   Main PID: 1326 (java)<br>      Tasks: 86 (limit: 4575)<br>     Memory: 2.4G<br>        CPU: 55.897s<br>     CGroup: &#x2F;system.slice&#x2F;elasticsearch.service<br>             ├─1326 &#x2F;usr&#x2F;share&#x2F;elasticsearch&#x2F;jdk&#x2F;bin&#x2F;java -Xms4m -Xmx64m -XX:+UseSerialGC -Dcli.name&#x3D;server -Dcli.script&#x3D;&#x2F;usr&#x2F;share&#x2F;elasticsearch&#x2F;bin&#x2F;elasticsearch -Dcli.libs&#x3D;lib&#x2F;tools<br>&#x2F;server-cli -Des.path.home&#x3D;&#x2F;usr&#x2F;share&#x2F;elasticsearch -Des.path.conf&#x3D;&#x2F;etc&#x2F;elasticsearch -Des.distribution.type&#x3D;deb -cp “&#x2F;usr&#x2F;share&#x2F;elasticsearch&#x2F;lib&#x2F;<em>:&#x2F;usr&#x2F;share&#x2F;elasticsearch&#x2F;lib&#x2F;cli-la<br>uncher&#x2F;</em>“ org.elasticsearch.launcher.CliToolLauncher -p &#x2F;var&#x2F;run&#x2F;elasticsearch&#x2F;elasticsearch.pid –quiet<br>             ├─1651 &#x2F;usr&#x2F;share&#x2F;elasticsearch&#x2F;jdk&#x2F;bin&#x2F;java -Des.networkaddress.cache.ttl&#x3D;60 -Des.networkaddress.cache.negative.ttl&#x3D;10 -Djava.security.manager&#x3D;allow -XX:+AlwaysPreTouch -<br>Xss1m -Djava.awt.headless&#x3D;true -Dfile.encoding&#x3D;UTF-8 -Djna.nosys&#x3D;true -XX:-OmitStackTraceInFastThrow -Dio.netty.noUnsafe&#x3D;true -Dio.netty.noKeySetOptimization&#x3D;true -Dio.netty.recycler.m<br>axCapacityPerThread&#x3D;0 -Dlog4j.shutdownHookEnabled&#x3D;false -Dlog4j2.disable.jmx&#x3D;true -Dlog4j2.formatMsgNoLookups&#x3D;true -Djava.locale.providers&#x3D;SPI,COMPAT –add-opens&#x3D;java.base&#x2F;java.io&#x3D;ALL-<br>UNNAMED -XX:+UseG1GC -Djava.io.tmpdir&#x3D;&#x2F;tmp&#x2F;elasticsearch-17157946413569632496 -XX:+HeapDumpOnOutOfMemoryError -XX:+ExitOnOutOfMemoryError -XX:HeapDumpPath&#x3D;&#x2F;var&#x2F;lib&#x2F;elasticsearch -XX:Er<br>rorFile&#x3D;&#x2F;var&#x2F;log&#x2F;elasticsearch&#x2F;hs_err_pid%p.log “-Xlog:gc*,gc+age&#x3D;trace,safepoint:file&#x3D;&#x2F;var&#x2F;log&#x2F;elasticsearch&#x2F;gc.log:utctime,pid,tags:filecount&#x3D;32,filesize&#x3D;64m” -Xms1961m -Xmx1961m -XX<br>:MaxDirectMemorySize&#x3D;1028653056 -XX:G1HeapRegionSize&#x3D;4m -XX:InitiatingHeapOccupancyPercent&#x3D;30 -XX:G1ReservePercent&#x3D;15 -Des.distribution.type&#x3D;deb –module-path &#x2F;usr&#x2F;share&#x2F;elasticsearch&#x2F;<br>lib –add-modules&#x3D;jdk.net -m org.elasticsearch.server&#x2F;org.elasticsearch.bootstrap.Elasticsearch<br>             └─1692 &#x2F;usr&#x2F;share&#x2F;elasticsearch&#x2F;modules&#x2F;x-pack-ml&#x2F;platform&#x2F;linux-x86_64&#x2F;bin&#x2F;controller</p>
+<p>Feb 23 14:15:56 es-node1.mooreyxia.org systemd[1]: Starting Elasticsearch…<br>Feb 23 14:16:21 es-node1.mooreyxia.org systemd[1]: Started Elasticsearch.</p>
+<p>#上面信息可以发现占用内存 2.4G<br>[root@es-node1 ~]#free -h<br>               total        used        free      shared  buff&#x2F;cache   available<br>Mem:           3.8Gi       2.5Gi       141Mi       0.0Ki       1.2Gi       1.1Gi<br>Swap:          1.9Gi       0.0Ki       1.9Gi<br>#开启了9200和9300端口 9200提供http访问请求<br>[root@es-node1 ~]#ss -ntl|grep 9200;ss -ntl|grep 9300;<br>LISTEN 0      4096                    <em>:9200             <em>:</em><br>LISTEN 0      4096   [::ffff:127.0.0.1]:9300             <em>:</em><br>LISTEN 0      4096                [::1]:9300          [::]:</em><br>#查看下内置java版本 - 版本比较新<br>[root@es-node1 ~]#ps aux|grep java<br>elastic+    1326  0.9  2.4 2599692 100292 ?      Ssl  14:15   0:03 &#x2F;usr&#x2F;share&#x2F;elasticsearch&#x2F;jdk&#x2F;bin&#x2F;java -Xms4m -Xmx64m -XX:+UseSerialGC -Dcli.name&#x3D;server -Dcli.script&#x3D;&#x2F;usr&#x2F;share&#x2F;elasticsearch&#x2F;bin&#x2F;elasticsearch -Dcli.libs&#x3D;lib&#x2F;tools&#x2F;server-cli -Des.path.home&#x3D;&#x2F;usr&#x2F;share&#x2F;elasticsearch -Des.path.conf&#x3D;&#x2F;etc&#x2F;elasticsearch -Des.distribution.type&#x3D;deb -cp &#x2F;usr&#x2F;share&#x2F;elasticsearch&#x2F;lib&#x2F;<em>:&#x2F;usr&#x2F;share&#x2F;elasticsearch&#x2F;lib&#x2F;cli-launcher&#x2F;</em> org.elasticsearch.launcher.CliToolLauncher -p &#x2F;var&#x2F;run&#x2F;elasticsearch&#x2F;elasticsearch.pid –quiet<br>elastic+    1651 13.6 60.0 4802620 2411668 ?     Sl   14:15   0:55 &#x2F;usr&#x2F;share&#x2F;elasticsearch&#x2F;jdk&#x2F;bin&#x2F;java -Des.networkaddress.cache.ttl&#x3D;60 -Des.networkaddress.cache.negative.ttl&#x3D;10 -Djava.security.manager&#x3D;allow -XX:+AlwaysPreTouch -Xss1m -Djava.awt.headless&#x3D;true -Dfile.encoding&#x3D;UTF-8 -Djna.nosys&#x3D;true -XX:-OmitStackTraceInFastThrow -Dio.netty.noUnsafe&#x3D;true -Dio.netty.noKeySetOptimization&#x3D;true -Dio.netty.recycler.maxCapacityPerThread&#x3D;0 -Dlog4j.shutdownHookEnabled&#x3D;false -Dlog4j2.disable.jmx&#x3D;true -Dlog4j2.formatMsgNoLookups&#x3D;true -Djava.locale.providers&#x3D;SPI,COMPAT –add-opens&#x3D;java.base&#x2F;java.io&#x3D;ALL-UNNAMED -XX:+UseG1GC -Djava.io.tmpdir&#x3D;&#x2F;tmp&#x2F;elasticsearch-17157946413569632496 -XX:+HeapDumpOnOutOfMemoryError -XX:+ExitOnOutOfMemoryError -XX:HeapDumpPath&#x3D;&#x2F;var&#x2F;lib&#x2F;elasticsearch -XX:ErrorFile&#x3D;&#x2F;var&#x2F;log&#x2F;elasticsearch&#x2F;hs_err_pid%p.log -Xlog:gc*,gc+age&#x3D;trace,safepoint:file&#x3D;&#x2F;var&#x2F;log&#x2F;elasticsearch&#x2F;gc.log:utctime,pid,tags:filecount&#x3D;32,filesize&#x3D;64m -Xms1961m -Xmx1961m -XX:MaxDirectMemorySize&#x3D;1028653056 -XX:G1HeapRegionSize&#x3D;4m -XX:InitiatingHeapOccupancyPercent&#x3D;30 -XX:G1ReservePercent&#x3D;15 -Des.distribution.type&#x3D;deb –module-path &#x2F;usr&#x2F;share&#x2F;elasticsearch&#x2F;lib –add-modules&#x3D;jdk.net -m org.elasticsearch.server&#x2F;org.elasticsearch.bootstrap.Elasticsearch<br>root        1767  0.0  0.0   4020  1952 pts&#x2F;0    S+   14:22   0:00 grep –color&#x3D;auto java<br>[root@es-node1 ~]#&#x2F;usr&#x2F;share&#x2F;elasticsearch&#x2F;jdk&#x2F;bin&#x2F;java -version<br>openjdk version “19.0.1” 2022-10-18<br>OpenJDK Runtime Environment (build 19.0.1+10-21)<br>OpenJDK 64-Bit Server VM (build 19.0.1+10-21, mixed mode, sharing)• 测试环境降低Elasticsearch内置JAVA虚拟机内存占用、 更改单节点配置信息<br>[root@es-node1 ~]#dpkg -L elasticsearch|grep etc<br>&#x2F;etc<br>&#x2F;etc&#x2F;elasticsearch<br>&#x2F;etc&#x2F;elasticsearch&#x2F;elasticsearch-plugins.example.yml<br>&#x2F;etc&#x2F;elasticsearch&#x2F;elasticsearch.yml<br>&#x2F;etc&#x2F;elasticsearch&#x2F;jvm.options #这里控制java虚拟机占用的内存，如果主机内存比较小可以调整<br>&#x2F;etc&#x2F;elasticsearch&#x2F;role_mapping.yml<br>&#x2F;etc&#x2F;elasticsearch&#x2F;roles.yml<br>&#x2F;etc&#x2F;elasticsearch&#x2F;users<br>&#x2F;etc&#x2F;elasticsearch&#x2F;users_roles<br>&#x2F;etc&#x2F;elasticsearch&#x2F;log4j2.properties<br>&#x2F;etc&#x2F;default<br>&#x2F;etc&#x2F;default&#x2F;elasticsearch<br>&#x2F;etc&#x2F;elasticsearch&#x2F;jvm.options.d</p>
+<p>#测试环境降低虚拟机内存大小 - 生产环境不建议<br>[root@es-node1 ~]#vim &#x2F;etc&#x2F;elasticsearch&#x2F;jvm.options<br>[root@es-node1 ~]#cat &#x2F;etc&#x2F;elasticsearch&#x2F;jvm.options|grep Xm</p>
+<h2 id="Xms4g"><a href="#Xms4g" class="headerlink" title="-Xms4g"></a>-Xms4g</h2><h2 id="Xmx4g"><a href="#Xmx4g" class="headerlink" title="-Xmx4g"></a>-Xmx4g</h2><p>-Xms256m<br>-Xmx256m<br>[root@es-node1 ~]#systemctl restart elasticsearch<br>[root@es-node1 ~]#free -h<br>               total        used        free      shared  buff&#x2F;cache   available<br>Mem:           3.8Gi       733Mi       1.9Gi       0.0Ki       1.2Gi       2.9Gi<br>Swap:          1.9Gi       0.0Ki       1.9Gi</p>
+<p>#更改单节点配置信息<br>#默认<br>[root@es-node1 ~]#grep -Ev ‘#|^$’ &#x2F;etc&#x2F;elasticsearch&#x2F;elasticsearch.yml<br>path.data: &#x2F;var&#x2F;lib&#x2F;elasticsearch<br>path.logs: &#x2F;var&#x2F;log&#x2F;elasticsearch<br>xpack.security.enabled: true<br>xpack.security.enrollment.enabled: true<br>xpack.security.http.ssl:<br>  enabled: true<br>  keystore.path: certs&#x2F;http.p12<br>xpack.security.transport.ssl:<br>  enabled: true<br>  verification_mode: certificate<br>  keystore.path: certs&#x2F;transport.p12<br>  truststore.path: certs&#x2F;transport.p12<br>cluster.initial_master_nodes: [“es-node1.mooreyxia.org”]<br>http.host: 0.0.0.0</p>
+<p>#改一下discovery.seed_hosts 和 node.name<br>[root@es-node1 ~]#cat &#x2F;etc&#x2F;elasticsearch&#x2F;elasticsearch.yml|grep node.name<br>node.name: node-1<br>[root@es-node1 ~]#cat &#x2F;etc&#x2F;elasticsearch&#x2F;elasticsearch.yml|grep discovery.seed_hosts<br>discovery.seed_hosts: [“192.168.11.200”]<br>[root@es-node1 ~]#systemctl restart elasticsearch<br>[root@es-node1 ~]#grep -Ev ‘#|^$’ &#x2F;etc&#x2F;elasticsearch&#x2F;elasticsearch.yml<br>node.name: node-1<br>path.data: &#x2F;var&#x2F;lib&#x2F;elasticsearch<br>path.logs: &#x2F;var&#x2F;log&#x2F;elasticsearch<br>discovery.seed_hosts: [“192.168.11.200”]<br>xpack.security.enabled: true<br>xpack.security.enrollment.enabled: true<br>xpack.security.http.ssl:<br>  enabled: true<br>  keystore.path: certs&#x2F;http.p12<br>xpack.security.transport.ssl:<br>  enabled: true<br>  verification_mode: certificate<br>  keystore.path: certs&#x2F;transport.p12<br>  truststore.path: certs&#x2F;transport.p12<br>cluster.initial_master_nodes: [“es-node1.mooreyxia.org”]<br>http.host: 0.0.0.0• Elasticsearch配置文件说明<br>[root@es-node1 ~]#cat &#x2F;etc&#x2F;elasticsearch&#x2F;elasticsearch.yml</p>
+<h1 id="x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-Elasticsearch-Configuration-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D"><a href="#x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-Elasticsearch-Configuration-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D-x3D" class="headerlink" title="&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D; Elasticsearch Configuration &#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;"></a>&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D; Elasticsearch Configuration &#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;</h1><h1 id=""><a href="#" class="headerlink" title=""></a></h1><h1 id="NOTE-Elasticsearch-comes-with-reasonable-defaults-for-most-settings"><a href="#NOTE-Elasticsearch-comes-with-reasonable-defaults-for-most-settings" class="headerlink" title="NOTE: Elasticsearch comes with reasonable defaults for most settings."></a>NOTE: Elasticsearch comes with reasonable defaults for most settings.</h1><h1 id="Before-you-set-out-to-tweak-and-tune-the-configuration-make-sure-you"><a href="#Before-you-set-out-to-tweak-and-tune-the-configuration-make-sure-you" class="headerlink" title="Before you set out to tweak and tune the configuration, make sure you"></a>Before you set out to tweak and tune the configuration, make sure you</h1><h1 id="understand-what-are-you-trying-to-accomplish-and-the-consequences"><a href="#understand-what-are-you-trying-to-accomplish-and-the-consequences" class="headerlink" title="understand what are you trying to accomplish and the consequences."></a>understand what are you trying to accomplish and the consequences.</h1><h1 id="-1"><a href="#-1" class="headerlink" title=""></a></h1><h1 id="The-primary-way-of-configuring-a-node-is-via-this-file-This-template-lists"><a href="#The-primary-way-of-configuring-a-node-is-via-this-file-This-template-lists" class="headerlink" title="The primary way of configuring a node is via this file. This template lists"></a>The primary way of configuring a node is via this file. This template lists</h1><h1 id="the-most-important-settings-you-may-want-to-configure-for-a-production-cluster"><a href="#the-most-important-settings-you-may-want-to-configure-for-a-production-cluster" class="headerlink" title="the most important settings you may want to configure for a production cluster."></a>the most important settings you may want to configure for a production cluster.</h1><h1 id="-2"><a href="#-2" class="headerlink" title=""></a></h1><h1 id="Please-consult-the-documentation-for-further-information-on-configuration-options"><a href="#Please-consult-the-documentation-for-further-information-on-configuration-options" class="headerlink" title="Please consult the documentation for further information on configuration options:"></a>Please consult the documentation for further information on configuration options:</h1><h1 id="https-www-elastic-co-guide-en-elasticsearch-reference-index-html"><a href="#https-www-elastic-co-guide-en-elasticsearch-reference-index-html" class="headerlink" title="https://www.elastic.co/guide/en/elasticsearch/reference/index.html"></a><a target="_blank" rel="noopener" href="https://www.elastic.co/guide/en/elasticsearch/reference/index.html">https://www.elastic.co/guide/en/elasticsearch/reference/index.html</a></h1><h1 id="-3"><a href="#-3" class="headerlink" title=""></a></h1><h1 id="———————————-Cluster-———————————–"><a href="#———————————-Cluster-———————————–" class="headerlink" title="———————————- Cluster ———————————–"></a>———————————- Cluster ———————————–</h1><h1 id="-4"><a href="#-4" class="headerlink" title=""></a></h1><h1 id="Use-a-descriptive-name-for-your-cluster"><a href="#Use-a-descriptive-name-for-your-cluster" class="headerlink" title="Use a descriptive name for your cluster:"></a>Use a descriptive name for your cluster:</h1><h1 id="-5"><a href="#-5" class="headerlink" title=""></a></h1><p>#cluster.name: my-application<br>#</p>
+<h1 id="————————————-Node-————————————"><a href="#————————————-Node-————————————" class="headerlink" title="———————————— Node ————————————"></a>———————————— Node ————————————</h1><h1 id="-6"><a href="#-6" class="headerlink" title=""></a></h1><h1 id="Use-a-descriptive-name-for-the-node"><a href="#Use-a-descriptive-name-for-the-node" class="headerlink" title="Use a descriptive name for the node:"></a>Use a descriptive name for the node:</h1><h1 id="-7"><a href="#-7" class="headerlink" title=""></a></h1><p>#node.name: node-1<br>#</p>
+<h1 id="Add-custom-attributes-to-the-node"><a href="#Add-custom-attributes-to-the-node" class="headerlink" title="Add custom attributes to the node:"></a>Add custom attributes to the node:</h1><h1 id="-8"><a href="#-8" class="headerlink" title=""></a></h1><p>#node.attr.rack: r1<br>#</p>
+<h1 id="———————————–-Paths-————————————"><a href="#———————————–-Paths-————————————" class="headerlink" title="———————————– Paths ————————————"></a>———————————– Paths ————————————</h1><h1 id="-9"><a href="#-9" class="headerlink" title=""></a></h1><h1 id="Path-to-directory-where-to-store-the-data-separate-multiple-locations-by-comma"><a href="#Path-to-directory-where-to-store-the-data-separate-multiple-locations-by-comma" class="headerlink" title="Path to directory where to store the data (separate multiple locations by comma):"></a>Path to directory where to store the data (separate multiple locations by comma):</h1><h1 id="-10"><a href="#-10" class="headerlink" title=""></a></h1><p>path.data: &#x2F;var&#x2F;lib&#x2F;elasticsearch<br>#</p>
+<h1 id="Path-to-log-files"><a href="#Path-to-log-files" class="headerlink" title="Path to log files:"></a>Path to log files:</h1><h1 id="-11"><a href="#-11" class="headerlink" title=""></a></h1><p>path.logs: &#x2F;var&#x2F;log&#x2F;elasticsearch<br>#</p>
+<h1 id="———————————–-Memory-———————————–"><a href="#———————————–-Memory-———————————–" class="headerlink" title="———————————– Memory ———————————–"></a>———————————– Memory ———————————–</h1><h1 id="-12"><a href="#-12" class="headerlink" title=""></a></h1><h1 id="Lock-the-memory-on-startup"><a href="#Lock-the-memory-on-startup" class="headerlink" title="Lock the memory on startup:"></a>Lock the memory on startup:</h1><h1 id="-13"><a href="#-13" class="headerlink" title=""></a></h1><p>#bootstrap.memory_lock: true<br>#</p>
+<h1 id="Make-sure-that-the-heap-size-is-set-to-about-half-the-memory-available"><a href="#Make-sure-that-the-heap-size-is-set-to-about-half-the-memory-available" class="headerlink" title="Make sure that the heap size is set to about half the memory available"></a>Make sure that the heap size is set to about half the memory available</h1><h1 id="on-the-system-and-that-the-owner-of-the-process-is-allowed-to-use-this"><a href="#on-the-system-and-that-the-owner-of-the-process-is-allowed-to-use-this" class="headerlink" title="on the system and that the owner of the process is allowed to use this"></a>on the system and that the owner of the process is allowed to use this</h1><h1 id="limit"><a href="#limit" class="headerlink" title="limit."></a>limit.</h1><h1 id="-14"><a href="#-14" class="headerlink" title=""></a></h1><h1 id="Elasticsearch-performs-poorly-when-the-system-is-swapping-the-memory"><a href="#Elasticsearch-performs-poorly-when-the-system-is-swapping-the-memory" class="headerlink" title="Elasticsearch performs poorly when the system is swapping the memory."></a>Elasticsearch performs poorly when the system is swapping the memory.</h1><h1 id="-15"><a href="#-15" class="headerlink" title=""></a></h1><h1 id="———————————-Network-———————————–"><a href="#———————————-Network-———————————–" class="headerlink" title="———————————- Network ———————————–"></a>———————————- Network ———————————–</h1><h1 id="-16"><a href="#-16" class="headerlink" title=""></a></h1><h1 id="By-default-Elasticsearch-is-only-accessible-on-localhost-Set-a-different"><a href="#By-default-Elasticsearch-is-only-accessible-on-localhost-Set-a-different" class="headerlink" title="By default Elasticsearch is only accessible on localhost. Set a different"></a>By default Elasticsearch is only accessible on localhost. Set a different</h1><h1 id="address-here-to-expose-this-node-on-the-network"><a href="#address-here-to-expose-this-node-on-the-network" class="headerlink" title="address here to expose this node on the network:"></a>address here to expose this node on the network:</h1><h1 id="-17"><a href="#-17" class="headerlink" title=""></a></h1><p>#network.host: 192.168.0.1<br>#</p>
+<h1 id="By-default-Elasticsearch-listens-for-HTTP-traffic-on-the-first-free-port-it"><a href="#By-default-Elasticsearch-listens-for-HTTP-traffic-on-the-first-free-port-it" class="headerlink" title="By default Elasticsearch listens for HTTP traffic on the first free port it"></a>By default Elasticsearch listens for HTTP traffic on the first free port it</h1><h1 id="finds-starting-at-9200-Set-a-specific-HTTP-port-here"><a href="#finds-starting-at-9200-Set-a-specific-HTTP-port-here" class="headerlink" title="finds starting at 9200. Set a specific HTTP port here:"></a>finds starting at 9200. Set a specific HTTP port here:</h1><h1 id="-18"><a href="#-18" class="headerlink" title=""></a></h1><p>#http.port: 9200<br>#</p>
+<h1 id="For-more-information-consult-the-network-module-documentation"><a href="#For-more-information-consult-the-network-module-documentation" class="headerlink" title="For more information, consult the network module documentation."></a>For more information, consult the network module documentation.</h1><h1 id="-19"><a href="#-19" class="headerlink" title=""></a></h1><h1 id="———————————-Discovery-———————————"><a href="#———————————-Discovery-———————————" class="headerlink" title="——————————— Discovery ———————————-"></a>——————————— Discovery ———————————-</h1><h1 id="-20"><a href="#-20" class="headerlink" title=""></a></h1><h1 id="Pass-an-initial-list-of-hosts-to-perform-discovery-when-this-node-is-started"><a href="#Pass-an-initial-list-of-hosts-to-perform-discovery-when-this-node-is-started" class="headerlink" title="Pass an initial list of hosts to perform discovery when this node is started:"></a>Pass an initial list of hosts to perform discovery when this node is started:</h1><h1 id="The-default-list-of-hosts-is-“127-0-0-1”-“-1-”"><a href="#The-default-list-of-hosts-is-“127-0-0-1”-“-1-”" class="headerlink" title="The default list of hosts is [“127.0.0.1”, “[::1]”]"></a>The default list of hosts is [“127.0.0.1”, “[::1]”]</h1><h1 id="-21"><a href="#-21" class="headerlink" title=""></a></h1><p>#discovery.seed_hosts: [“host1”, “host2”]<br>#</p>
+<h1 id="Bootstrap-the-cluster-using-an-initial-set-of-master-eligible-nodes"><a href="#Bootstrap-the-cluster-using-an-initial-set-of-master-eligible-nodes" class="headerlink" title="Bootstrap the cluster using an initial set of master-eligible nodes:"></a>Bootstrap the cluster using an initial set of master-eligible nodes:</h1><h1 id="-22"><a href="#-22" class="headerlink" title=""></a></h1><p>#cluster.initial_master_nodes: [“node-1”, “node-2”]<br>#</p>
+<h1 id="For-more-information-consult-the-discovery-and-cluster-formation-module-documentation"><a href="#For-more-information-consult-the-discovery-and-cluster-formation-module-documentation" class="headerlink" title="For more information, consult the discovery and cluster formation module documentation."></a>For more information, consult the discovery and cluster formation module documentation.</h1><h1 id="-23"><a href="#-23" class="headerlink" title=""></a></h1><h1 id="———————————-Readiness-———————————"><a href="#———————————-Readiness-———————————" class="headerlink" title="——————————— Readiness ———————————-"></a>——————————— Readiness ———————————-</h1><h1 id="-24"><a href="#-24" class="headerlink" title=""></a></h1><h1 id="Enable-an-unauthenticated-TCP-readiness-endpoint-on-localhost"><a href="#Enable-an-unauthenticated-TCP-readiness-endpoint-on-localhost" class="headerlink" title="Enable an unauthenticated TCP readiness endpoint on localhost"></a>Enable an unauthenticated TCP readiness endpoint on localhost</h1><h1 id="-25"><a href="#-25" class="headerlink" title=""></a></h1><p>#readiness.port: 9399<br>#</p>
+<h1 id="———————————-Various-———————————–"><a href="#———————————-Various-———————————–" class="headerlink" title="———————————- Various ———————————–"></a>———————————- Various ———————————–</h1><h1 id="-26"><a href="#-26" class="headerlink" title=""></a></h1><h1 id="Allow-wildcard-deletion-of-indices"><a href="#Allow-wildcard-deletion-of-indices" class="headerlink" title="Allow wildcard deletion of indices:"></a>Allow wildcard deletion of indices:</h1><h1 id="-27"><a href="#-27" class="headerlink" title=""></a></h1><p>#action.destructive_requires_name: false</p>
+<p>#———————– BEGIN SECURITY AUTO CONFIGURATION ———————–<br>#</p>
+<h1 id="The-following-settings-TLS-certificates-and-keys-have-been-automatically"><a href="#The-following-settings-TLS-certificates-and-keys-have-been-automatically" class="headerlink" title="The following settings, TLS certificates, and keys have been automatically"></a>The following settings, TLS certificates, and keys have been automatically</h1><h1 id="generated-to-configure-Elasticsearch-security-features-on-23-02-2023-14-03-48"><a href="#generated-to-configure-Elasticsearch-security-features-on-23-02-2023-14-03-48" class="headerlink" title="generated to configure Elasticsearch security features on 23-02-2023 14:03:48"></a>generated to configure Elasticsearch security features on 23-02-2023 14:03:48</h1><h1 id="-28"><a href="#-28" class="headerlink" title=""></a></h1><h1 id="——————————————————————————–"><a href="#——————————————————————————–" class="headerlink" title="——————————————————————————–"></a>——————————————————————————–</h1><h1 id="Enable-security-features"><a href="#Enable-security-features" class="headerlink" title="Enable security features"></a>Enable security features</h1><p>xpack.security.enabled: true</p>
+<p>xpack.security.enrollment.enabled: true</p>
+<h1 id="Enable-encryption-for-HTTP-API-client-connections-such-as-Kibana-Logstash-and-Agents"><a href="#Enable-encryption-for-HTTP-API-client-connections-such-as-Kibana-Logstash-and-Agents" class="headerlink" title="Enable encryption for HTTP API client connections, such as Kibana, Logstash, and Agents"></a>Enable encryption for HTTP API client connections, such as Kibana, Logstash, and Agents</h1><p>xpack.security.http.ssl:<br>  enabled: true<br>  keystore.path: certs&#x2F;http.p12</p>
+<h1 id="Enable-encryption-and-mutual-authentication-between-cluster-nodes"><a href="#Enable-encryption-and-mutual-authentication-between-cluster-nodes" class="headerlink" title="Enable encryption and mutual authentication between cluster nodes"></a>Enable encryption and mutual authentication between cluster nodes</h1><p>xpack.security.transport.ssl:<br>  enabled: true<br>  verification_mode: certificate<br>  keystore.path: certs&#x2F;transport.p12<br>  truststore.path: certs&#x2F;transport.p12</p>
+<h1 id="Create-a-new-cluster-with-the-current-node-only"><a href="#Create-a-new-cluster-with-the-current-node-only" class="headerlink" title="Create a new cluster with the current node only"></a>Create a new cluster with the current node only</h1><h1 id="Additional-nodes-can-still-join-the-cluster-later"><a href="#Additional-nodes-can-still-join-the-cluster-later" class="headerlink" title="Additional nodes can still join the cluster later"></a>Additional nodes can still join the cluster later</h1><p>cluster.initial_master_nodes: [“es-node1.mooreyxia.org”]</p>
+<h1 id="Allow-HTTP-API-connections-from-anywhere"><a href="#Allow-HTTP-API-connections-from-anywhere" class="headerlink" title="Allow HTTP API connections from anywhere"></a>Allow HTTP API connections from anywhere</h1><h1 id="Connections-are-encrypted-and-require-user-authentication"><a href="#Connections-are-encrypted-and-require-user-authentication" class="headerlink" title="Connections are encrypted and require user authentication"></a>Connections are encrypted and require user authentication</h1><p>http.host: 0.0.0.0</p>
+<h1 id="Allow-other-nodes-to-join-the-cluster-from-anywhere"><a href="#Allow-other-nodes-to-join-the-cluster-from-anywhere" class="headerlink" title="Allow other nodes to join the cluster from anywhere"></a>Allow other nodes to join the cluster from anywhere</h1><h1 id="Connections-are-encrypted-and-mutually-authenticated"><a href="#Connections-are-encrypted-and-mutually-authenticated" class="headerlink" title="Connections are encrypted and mutually authenticated"></a>Connections are encrypted and mutually authenticated</h1><p>#transport.host: 0.0.0.0</p>
+<p>#———————– END SECURITY AUTO CONFIGURATION ————————-</p>
+<p>#说明<br>#ELK集群名称，单节点无需配置，同一个集群内每个节点的此项必须相同,新加集群的节点此项和其它节点相同即可加入集群,而无需再验证<br>cluster.name: ELK-Cluster<br>#当前节点在集群内的节点名称，同一集群中每个节点要确保此名称唯一<br>node.name: es-node1<br>#ES 数据保存目录，包安装默认路径：&#x2F;var&#x2F;lib&#x2F;elasticsearch&#x2F;<br>path.data: &#x2F;data&#x2F;es-data<br>#ES 日志保存目录，包安装默认路径：&#x2F;var&#x2F;llog&#x2F;elasticsearch&#x2F;<br>path.logs: &#x2F;data&#x2F;es-logs<br>#服务启动的时候立即分配(锁定)足够的内存，防止数据写入swap,提高启动速度,但是true会导致启动失败，需要优化<br>bootstrap.memory_lock: true<br>#指定该节点监听IP，如果绑定了错误的IP，可将此修改为指定IP<br>network.host: 0.0.0.0<br>#监听端口<br>http.port: 9200<br>#发现集群的node节点列表，可以添加部分或全部节点IP<br>#在新增节点到已有集群时,此处需指定至少一个已经在集群中的节点地址<br>discovery.seed_hosts: [“10.0.0.101”,”10.0.0.102”,”10.0.0.103”]<br>#集群初始化时指定希望哪些节点可以被选举为 master,只在初始化时使用,新加节点到已有集群时此项可不配置<br>cluster.initial_master_nodes: [“10.0.0.101”,”10.0.0.102”,”10.0.0.103”]<br>#一个集群中的 N 个节点启动后,才允许进行数据恢复处理，默认是1,一般设为为所有节点的一半以上,防止出现脑裂现象<br>#当集群无法启动时,可以将之修改为1,或者将下面行注释掉,实现快速恢复启动<br>gateway.recover_after_nodes: 2<br>#设置是否可以通过正则表达式或者_all匹配索引库进行删除或者关闭索引库，默认true表示必须需要明确指定索引库名称，不能使用正则表达式和_all，生产环境建议设置为 true，防止误删索引库。<br>action.destructive_requires_name: true<br>#如果不参与主节点选举设为false,默认值为true<br>node.master: false<br>#存储数据,默认值为true,此值为false则不存储数据而成为一个路由节点• 单点部署完毕后关闭认证功能即可访问到http9200端口，旧版可以直接访问<br>#关闭认证<br>[root@es-node1 ~]#cat &#x2F;etc&#x2F;elasticsearch&#x2F;elasticsearch.yml|grep xpack.security.enabled<br>#xpack.security.enabled: true<br>xpack.security.enabled: false<br>[root@es-node1 ~]#systemctl restart elasticsearch</p>
+<p>#访问http9200端口<br>[root@es-node1 ~]#curl <a target="_blank" rel="noopener" href="http://127.0.0.1:9200/">http://127.0.0.1:9200/</a><br>{<br>  “name” : “node-1”,<br>  “cluster_name” : “elasticsearch”,<br>  “cluster_uuid” : “F8QsLBF5TVKl6tPAt8laRQ”,<br>  “version” : {<br>    “number” : “8.6.1”,<br>    “build_flavor” : “default”,<br>    “build_type” : “deb”,<br>    “build_hash” : “180c9830da956993e59e2cd70eb32b5e383ea42c”,<br>    “build_date” : “2023-01-24T21:35:11.506992272Z”,<br>    “build_snapshot” : false,<br>    “lucene_version” : “9.4.2”,<br>    “minimum_wire_compatibility_version” : “7.17.0”,<br>    “minimum_index_compatibility_version” : “7.0.0”<br>  },<br>  “tagline” : “You Know, for Search”<br>}基于Docker的单节点部署<br>[root@es-node1 ~]#apt update &amp;&amp; apt install docker.io -y</p>
+<p>#docker优化处理<br>vim &#x2F;etc&#x2F;docker&#x2F;daemon.json<br>{<br>“registry-mirrors”: [  –&gt; 更换镜像下载源<br>“<a target="_blank" rel="noopener" href="https://registry.docker-cn.com/">https://registry.docker-cn.com</a>“,<br>“<a target="_blank" rel="noopener" href="http://hub-mirror.c.163.com/">http://hub-mirror.c.163.com</a>“,<br>“<a target="_blank" rel="noopener" href="https://docker.mirrors.ustc.edu.cn/">https://docker.mirrors.ustc.edu.cn</a>“<br>],<br>“insecure-registries”: [“serverIP”], –&gt; 公司内部私有仓库地址<br>“exec-opts”: [“native.cgroupdriver&#x3D;systemd”], –&gt; 以服务的方式进行托管，新版已经默认<br>“graph”: “&#x2F;data&#x2F;docker”,  –&gt; 指定docker数据目录,之后所有的容器都会在这里生成，建议单独设置一个大容量的SSD高速磁盘挂载<br>“max-concurrent-downloads”: 10, –&gt; 最大并发下载<br>“max-concurrent-uploads”: 5, –&gt; 最大并发上传<br>“log-opts”: { –&gt; 设置每个文件的日志大小<br>“max-size”: “300m”,<br>“max-file”: “2”<br>},<br>“live-restore”: true –&gt; 重启docker-daemon 不关闭容器<br>}</p>
+<p>[root@es-node1 ~]#systemctl restart docker<br>[root@es-node1 ~]#docker info<br>Client:<br> Context:    default<br> Debug Mode: false</p>
+<p>Server:<br> Containers: 0<br>  Running: 0<br>  Paused: 0<br>  Stopped: 0<br> Images: 0<br> Server Version: 20.10.12<br> Storage Driver: overlay2<br>  Backing Filesystem: extfs<br>  Supports d_type: true<br>  Native Overlay Diff: true<br>  userxattr: false<br> Logging Driver: json-file<br> Cgroup Driver: systemd<br> Cgroup Version: 2<br> Plugins:<br>  Volume: local<br>  Network: bridge host ipvlan macvlan null overlay<br>  Log: awslogs fluentd gcplogs gelf journald json-file local logentries splunk syslog<br> Swarm: inactive<br> Runtimes: io.containerd.runc.v2 io.containerd.runtime.v1.linux runc<br> Default Runtime: runc<br> Init Binary: docker-init<br> containerd version:<br> runc version:<br> init version:<br> Security Options:<br>  apparmor<br>  seccomp<br>   Profile: default<br>  cgroupns<br> Kernel Version: 5.15.0-60-generic<br> Operating System: Ubuntu 22.04.1 LTS<br> OSType: linux<br> Architecture: x86_64<br> CPUs: 2<br> Total Memory: 3.832GiB<br> Name: es-node1.mooreyxia.org<br> ID: 5ZIS:4WMN:2ZRL:OGRW:ORGV:AYFK:OXGM:33VR:THPJ:ID3D:HNUE:ABP6<br> Docker Root Dir: &#x2F;data&#x2F;docker<br> Debug Mode: false<br> Registry: <a target="_blank" rel="noopener" href="https://index.docker.io/v1/">https://index.docker.io/v1/</a><br> Labels:<br> Experimental: false<br> Insecure Registries:<br>  127.0.0.0&#x2F;8<br> Registry Mirrors:<br>  <a target="_blank" rel="noopener" href="https://registry.docker-cn.com/">https://registry.docker-cn.com/</a><br>  <a target="_blank" rel="noopener" href="http://hub-mirror.c.163.com/">http://hub-mirror.c.163.com/</a><br>  <a target="_blank" rel="noopener" href="https://docker.mirrors.ustc.edu.cn/">https://docker.mirrors.ustc.edu.cn/</a><br> Live Restore Enabled: true</p>
+<p>#单节点部署elasticsearch<br>[root@es-node1 ~]#docker run –name es-single-node -d -p 9200:9200 -p 9300:9300 -e “discovery.type&#x3D;single-node” docker.elastic.co&#x2F;elasticsearch&#x2F;elasticsearch:8.6.1<br>Unable to find image ‘docker.elastic.co&#x2F;elasticsearch&#x2F;elasticsearch:8.6.1’ locally<br>8.6.1: Pulling from elasticsearch&#x2F;elasticsearch<br>36a9c60c46d0: Pull complete<br>cf7890c3f5b2: Pull complete<br>67412efab420: Pull complete<br>de2143dc81a9: Pull complete<br>83bbda4d56a5: Pull complete<br>e4273bcd0106: Pull complete<br>1ea52dee1d5f: Pull complete<br>0749992d4ecd: Pull complete<br>14460fed490f: Pull complete<br>Digest: sha256:159534b0af912835c708face6c4620029adbbd0d27c8cccd34968d2dba8d74b8<br>Status: Downloaded newer image for docker.elastic.co&#x2F;elasticsearch&#x2F;elasticsearch:8.6.1<br>8bbf2a7600425330c06fd364e3ce0b1f08a9f4ebd4cbcab5bf16e7c8dc8db370<br>[root@es-node1 ~]#docker images<br>REPOSITORY                                      TAG       IMAGE ID       CREATED       SIZE<br>docker.elastic.co&#x2F;elasticsearch&#x2F;elasticsearch   8.6.1     704e34a98f9a   4 weeks ago   1.29GB</p>
+<p>#8.6.1版本需要关闭9200访问服务验证才能访问，旧版不用做<br>[root@es-node1 ~]#docker exec -it es-single-node sh<br>sh-5.0$ ls<br>LICENSE.txt  NOTICE.txt  README.asciidoc  bin  config  data  jdk  lib  logs  modules  plugins<br>sh-5.0$ ls config&#x2F;<br>certs           elasticsearch.keystore  jvm.options    log4j2.file.properties  role_mapping.yml  users<br>elasticsearch-plugins.example.yml  elasticsearch.yml     jvm.options.d  log4j2.properties    roles.yml      users_roles<br>sh-5.0$ cat config&#x2F;elasticsearch.yml<br>cluster.name: “docker-cluster”<br>network.host: 0.0.0.0</p>
+<p>#———————– BEGIN SECURITY AUTO CONFIGURATION ———————–<br>#</p>
+<h1 id="The-following-settings-TLS-certificates-and-keys-have-been-automatically-1"><a href="#The-following-settings-TLS-certificates-and-keys-have-been-automatically-1" class="headerlink" title="The following settings, TLS certificates, and keys have been automatically"></a>The following settings, TLS certificates, and keys have been automatically</h1><h1 id="generated-to-configure-Elasticsearch-security-features-on-24-02-2023-07-00-40"><a href="#generated-to-configure-Elasticsearch-security-features-on-24-02-2023-07-00-40" class="headerlink" title="generated to configure Elasticsearch security features on 24-02-2023 07:00:40"></a>generated to configure Elasticsearch security features on 24-02-2023 07:00:40</h1><h1 id="-29"><a href="#-29" class="headerlink" title=""></a></h1><h1 id="——————————————————————————–-1"><a href="#——————————————————————————–-1" class="headerlink" title="——————————————————————————–"></a>——————————————————————————–</h1><h1 id="Enable-security-features-1"><a href="#Enable-security-features-1" class="headerlink" title="Enable security features"></a>Enable security features</h1><p>xpack.security.enabled: true</p>
+<p>xpack.security.enrollment.enabled: true</p>
+<h1 id="Enable-encryption-for-HTTP-API-client-connections-such-as-Kibana-Logstash-and-Agents-1"><a href="#Enable-encryption-for-HTTP-API-client-connections-such-as-Kibana-Logstash-and-Agents-1" class="headerlink" title="Enable encryption for HTTP API client connections, such as Kibana, Logstash, and Agents"></a>Enable encryption for HTTP API client connections, such as Kibana, Logstash, and Agents</h1><p>xpack.security.http.ssl:<br>  enabled: true<br>  keystore.path: certs&#x2F;http.p12</p>
+<h1 id="Enable-encryption-and-mutual-authentication-between-cluster-nodes-1"><a href="#Enable-encryption-and-mutual-authentication-between-cluster-nodes-1" class="headerlink" title="Enable encryption and mutual authentication between cluster nodes"></a>Enable encryption and mutual authentication between cluster nodes</h1><p>xpack.security.transport.ssl:<br>  enabled: true<br>  verification_mode: certificate<br>  keystore.path: certs&#x2F;transport.p12<br>  truststore.path: certs&#x2F;transport.p12<br>#———————– END SECURITY AUTO CONFIGURATION ————————-<br>sh-5.0$ sed -i ‘s&#x2F;xpack.security.enabled: true&#x2F;xpack.security.enabled: false&#x2F;‘ config&#x2F;elasticsearch.yml<br>sh-5.0$ cat config&#x2F;elasticsearch.yml<br>cluster.name: “docker-cluster”<br>network.host: 0.0.0.0</p>
+<p>#———————– BEGIN SECURITY AUTO CONFIGURATION ———————–<br>#</p>
+<h1 id="The-following-settings-TLS-certificates-and-keys-have-been-automatically-2"><a href="#The-following-settings-TLS-certificates-and-keys-have-been-automatically-2" class="headerlink" title="The following settings, TLS certificates, and keys have been automatically"></a>The following settings, TLS certificates, and keys have been automatically</h1><h1 id="generated-to-configure-Elasticsearch-security-features-on-24-02-2023-07-00-40-1"><a href="#generated-to-configure-Elasticsearch-security-features-on-24-02-2023-07-00-40-1" class="headerlink" title="generated to configure Elasticsearch security features on 24-02-2023 07:00:40"></a>generated to configure Elasticsearch security features on 24-02-2023 07:00:40</h1><h1 id="-30"><a href="#-30" class="headerlink" title=""></a></h1><h1 id="——————————————————————————–-2"><a href="#——————————————————————————–-2" class="headerlink" title="——————————————————————————–"></a>——————————————————————————–</h1><h1 id="Enable-security-features-2"><a href="#Enable-security-features-2" class="headerlink" title="Enable security features"></a>Enable security features</h1><p>xpack.security.enabled: false</p>
+<p>xpack.security.enrollment.enabled: true</p>
+<h1 id="Enable-encryption-for-HTTP-API-client-connections-such-as-Kibana-Logstash-and-Agents-2"><a href="#Enable-encryption-for-HTTP-API-client-connections-such-as-Kibana-Logstash-and-Agents-2" class="headerlink" title="Enable encryption for HTTP API client connections, such as Kibana, Logstash, and Agents"></a>Enable encryption for HTTP API client connections, such as Kibana, Logstash, and Agents</h1><p>xpack.security.http.ssl:<br>  enabled: true<br>  keystore.path: certs&#x2F;http.p12</p>
+<h1 id="Enable-encryption-and-mutual-authentication-between-cluster-nodes-2"><a href="#Enable-encryption-and-mutual-authentication-between-cluster-nodes-2" class="headerlink" title="Enable encryption and mutual authentication between cluster nodes"></a>Enable encryption and mutual authentication between cluster nodes</h1><p>xpack.security.transport.ssl:<br>  enabled: true<br>  verification_mode: certificate<br>  keystore.path: certs&#x2F;transport.p12<br>  truststore.path: certs&#x2F;transport.p12<br>#———————– END SECURITY AUTO CONFIGURATION ————————-<br>sh-5.0$ exit<br>exit<br>[root@es-node1 ~]#docker restart es-single-node<br>es-single-node</p>
+<p>#访问测试<br>[root@es-node1 ~]#curl <a target="_blank" rel="noopener" href="http://192.168.11.200:9200/">http://192.168.11.200:9200</a><br>{<br>  “name” : “8bbf2a760042”,<br>  “cluster_name” : “docker-cluster”,<br>  “cluster_uuid” : “DCuw_PO8TmiOWz3J2JqX9w”,<br>  “version” : {<br>    “number” : “8.6.1”,<br>    “build_flavor” : “default”,<br>    “build_type” : “docker”,<br>    “build_hash” : “180c9830da956993e59e2cd70eb32b5e383ea42c”,<br>    “build_date” : “2023-01-24T21:35:11.506992272Z”,<br>    “build_snapshot” : false,<br>    “lucene_version” : “9.4.2”,<br>    “minimum_wire_compatibility_version” : “7.17.0”,<br>    “minimum_index_compatibility_version” : “7.0.0”<br>  },<br>  “tagline” : “You Know, for Search”<br>}我是moore,大家一起加油！</p>
+
+      
+       <hr><span style="font-style: italic;color: gray;"> 转载请注明来源，欢迎对文章中的引用来源进行考证，欢迎指出任何有错误或不够清晰的表达。可以在下面评论区评论，也可以邮件至 jaytp@qq.com </span>
+    </div>
+</article>
+
+
+<p>
+    <a  class="dashang" onclick="dashangToggle()">💰</a>
+</p>
+
+
+
+
+
+
+    
+
+
+
+
+    </div>
+    <div class="copyright">
+        <p class="footer-entry">
+    ©2016-2020 Yelog
+</p>
+<p class="footer-entry">Built with <a href="https://hexo.io/" target="_blank">Hexo</a> and <a href="https://github.com/yelog/hexo-theme-3-hexo" target="_blank">3-hexo</a> theme</p>
+
+    </div>
+    <div class="full-toc">
+        <button class="full" data-title="切换全屏 快捷键 s"><span class="min "></span></button>
+<a class="" id="rocket" ></a>
+
+    </div>
+</div>
+
+<div class="hide_box" onclick="dashangToggle()"></div>
+<div class="shang_box">
+    <a class="shang_close"  onclick="dashangToggle()">×</a>
+    <div class="shang_tit">
+        <p>Help us with donation</p>
+    </div>
+    <div class="shang_payimg">
+        <div class="pay_img">
+            <img src="/img/alipay.jpg" class="alipay" title="扫码支持">
+            <img src="/img/weixin.jpg" class="weixin" title="扫码支持">
+        </div>
+    </div>
+    <div class="shang_payselect">
+        <span><label><input type="radio" name="pay" checked value="alipay">alipay</label></span><span><label><input type="radio" name="pay" value="weixin">weixin</label></span>
+    </div>
+</div>
+
+
+</body>
+<script src="/js/jquery.pjax.js?v=1.1.0" ></script>
+
+<script src="/js/script.js?v=1.1.0" ></script>
+<script>
+    var img_resize = 'default';
+    function initArticle() {
+        /*渲染对应的表格样式*/
+        
+            $("#post .pjax table").addClass("green_title");
+        
+
+        /*渲染打赏样式*/
+        
+        $("input[name=pay]").on("click", function () {
+            if($("input[name=pay]:checked").val()=="weixin"){
+                $(".shang_box .shang_payimg .pay_img").addClass("weixin_img");
+            } else {
+                $(".shang_box .shang_payimg .pay_img").removeClass("weixin_img");
+            }
+        })
+        
+
+        /*高亮代码块行号*/
+        
+
+        /*访问数量*/
+        
+        $.getScript("//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js");
+        
+
+        /*代码高亮，行号对齐*/
+        $('.pre-numbering').css('line-height',$('.has-numbering').css('line-height'));
+
+        
+        
+    }
+
+    /*打赏页面隐藏与展示*/
+    
+    function dashangToggle() {
+        $(".shang_box").fadeToggle();
+        $(".hide_box").fadeToggle();
+    }
+    
+
+</script>
+
+<!--加入行号的高亮代码块样式-->
+
+<!--自定义样式设置-->
+<style>
+    
+    
+    .nav {
+        width: 542px;
+    }
+    .nav.fullscreen {
+        margin-left: -542px;
+    }
+    .nav-left {
+        width: 120px;
+    }
+    
+    
+    @media screen and (max-width: 1468px) {
+        .nav {
+            width: 492px;
+        }
+        .nav.fullscreen {
+            margin-left: -492px;
+        }
+        .nav-left {
+            width: 100px;
+        }
+    }
+    
+    
+    @media screen and (max-width: 1024px) {
+        .nav {
+            width: 492px;
+            margin-left: -492px
+        }
+        .nav.fullscreen {
+            margin-left: 0;
+        }
+    }
+    
+    @media screen and (max-width: 426px) {
+        .nav {
+            width: 100%;
+        }
+        .nav-left {
+            width: 100%;
+        }
+    }
+    
+    
+    .nav-right .title-list nav a .post-title, .nav-right .title-list #local-search-result a .post-title {
+        color: #383636;
+    }
+    
+    
+    .nav-right .title-list nav a .post-date, .nav-right .title-list #local-search-result a .post-date {
+        color: #5e5e5f;
+    }
+    
+    
+    .nav-right nav a.hover, #local-search-result a.hover{
+        background-color: #e2e0e0;
+    }
+    
+    
+
+    /*列表样式*/
+    
+
+    /* 背景图样式 */
+    
+    
+
+
+    /*引用块样式*/
+    
+
+    /*文章列表背景图*/
+    
+
+    
+</style>
+
+
+
+
+
+
+
+</html>

@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>52-HAProxy-10种负载均衡调度算法 | Hexo</title>
+  <meta name="keywords" content="">
+  <meta name="description" content="52-HAProxy-10种负载均衡调度算法 | Hexo">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="description" content="基于现有虚拟机磁盘为模版创建新的虚拟机使用 virt-install 创建虚拟机• 虽然使用virt-manager 可以方便的管理虚拟机,但如果需要批量进行虚拟机的创建管理,命令行工具virtinstall更加方便和适合案例：利用 qemu-img命令创建虚拟磁盘#注意: qemu-img create 一定要确认对应路径下没有此文件,如果存在将覆盖原文件  确认现有的虚拟磁盘文件[root@u">
+<meta property="og:type" content="article">
+<meta property="og:title" content="42-KVM虚拟化-基于现有虚拟机磁盘为模版创建新的虚拟机">
+<meta property="og:url" content="http://example.com/2023/05/14/42-KVM%E8%99%9A%E6%8B%9F%E5%8C%96-%E5%9F%BA%E4%BA%8E%E7%8E%B0%E6%9C%89%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%A3%81%E7%9B%98%E4%B8%BA%E6%A8%A1%E7%89%88%E5%88%9B%E5%BB%BA%E6%96%B0%E7%9A%84%E8%99%9A%E6%8B%9F%E6%9C%BA/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="基于现有虚拟机磁盘为模版创建新的虚拟机使用 virt-install 创建虚拟机• 虽然使用virt-manager 可以方便的管理虚拟机,但如果需要批量进行虚拟机的创建管理,命令行工具virtinstall更加方便和适合案例：利用 qemu-img命令创建虚拟磁盘#注意: qemu-img create 一定要确认对应路径下没有此文件,如果存在将覆盖原文件  确认现有的虚拟磁盘文件[root@u">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="http://example.com/img/092d6b54082e04ec1c20121058c692bc5844b5.png">
+<meta property="og:image" content="http://example.com/img/f8bada3025892d742fe1746c42ead86f562ddc.png">
+<meta property="article:published_time" content="2023-05-14T08:21:34.888Z">
+<meta property="article:modified_time" content="2023-05-14T08:23:40.552Z">
+<meta property="article:author" content="John Doe">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/img/092d6b54082e04ec1c20121058c692bc5844b5.png">
+
+
+<link rel="icon" href="/img/avatar.jpg">
+
+<link href="/css/style.css?v=1.1.0" rel="stylesheet">
+
+<link href="/css/hl_theme/atom-light.css?v=1.1.0" rel="stylesheet">
+
+<link href="//cdn.jsdelivr.net/npm/animate.css@4.1.0/animate.min.css" rel="stylesheet">
+
+<script src="//cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js"></script>
+<script src="/js/titleTip.js?v=1.1.0" ></script>
+
+<script src="//cdn.jsdelivr.net/npm/highlightjs@9.16.2/highlight.pack.min.js"></script>
+<script>
+    hljs.initHighlightingOnLoad();
+</script>
+
+<script src="//cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.min.js"></script>
+
+
+
+<script src="//cdn.jsdelivr.net/npm/jquery.cookie@1.4.1/jquery.cookie.min.js" ></script>
+
+<script src="/js/iconfont.js?v=1.1.0" ></script>
+
+<meta name="generator" content="Hexo 6.3.0"></head>
+<div style="display: none">
+  <input class="theme_disqus_on" value="false">
+  <input class="theme_preload_comment" value="">
+  <input class="theme_blog_path" value="">
+  <input id="theme_shortcut" value="true" />
+  <input id="theme_highlight_on" value="true" />
+  <input id="theme_code_copy" value="true" />
+</div>
+
+
+
+<body>
+<aside class="nav">
+    <div class="nav-left">
+        <a href="/"
+   class="avatar_target">
+    <img class="avatar"
+         src="/img/avatar.jpg"/>
+</a>
+<div class="author">
+    <span>John Doe</span>
+</div>
+
+<div class="icon">
+    
+        
+            <a title="rss"
+               href="/atom.xml"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-rss"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="github"
+               href="https://github.com/yelog"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-github"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="facebook"
+               href="https://www.facebook.com/faker.tops"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-facebook"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+    
+        
+    
+        
+            <a title="instagram"
+               href="https://www.facebook.com/faker.tops"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-instagram"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="reddit"
+               href="https://www.reddit.com/user/yelog/"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-reddit"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="weibo"
+               href="http://weibo.com/u/2307534817"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-weibo"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="jianshu"
+               href="https://www.jianshu.com/u/ff56736de7cf"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-jianshu"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="zhihu"
+               href="https://www.zhihu.com/people/jaytp/activities"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-zhihu"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+    
+        
+            <a title="oschina"
+               href="https://my.oschina.net/yelog"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-oschina"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+    
+        
+            <a title="email"
+               href="mailto:jaytp@qq.com"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-email"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="qq"
+               href="http://wpa.qq.com/msgrd?v=3&uin=872336115&site=qq&menu=yes"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-qq"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="kugou"
+               href="https://www.kugou.com/"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-kugou"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="neteasemusic"
+               href="https://music.163.com/#/user/home?id=88151013"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-neteasemusic"></use>
+                    </svg>
+                
+            </a>
+        
+    
+</div>
+
+
+
+
+<ul>
+    <li>
+        <div class="all active" data-rel="All">All
+            
+                <small>(36)</small>
+            
+        </div>
+    </li>
+    
+        
+            
+                <li>
+                    <div data-rel="SRE linux云计算">
+                        
+                        SRE linux云计算
+                        <small>(11)</small>
+                        
+                    </div>
+                    
+                </li>
+            
+        
+    
+        
+            
+                <li>
+                    <div data-rel="云原生">
+                        
+                        云原生
+                        <small>(10)</small>
+                        
+                    </div>
+                    
+                </li>
+            
+        
+    
+        
+            
+                <li>
+                    <div data-rel="PMP管理">
+                        
+                        PMP管理
+                        <small>(1)</small>
+                        
+                    </div>
+                    
+                </li>
+            
+        
+    
+        
+            
+                <li>
+                    <div data-rel="Python 爬虫">
+                        
+                        Python 爬虫
+                        <small>(14)</small>
+                        
+                    </div>
+                    
+                </li>
+            
+        
+    
+</ul>
+<div class="left-bottom">
+    <div class="menus">
+        
+            
+            
+            
+    </div>
+    <div>
+        
+            <a class="about  hasFriend  site_url"
+               
+               href="/about">About</a>
+        
+        <a style="width: 50%"
+                
+                                           class="friends">Friends</a>
+        
+    </div>
+</div>
+<input type="hidden" id="yelog_site_posts_number" value="36">
+
+<div style="display: none">
+    <span id="busuanzi_value_site_uv"></span>
+    <span id="busuanzi_value_site_pv"></span>
+</div>
+
+    </div>
+    <div class="nav-right">
+        <div class="friends-area">
+    <div class="friends-title">
+        Links
+        <i class="iconfont icon-left"></i>
+    </div>
+    <div class="friends-content">
+        <ul>
+            
+            <li><a target="_blank" href="http://yelog.org/">叶落阁</a></li>
+            
+        </ul>
+    </div>
+</div>
+        <div class="title-list">
+    <div class="right-top">
+        <div id="default-panel">
+            <i class="iconfont icon-search" data-title="搜索 快捷键 i"></i>
+            <div class="right-title">All</div>
+            <i class="iconfont icon-file-tree" data-title="切换到大纲视图 快捷键 w"></i>
+        </div>
+        <div id="search-panel">
+            <i class="iconfont icon-left" data-title="返回"></i>
+            <input id="local-search-input" autocomplete="off"/>
+            <label class="border-line" for="input"></label>
+            <i class="iconfont icon-case-sensitive" data-title="大小写敏感"></i>
+            <i class="iconfont icon-tag" data-title="标签"></i>
+        </div>
+        <div id="outline-panel" style="display: none">
+            <div class="right-title">大纲</div>
+            <i class="iconfont icon-list" data-title="切换到文章列表"></i>
+        </div>
+    </div>
+
+    <div class="tags-list">
+    <input id="tag-search" />
+    <div class="tag-wrapper">
+        
+    </div>
+
+</div>
+
+    
+    <nav id="title-list-nav">
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/14/42-KVM%E8%99%9A%E6%8B%9F%E5%8C%96-%E5%9F%BA%E4%BA%8E%E7%8E%B0%E6%9C%89%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%A3%81%E7%9B%98%E4%B8%BA%E6%A8%A1%E7%89%88%E5%88%9B%E5%BB%BA%E6%96%B0%E7%9A%84%E8%99%9A%E6%8B%9F%E6%9C%BA/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="42-KVM虚拟化-基于现有虚拟机磁盘为模版创建新的虚拟机">42-KVM虚拟化-基于现有虚拟机磁盘为模版创建新的虚拟机</span>
+            <span class="post-date" title="2023-05-14 16:21:34">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%B8%89%E7%AB%A0-2-requests%20%E8%BF%9B%E9%98%B6%E2%80%A2%20%E7%88%AC%E5%8F%96%E6%9F%90%E8%A7%86%E9%A2%91%E7%BD%91%E7%9B%B8%E5%85%B3%E8%A7%86%E9%A2%91/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第三章-2-requests 进阶• 爬取某视频网相关视频">Python爬虫-第三章-2-requests 进阶• 爬取某视频网相关视频</span>
+            <span class="post-date" title="2023-05-14 16:20:20">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/14/44-KVM%E8%99%9A%E6%8B%9F%E5%8C%96-%E5%AD%98%E5%82%A8%E7%AE%A1%E7%90%86%E5%92%8C%E7%A3%81%E7%9B%98%E6%89%A9%E5%AE%B9/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="44-KVM虚拟化-存储管理和磁盘扩容">44-KVM虚拟化-存储管理和磁盘扩容</span>
+            <span class="post-date" title="2023-05-14 16:18:30">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%B8%89%E7%AB%A0-3-%E5%88%A9%E7%94%A8re%E6%A8%A1%E5%9D%97%E7%88%AC%E5%8F%96%E6%9F%90%E7%BD%91%E7%94%B5%E5%BD%B1%E6%8E%92%E8%A1%8C%E6%A6%9C/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第三章-3-利用re模块爬取某网电影排行榜">Python爬虫-第三章-3-利用re模块爬取某网电影排行榜</span>
+            <span class="post-date" title="2023-05-14 16:16:51">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/14/46-Docker-Container%E5%AE%B9%E5%99%A8%E7%AE%A1%E7%90%86%E5%90%84%E7%A7%8D%E6%93%8D%E4%BD%9C/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="46-Docker-Container容器管理各种操作">46-Docker-Container容器管理各种操作</span>
+            <span class="post-date" title="2023-05-14 16:14:04">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/14/47-Docker-Dockerfile%E9%95%9C%E5%83%8F%E5%88%9B%E5%BB%BA%E8%87%AA%E5%8A%A8%E5%8C%96%E7%94%9F%E4%BA%A7%E6%A1%88%E4%BE%8B/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="47-Docker-Dockerfile镜像创建自动化生产案例">47-Docker-Dockerfile镜像创建自动化生产案例</span>
+            <span class="post-date" title="2023-05-14 16:09:19">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/14/48-Docker-%E5%A4%9A%E5%AE%B9%E5%99%A8%E6%95%B0%E6%8D%AE%E5%85%B1%E4%BA%AB%E5%8F%8A%E6%8C%81%E4%B9%85%E5%8C%96/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="48-Docker-多容器数据共享及持久化">48-Docker-多容器数据共享及持久化</span>
+            <span class="post-date" title="2023-05-14 16:06:48">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%B8%89%E7%AB%A0-4-%E5%88%A9%E7%94%A8BeautifulSoup%E6%A8%A1%E5%9D%97%E7%88%AC%E5%8F%96%E6%9F%90%E7%BD%91%E5%A3%81%E7%BA%B8%E5%9B%BE%E5%BA%93%E5%9B%BE%E7%89%87/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第三章-4-利用BeautifulSoup模块爬取某网壁纸图库图片">Python爬虫-第三章-4-利用BeautifulSoup模块爬取某网壁纸图库图片</span>
+            <span class="post-date" title="2023-05-14 16:05:34">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%B8%89%E7%AB%A0-5-%E5%88%A9%E7%94%A8xpath%E7%88%AC%E5%8F%96%E6%9F%90%E5%85%AB%E6%88%92%E7%BD%91%E7%9B%B8%E5%85%B3%E8%AF%8D%E8%AF%AD%E5%85%AC%E5%8F%B8%E7%9A%84%E4%BF%A1%E6%81%AF%E5%92%8C%E4%BB%B7%E6%A0%BC/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第三章-5-利用xpath爬取某八戒网相关词语公司的信息和价格">Python爬虫-第三章-5-利用xpath爬取某八戒网相关词语公司的信息和价格</span>
+            <span class="post-date" title="2023-05-14 16:04:16">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%B8%89%E7%AB%A0-6-%E6%8A%93%E5%8F%96%E6%9F%90%E4%BA%91%E9%9F%B3%E4%B9%90%E8%AF%84%E8%AE%BA%E6%95%B0%E6%8D%AE/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第三章-6-抓取某云音乐评论数据">Python爬虫-第三章-6-抓取某云音乐评论数据</span>
+            <span class="post-date" title="2023-05-14 16:03:15">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-1-%E5%A4%9A%E7%BA%BF%E7%A8%8B%E5%A4%9A%E8%BF%9B%E7%A8%8B%E5%B9%B6%E5%8F%91%E7%88%AC%E5%8F%96%E2%85%A0/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-1-多线程多进程并发爬取Ⅰ">Python爬虫-第四章-1-多线程多进程并发爬取Ⅰ</span>
+            <span class="post-date" title="2023-05-14 16:01:27">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-1-%E5%A4%9A%E7%BA%BF%E7%A8%8B%E5%A4%9A%E8%BF%9B%E7%A8%8B%E5%B9%B6%E5%8F%91%E7%88%AC%E5%8F%96%E2%85%A1/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-1-多线程多进程并发爬取Ⅱ">Python爬虫-第四章-1-多线程多进程并发爬取Ⅱ</span>
+            <span class="post-date" title="2023-05-14 16:00:37">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-1-%E5%A4%9A%E7%BA%BF%E7%A8%8B%E5%A4%9A%E8%BF%9B%E7%A8%8B%E5%B9%B6%E5%8F%91%E7%88%AC%E5%8F%96%E2%85%A2-%E7%88%AC%E5%8F%96%E6%9F%90%E8%8F%9C%E5%B8%82%E5%9C%BA%E6%89%B9%E5%8F%91%E4%BB%B7%E6%95%B0%E6%8D%AE/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-1-多线程多进程并发爬取Ⅲ-爬取某菜市场批发价数据">Python爬虫-第四章-1-多线程多进程并发爬取Ⅲ-爬取某菜市场批发价数据</span>
+            <span class="post-date" title="2023-05-14 15:59:35">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-2-%E5%8D%8F%E7%A8%8B%E4%B8%8E%E5%BC%82%E6%AD%A5/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-2-协程与异步">Python爬虫-第四章-2-协程与异步</span>
+            <span class="post-date" title="2023-05-14 15:58:20">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/14/52-HAProxy-10%E7%A7%8D%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E8%B0%83%E5%BA%A6%E7%AE%97%E6%B3%95/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="52-HAProxy-10种负载均衡调度算法">52-HAProxy-10种负载均衡调度算法</span>
+            <span class="post-date" title="2023-05-14 15:56:12">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/14/55-Redis-%E7%BC%96%E8%AF%91%E9%83%A8%E7%BD%B2%E5%8F%8A%E6%95%B0%E6%8D%AE%E6%8C%81%E4%B9%85%E5%8C%96/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="55-Redis-编译部署及数据持久化">55-Redis-编译部署及数据持久化</span>
+            <span class="post-date" title="2023-05-14 15:54:02">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/14/56-Redis%E9%9B%86%E7%BE%A4-%E5%93%A8%E5%85%B5Sentinel%E6%90%AD%E5%BB%BA%E5%AE%9E%E7%8E%B0%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E9%AB%98%E5%8F%AF%E7%94%A8/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="56-Redis集群-哨兵Sentinel搭建实现负载均衡高可用">56-Redis集群-哨兵Sentinel搭建实现负载均衡高可用</span>
+            <span class="post-date" title="2023-05-14 15:41:50">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/14/998-%E6%90%AD%E5%BB%BA%E4%B8%80%E5%8F%B0%E7%A7%81%E7%94%A8%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%A8%E8%BF%87%E7%A8%8B/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="998-搭建一台私用服务器全过程">998-搭建一台私用服务器全过程</span>
+            <span class="post-date" title="2023-05-14 15:36:20">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/%20Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-3-%E5%A4%9A%E7%BA%BF%E7%A8%8B%E5%A4%9A%E8%BF%9B%E7%A8%8B%E6%8F%90%E5%8D%87%E4%BB%BB%E5%8A%A1%E6%89%A7%E8%A1%8C%E6%95%88%E7%8E%87/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-3-多线程多进程提升任务执行效率">Python爬虫-第四章-3-多线程多进程提升任务执行效率</span>
+            <span class="post-date" title="2023-05-14 15:35:16">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/%20Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-4-%E5%88%A9%E7%94%A8%E7%BA%BF%E7%A8%8B%E6%B1%A0%E5%92%8C%E8%BF%9B%E7%A8%8B%E6%B1%A0%E9%AB%98%E6%95%88%E7%88%AC%E5%8F%96%E5%8C%97%E4%BA%AC%E6%9F%90%E5%8F%91%E8%8F%9C%E5%9C%B0%E6%95%B0%E6%8D%AE/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-4-利用线程池和进程池高效爬取北京某发菜地数据">Python爬虫-第四章-4-利用线程池和进程池高效爬取北京某发菜地数据</span>
+            <span class="post-date" title="2023-05-14 15:34:07">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/13/%20Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-5-%E9%AB%98%E6%95%88%E6%8A%93%E5%8F%96%E8%A7%86%E9%A2%91%E7%BD%91%E7%AB%99%E8%A7%86%E9%A2%91%E8%B5%84%E6%BA%90%E8%87%B3%E6%9C%AC%E5%9C%B0/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-5-高效抓取视频网站视频资源至本地">Python爬虫-第四章-5-高效抓取视频网站视频资源至本地</span>
+            <span class="post-date" title="2023-05-13 20:13:14">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/13/%20Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%BA%94%E7%AB%A0-1-%E8%B6%85%E7%BA%A7%E9%B9%B0%E6%8F%92%E4%BB%B6%E5%AE%9E%E7%8E%B0%E8%87%AA%E5%8A%A8%E5%A1%AB%E5%86%99%E8%AF%86%E5%88%AB%E7%A0%81%E5%B9%B6%E7%99%BB%E5%BD%9512306%E7%BD%91%E7%AB%99/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第五章-1-超级鹰插件实现自动填写识别码并登录12306网站">Python爬虫-第五章-1-超级鹰插件实现自动填写识别码并登录12306网站</span>
+            <span class="post-date" title="2023-05-13 19:54:30">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/13/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%BA%94%E7%AB%A0-2-%E7%88%AC%E5%8F%96%E6%9F%90%E7%BD%91%E7%AB%99%E5%9B%BE%E5%BA%93/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第五章-2-爬取某网站图库">Python爬虫-第五章-2-爬取某网站图库</span>
+            <span class="post-date" title="2023-05-13 19:52:47">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/66-CICD%E6%8C%81%E7%BB%AD%E9%9B%86%E6%88%90%E5%B7%A5%E5%85%B7-Jenkins%E5%A3%B0%E6%98%8E%E5%BC%8FPipeline%E9%83%A8%E7%BD%B2JAVA%E7%A8%8B%E5%BA%8F%E7%94%9F%E4%BA%A7%E6%A1%88%E4%BE%8B(%E5%8C%85%E5%90%ABDocker%E6%A1%88%E4%BE%8B)/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="66-CICD持续集成工具-Jenkins声明式Pipeline部署JAVA程序生产案例(包含Docker案例)">66-CICD持续集成工具-Jenkins声明式Pipeline部署JAVA程序生产案例(包含Docker案例)</span>
+            <span class="post-date" title="2023-05-13 19:49:20">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/997-%E6%89%A9%E5%B1%95KVM%E8%99%9A%E6%8B%9F%E6%9C%BA%E9%80%BB%E8%BE%91%E5%8D%B7/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="67-日志分析系统ELK-ELK架构简述">67-日志分析系统ELK-ELK架构简述</span>
+            <span class="post-date" title="2023-05-13 19:47:57">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/67-%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90%E7%B3%BB%E7%BB%9FELK-ELK%E6%9E%B6%E6%9E%84%E7%AE%80%E8%BF%B0/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="67-日志分析系统ELK-ELK架构简述">67-日志分析系统ELK-ELK架构简述</span>
+            <span class="post-date" title="2023-05-13 19:46:06">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/68-%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90%E7%B3%BB%E7%BB%9FELK-Elasticsearch%E5%8D%95%E7%82%B9%E9%83%A8%E7%BD%B2%E5%92%8C%E9%85%8D%E7%BD%AE%E4%BC%98%E5%8C%96%EF%BC%88%E5%90%AB%E5%9F%BA%E4%BA%8EDocker%E5%8D%95%E7%82%B9%E9%83%A8%E7%BD%B2%E6%A1%88%E4%BE%8B%EF%BC%89/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="68-日志分析系统ELK-Elasticsearch单点部署和配置优化（含基于Docker单点部署案例）">68-日志分析系统ELK-Elasticsearch单点部署和配置优化（含基于Docker单点部署案例）</span>
+            <span class="post-date" title="2023-05-13 19:44:06">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/13/78-%E4%BA%91%E5%8E%9F%E7%94%9F%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-Kubernetes%E9%9B%86%E7%BE%A4%E8%8A%82%E7%82%B9%E6%A8%AA%E5%90%91%E4%BC%B8%E7%BC%A9%E5%8F%8A%E6%A0%B8%E5%BF%83%E7%BB%84%E4%BB%B6%E7%89%88%E6%9C%AC%E5%8D%87%E7%BA%A7/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="78-云原生操作系统-Kubernetes集群节点横向伸缩及核心组件版本升级">78-云原生操作系统-Kubernetes集群节点横向伸缩及核心组件版本升级</span>
+            <span class="post-date" title="2023-05-13 17:37:37">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/13/79-%E4%BA%91%E5%8E%9F%E7%94%9F%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-Kubectl%E5%91%BD%E4%BB%A4%E4%BB%A5%E5%8F%8AEtcd%E5%9F%BA%E4%BA%8E%E5%BF%AB%E7%85%A7%E7%9A%84%E6%95%B0%E6%8D%AE%E5%A4%87%E4%BB%BD%E4%B8%8E%E6%81%A2%E5%A4%8D/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="79-云原生操作系统-Kubectl命令以及Etcd基于快照的数据备份与恢复">79-云原生操作系统-Kubectl命令以及Etcd基于快照的数据备份与恢复</span>
+            <span class="post-date" title="2023-05-13 17:34:14">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All PMP管理 "
+           href="/2023/05/13/%E9%A2%84%E6%B5%8B%E5%9E%8B%E9%A1%B9%E7%9B%AE%E7%AE%A1%E7%90%86-6-%E9%A1%B9%E7%9B%AE%E8%BF%9B%E5%BA%A6%E7%AE%A1%E7%90%86%E2%85%A1/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="预测型项目管理-6-项目进度管理Ⅱ">预测型项目管理-6-项目进度管理Ⅱ</span>
+            <span class="post-date" title="2023-05-13 17:32:31">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/13/84-%E4%BA%91%E5%8E%9F%E7%94%9F%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-%E5%9F%BA%E4%BA%8Enerdctl%20+%20buildkitd%E6%9E%84%E5%BB%BA%E5%AE%B9%E5%99%A8%E9%95%9C%E5%83%8F20230513/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="84-云原生操作系统-基于nerdctl + buildkitd构建容器镜像">84-云原生操作系统-基于nerdctl + buildkitd构建容器镜像</span>
+            <span class="post-date" title="2023-05-13 17:22:54">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/13/86-%E4%BA%91%E5%8E%9F%E7%94%9F%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-Zookeeper%E9%9B%86%E7%BE%A4%E5%8F%8A%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%8A%A8%E6%80%81%E6%B3%A8%E5%86%8C%E5%92%8C%E5%8F%91%E7%8E%B0%E4%B8%9A%E5%8A%A1%E5%AE%B9%E5%99%A8%E5%8C%96%E6%A1%88%E4%BE%8B/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="86-云原生操作系统-Zookeeper集群及微服务动态注册和发现业务容器化案例">86-云原生操作系统-Zookeeper集群及微服务动态注册和发现业务容器化案例</span>
+            <span class="post-date" title="2023-05-13 17:13:23">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/13/87-%E4%BA%91%E5%8E%9F%E7%94%9F%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-Redis%E5%8D%95%E6%9C%BA%E5%92%8C%E9%9B%86%E7%BE%A4%E4%B8%9A%E5%8A%A1%E5%AE%B9%E5%99%A8%E5%8C%96%E6%A1%88%E4%BE%8B/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="87-云原生操作系统-Redis单机和集群业务容器化案例">87-云原生操作系统-Redis单机和集群业务容器化案例</span>
+            <span class="post-date" title="2023-05-13 17:08:49">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/997-%E4%BD%BF%E7%94%A8ChatGPT%E5%81%9A%E8%BF%90%E7%BB%B4%E5%BA%94%E7%94%A8%E5%B7%A5%E5%85%B7%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E8%A7%A3%E7%AD%94/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="997-使用ChatGPT做运维应用工具常见问题解答">997-使用ChatGPT做运维应用工具常见问题解答</span>
+            <span class="post-date" title="2023-05-13 15:49:52">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/%E5%A4%A7%E5%9E%8B%E4%BA%92%E8%81%94%E7%BD%91%E5%BE%AE%E6%9C%8D%E5%8A%A1%E6%9E%B6%E6%9E%84%E5%9B%BE/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="大型互联网微服务架构图">大型互联网微服务架构图</span>
+            <span class="post-date" title="2023-05-13 15:47:16">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/%E4%BA%91%E8%AE%A1%E7%AE%97%E6%9E%B6%E6%9E%84%E5%9B%BE/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="云计算架构图">云计算架构图</span>
+            <span class="post-date" title="2023-05-13 15:24:25">2023/05/13</span>
+        </a>
+        
+        <div id="no-item-tips">
+
+        </div>
+    </nav>
+    <div id="outline-list">
+    </div>
+</div>
+
+    </div>
+    <div class="hide-list">
+        <div class="semicircle" data-title="切换全屏 快捷键 s">
+            <div class="brackets first"><</div>
+            <div class="brackets">&gt;</div>
+        </div>
+    </div>
+</aside>
+<div id="post">
+    <div class="pjax">
+        <article id="post-52-HAProxy-10种负载均衡调度算法" class="article article-type-post" itemscope itemprop="blogPost">
+    
+        <h1 class="article-title">52-HAProxy-10种负载均衡调度算法</h1>
+    
+    <div class="article-meta">
+        
+        
+        
+        <span class="book">
+            <i class="iconfont icon-category"></i>
+            
+            
+            <a  data-rel="SRE linux云计算">SRE linux云计算</a>
+            
+        </span>
+        
+        
+    </div>
+    <div class="article-meta">
+        
+            Created At : <time class="date" title='Updated At: 2023-05-14 15:57:57'>2023-05-14 15:56</time>
+        
+    </div>
+    <div class="article-meta">
+        
+        
+        <span id="busuanzi_container_page_pv">
+            Views 👀 :<span id="busuanzi_value_page_pv">
+                <span class="count-comment">
+                    <span class="spinner">
+                      <div class="cube1"></div>
+                      <div class="cube2"></div>
+                    </span>
+                </span>
+            </span>
+        </span>
+        
+        
+    </div>
+    
+    <div class="toc-ref">
+    
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#name"><span class="toc-text">name</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#be-id-be-name-srv-id-srv-name-srv-addr-srv-op-state-srv-admin-state-srv-uweight-srv-iweight-srv-time-since-last-change-srv-check-status-srv-check-result-srv-check-health-srv-check-state-srv-agent-state-bk-f-forced-id-srv-f-forced-id-srv-fqdn-srv-port-srvrecord-srv-use-ssl-srv-check-port-srv-check-addr-srv-agent-addr-srv-agent-port"><span class="toc-text">be_id be_name srv_id srv_name srv_addr srv_op_state srv_admin_state srv_uweight srv_iweight srv_time_since_last_change srv_check_status srv_check_result srv_check_health srv_check_state srv_agent_state bk_f_forced_id srv_f_forced_id srv_fqdn srv_port srvrecord srv_use_ssl srv_check_port srv_check_addr srv_agent_addr srv_agent_port</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#bind-192-168-10-200-80"><span class="toc-text">bind 192.168.10.200:80</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#use-backend-www-mooreyxia-org-servers"><span class="toc-text">use_backend www.mooreyxia.org_servers</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#server-web01-10-0-0-202-80-check-inter-3000-fall-3-rise-5"><span class="toc-text">server web01 10.0.0.202:80 check inter 3000 fall 3 rise 5</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#server-web02-10-0-0-203-80-check-inter-3000-fall-3-rise-5"><span class="toc-text">server web02 10.0.0.203:80 check inter 3000 fall 3 rise 5</span></a></li></ol>
+    
+<style>
+    .left-col .switch-btn,
+    .left-col .switch-area {
+        display: none;
+    }
+    .toc-level-3 i,
+    .toc-level-3 ol {
+        display: none !important;
+    }
+</style>
+</div>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>HAProxy 调度算法<br>在LVS关于负载均衡的十种调度算法中,分为静态调度算法和动态调度算法两种，静态调度是指无视后端服务负载情况执行调度命令，而动态调度算法是根据后端的动态变化负载权重去执行调度命令。这种类似的用法在haproxy中也存在。<br>HAProxy通过固定参数 balance 指明对后端服务器的调度算法，该参数可以配置在listen或backend选项中。<br>HAProxy的调度算法分为静态和动态调度算法，但是有些算法可以根据参数在静态和动态算法中相互转换。<br>官方文档：​​<a target="_blank" rel="noopener" href="http://cbonte.github.io/haproxy-dconv/2.4/configuration.html#4-balance%E2%80%8B%E2%80%8B">http://cbonte.github.io/haproxy-dconv/2.4/configuration.html#4-balance​​</a><br>静态算法：<br>• 按照事先定义好的规则轮询进行调度，不关心后端服务器的当前负载、连接数和响应速度等，且无法实时动态修改权重(只能为0和1,不支持其它值)或者修改后不生效，如果需要修改只能靠重启HAProxy生效。<br>Socat 工具 - 有利于实现脚本自动化管理<br>• 对服务器动态权重和其它状态可以利用 socat工具进行调整，Socat 是 Linux 下的一个多功能的网络工具，名字来由是Socket CAT，相当于netCAT的增强版.Socat 的主要特点就是在两个数据流之间建立双向通道，且支持众多协议和链接方式。如 IP、TCP、 UDP、IPv6、Socket文件等<br>案例：利用工具socat 对haproxy服务器进行管理 - 不用重启服务能立即生效，注意只针对单进程有效<br><a target="_blank" rel="noopener" href="http://haproxy-server:9999/haproxy-status">http://haproxy-server:9999/haproxy-status</a> 状态页面也可以查看<br>#同一主机上两个程序，例如客户端程序与服务端程序，可通过socket进行通讯 haproxy自带socket<br>[root@haproxy ~]#cat &#x2F;etc&#x2F;haproxy&#x2F;haproxy.cfg<br>global<br>maxconn 100000<br>stats socket &#x2F;var&#x2F;lib&#x2F;haproxy&#x2F;haproxy.sock mode 600 level admin  –&gt; 该文件实现socket和haproxy之间的通讯<br>….<br>[root@haproxy ~]#file &#x2F;var&#x2F;lib&#x2F;haproxy&#x2F;haproxy.sock<br>&#x2F;var&#x2F;lib&#x2F;haproxy&#x2F;haproxy.sock: socket</p>
+<p>#安装socat<br>[root@haproxy ~]#apt -y install socat<br>#查看帮助<br>[root@haproxy ~]#socat -h<br>#查看haproxy.sock可接受那些指令<br>[root@haproxy ~]#echo “help” | socat stdio &#x2F;var&#x2F;lib&#x2F;haproxy&#x2F;haproxy.sock<br>The following commands are valid at this level:<br>  abort ssl ca-file <cafile>              : abort a transaction for a CA file<br>  abort ssl cert <certfile>               : abort a transaction for a certificate file<br>  abort ssl crl-file <crlfile>            : abort a transaction for a CRL file<br>  add acl [@<ver>] <acl> <pattern>        : add an acl entry<br>  add map [@<ver>] <map> <key> <val>      : add a map entry (payload supported instead of key&#x2F;val)<br>  add server <bk>&#x2F;<srv>                   : create a new server<br>  add ssl ca-file <cafile> <payload>      : add a certificate into the CA file<br>  add ssl crt-list <list> <cert> [opts]*  : add to crt-list file <list> a line <cert> or a payload<br>  clear acl [@<ver>] <acl>                : clear the contents of this acl<br>  clear counters [all]                    : clear max statistics counters (or all counters)<br>  clear map [@<ver>] <map>                : clear the contents of this map<br>  clear table <table> [<filter>]*         : remove an entry from a table (filter: data&#x2F;key)<br>  commit acl @<ver> <acl>                 : commit the ACL at this version<br>  commit map @<ver> <map>                 : commit the map at this version<br>  commit ssl ca-file <cafile>             : commit a CA file<br>  commit ssl cert <certfile>              : commit a certificate file<br>  commit ssl crl-file <crlfile>           : commit a CRL file<br>  debug dev hash   [msg]                  : return msg hashed if anon is set<br>  del acl <acl> [<key>|#<ref>]            : delete acl entries matching <key><br>  del map <map> [<key>|#<ref>]            : delete map entries matching <key><br>  del server <bk>&#x2F;<srv>                   : remove a dynamically added server<br>  del ssl ca-file <cafile>                : delete an unused CA file<br>  del ssl cert <certfile>                 : delete an unused certificate file<br>  del ssl crl-file <crlfile>              : delete an unused CRL file<br>  del ssl crt-list <list> &lt;cert[:line]&gt;   : delete a line <cert> from crt-list file <list><br>  disable agent                           : disable agent checks<br>  disable dynamic-cookie backend <bk>     : disable dynamic cookies on a specific backend<br>  disable frontend <frontend>             : temporarily disable specific frontend<br>  disable health                          : disable health checks<br>  disable server (DEPRECATED)             : disable a server for maintenance (use ‘set server’ instead)<br>  enable agent                            : enable agent checks<br>  enable dynamic-cookie backend <bk>      : enable dynamic cookies on a specific backend<br>  enable frontend <frontend>              : re-enable specific frontend<br>  enable health                           : enable health checks<br>  enable server  (DEPRECATED)             : enable a disabled server (use ‘set server’ instead)<br>  get acl <acl> <value>                   : report the patterns matching a sample for an ACL<br>  get map <acl> <value>                   : report the keys and values matching a sample for a map<br>  get var <name>                          : retrieve contents of a process-wide variable<br>  get weight <bk>&#x2F;<srv>                   : report a server’s current weight<br>  new ssl ca-file <cafile>                : create a new CA file to be used in a crt-list<br>  new ssl cert <certfile>                 : create a new certificate file to be used in a crt-list or a directory<br>  new ssl crlfile <crlfile>               : create a new CRL file to be used in a crt-list<br>  operator                                : lower the level of the current CLI session to operator<br>  prepare acl <acl>                       : prepare a new version for atomic ACL replacement<br>  prepare map <acl>                       : prepare a new version for atomic map replacement<br>  set anon <setting> [value]              : change the anonymized mode setting<br>  set anon global-key <value>             : change the global anonymizing key<br>  set dynamic-cookie-key backend <bk> <k> : change a backend secret key for dynamic cookies<br>  set map <map> [<key>|#<ref>] <value>    : modify a map entry<br>  set maxconn frontend <frontend> <value> : change a frontend’s maxconn setting<br>  set maxconn global <value>              : change the per-process maxconn setting<br>  set maxconn server <bk>&#x2F;<srv>           : change a server’s maxconn setting<br>  set profiling <what> {auto|on|off}      : enable&#x2F;disable resource profiling (tasks,memory)<br>  set rate-limit <setting> <value>        : change a rate limiting value<br>  set server <bk>&#x2F;<srv> [opts]            : change a server’s state, weight, address or ssl<br>  set severity-output [none|number|string]: set presence of severity level in feedback information<br>  set ssl ca-file <cafile> <payload>      : replace a CA file<br>  set ssl cert <certfile> <payload>       : replace a certificate file<br>  set ssl crl-file <crlfile> <payload>    : replace a CRL file<br>  set ssl ocsp-response &lt;resp|payload&gt;    : update a certificate’s OCSP Response from a base64-encode DER<br>  set ssl tls-key [id|file] <key>         : set the next TLS key for the <id> or <file> listener to <key><br>  set table <table> key <k> [data.* <v>]* : update or create a table entry’s data<br>  set timeout [cli] <delay>               : change a timeout setting<br>  set weight <bk>&#x2F;<srv>  (DEPRECATED)     : change a server’s weight (use ‘set server’ instead)<br>  show acl [@<ver>] <acl>]                : report available acls or dump an acl’s contents<br>  show activity [-1|0|thread_num]         : show per-thread activity stats (for support&#x2F;developers)<br>  show anon                               : display the current state of anonymized mode<br>  show backend                            : list backends in the current running config<br>  show cache                              : show cache status<br>  show cli level                          : display the level of the current CLI session<br>  show cli sockets                        : dump list of cli sockets<br>  show env [var]                          : dump environment variables known to the process<br>  show errors [<px>] [request|response]   : report last request and&#x2F;or response errors for each proxy<br>  show events [<sink>] [-w] [-n]          : show event sink state<br>  show fd [num]                           : dump list of file descriptors in use or a specific one<br>  show info [desc|json|typed|float]*      : report information about the running process<br>  show libs                               : show loaded object files and libraries<br>  show map [@ver] [map]                   : report available maps or dump a map’s contents<br>  show peers [dict|-] [section]           : dump some information about all the peers or this peers section<br>  show pools [by*] [match <pfx>] [nb]     : report information about the memory pools usage<br>  show profiling [<what>|&lt;#lines&gt;|<opts>]<em>: show profiling state (all,status,tasks,memory)<br>  show resolvers [id]                     : dumps counters from all resolvers section and associated name servers<br>  show schema json                        : report schema used for stats<br>  show servers conn [<backend>]           : dump server connections status (all or for a single backend)<br>  show servers state [<backend>]          : dump volatile server information (all or for a single backend)<br>  show sess [id]                          : report the list of current sessions or dump this exact session<br>  show ssl ca-file [<cafile>[:<index>]]   : display the SSL CA files used in memory, or the details of a <cafile>, or a single certificate of index <index> of a CA file <cafile><br>  show ssl cert [<certfile>]              : display the SSL certificates used in memory, or the details of a file<br>  show ssl crl-file [&lt;crlfile[:<index>&gt;]] : display the SSL CRL files used in memory, or the details of a <crlfile>, or a single CRL of index <index> of CRL file <crlfile><br>  show ssl crt-list [-n] [<list>]         : show the list of crt-lists or the content of a crt-list file <list><br>  show ssl ocsp-response [id]             : display the IDs of the OCSP responses used in memory, or the details of a single OCSP response<br>  show ssl providers                      : show loaded SSL providers<br>  show startup-logs                       : report logs emitted during HAProxy startup<br>  show stat [desc|json|no-maint|typed|up]</em>: report counters for each proxy and server<br>  show table <table> [<filter>]*          : report table usage stats or dump this table’s contents (filter: data&#x2F;key)<br>  show tasks                              : show running tasks<br>  show threads                            : show some threads debugging information<br>  show tls-keys [id|*]                    : show tls keys references or dump tls ticket keys when id specified<br>  show trace [<module>]                   : show live tracing state<br>  show version                            : show version of the current process<br>  shutdown frontend <frontend>            : stop a specific frontend<br>  shutdown session [id]                   : kill a specific session<br>  shutdown sessions server <bk>&#x2F;<srv>     : kill sessions on a server<br>  trace [<module>|0] [cmd [args…]]      : manage live tracing (empty to list, 0 to stop all)<br>  user                                    : lower the level of the current CLI session to user<br>  help [<command>]                        : list matching or all commands<br>  prompt                                  : toggle interactive mode with prompt<br>  quit                                    : disconnect<br>#查看线程<br>[root@haproxy ~]#echo “show threads” | socat stdio &#x2F;var&#x2F;lib&#x2F;haproxy&#x2F;haproxy.sock<br>  Thread 1 : id&#x3D;0x7fe6932ba0c0 act&#x3D;0 glob&#x3D;0 wq&#x3D;0 rq&#x3D;0 tl&#x3D;0 tlsz&#x3D;0 rqsz&#x3D;0<br>      1&#x2F;1    stuck&#x3D;0 prof&#x3D;0 harmless&#x3D;1 wantrdv&#x3D;0<br>             cpu_ns: poll&#x3D;27025059 now&#x3D;27106301 diff&#x3D;81242<br>             curr_task&#x3D;0<br>  Thread 2 : id&#x3D;0x7fe6932ae640 act&#x3D;0 glob&#x3D;0 wq&#x3D;1 rq&#x3D;0 tl&#x3D;0 tlsz&#x3D;0 rqsz&#x3D;0<br>      1&#x2F;2    stuck&#x3D;0 prof&#x3D;0 harmless&#x3D;1 wantrdv&#x3D;0<br>             cpu_ns: poll&#x3D;5841499886 now&#x3D;5841806929 diff&#x3D;307043<br>             curr_task&#x3D;0</p>
+<ul>
+<li>Thread 3 : id&#x3D;0x7fe690ad3640 act&#x3D;1 glob&#x3D;0 wq&#x3D;1 rq&#x3D;0 tl&#x3D;0 tlsz&#x3D;0 rqsz&#x3D;0<br>1&#x2F;3    stuck&#x3D;0 prof&#x3D;0 harmless&#x3D;0 wantrdv&#x3D;0<br>       cpu_ns: poll&#x3D;2687436766 now&#x3D;2687675923 diff&#x3D;239157<br>       curr_task&#x3D;0x7fe67c034830 (task) calls&#x3D;2 last&#x3D;0<br>         fct&#x3D;0x55887b9ce170(task_run_applet) ctx&#x3D;0x7fe67c034e70(<CLI>)<br>       strm&#x3D;0x7fe67c034440,8 src&#x3D;unix fe&#x3D;GLOBAL be&#x3D;GLOBAL dst&#x3D;<CLI><br>       txn&#x3D;(nil),0 txn.req&#x3D;-,0 txn.rsp&#x3D;-,0<br>       rqf&#x3D;c08002 rqa&#x3D;0 rpf&#x3D;80008000 rpa&#x3D;0<br>       scf&#x3D;0x7fe67c026800,EST,0 scb&#x3D;0x7fe67c0348e0,EST,1<br>       af&#x3D;(nil),0 sab&#x3D;0x7fe67c034e70,11<br>       cof&#x3D;0x7fe67c034bd0,300:PASS(0x7fe67c026c20)&#x2F;RAW((nil))&#x2F;unix_stream(25)<br>       cob&#x3D;(nil),0:NONE((nil))&#x2F;NONE((nil))&#x2F;NONE(-1)<br>Thread 4 : id&#x3D;0x7fe68bfff640 act&#x3D;0 glob&#x3D;0 wq&#x3D;1 rq&#x3D;0 tl&#x3D;0 tlsz&#x3D;0 rqsz&#x3D;0<br>1&#x2F;4    stuck&#x3D;0 prof&#x3D;0 harmless&#x3D;1 wantrdv&#x3D;0<br>       cpu_ns: poll&#x3D;1573141326 now&#x3D;1573420254 diff&#x3D;278928<br>       curr_task&#x3D;0</li>
+</ul>
+<p>#查看正在运行的后端服务<br>[root@haproxy ~]#echo “show backend” | socat stdio &#x2F;var&#x2F;lib&#x2F;haproxy&#x2F;haproxy.sock</p>
+<h1 id="name"><a href="#name" class="headerlink" title="name"></a>name</h1><p>stats<br><a target="_blank" rel="noopener" href="http://www.mooreyxia.net_80/">www.mooreyxia.net_80</a><br><a target="_blank" rel="noopener" href="http://www.mooreyxia.org_servers/">www.mooreyxia.org_servers</a><br>#可以用于实现Zabbix监控<br>[root@haproxy ~]#echo “show info” | socat stdio &#x2F;var&#x2F;lib&#x2F;haproxy&#x2F;haproxy.sock<br>Name: HAProxy<br>Version: 2.7.1-3e4af0e<br>Release_date: 2022&#x2F;12&#x2F;19<br>Nbthread: 4<br>Nbproc: 1<br>Process_num: 1<br>Pid: 1257<br>Uptime: 0d 4h10m05s<br>Uptime_sec: 15005<br>Memmax_MB: 0<br>PoolAlloc_MB: 0<br>PoolUsed_MB: 0<br>PoolFailed: 0<br>Ulimit-n: 200041<br>Maxsock: 200041<br>Maxconn: 100000<br>Hard_maxconn: 100000<br>CurrConns: 0<br>CumConns: 17492<br>CumReq: 12<br>MaxSslConns: 0<br>CurrSslConns: 0<br>CumSslConns: 0<br>Maxpipes: 0<br>PipesUsed: 0<br>PipesFree: 0<br>ConnRate: 0<br>ConnRateLimit: 0<br>MaxConnRate: 3<br>SessRate: 0<br>SessRateLimit: 0<br>MaxSessRate: 3<br>SslRate: 0<br>SslRateLimit: 0<br>MaxSslRate: 0<br>SslFrontendKeyRate: 0<br>SslFrontendMaxKeyRate: 0<br>SslFrontendSessionReuse_pct: 0<br>SslBackendKeyRate: 0<br>SslBackendMaxKeyRate: 0<br>SslCacheLookups: 0<br>SslCacheMisses: 0<br>CompressBpsIn: 0<br>CompressBpsOut: 0<br>CompressBpsRateLim: 0<br>ZlibMemUsage: 0<br>MaxZlibMemUsage: 0<br>Tasks: 23<br>Run_queue: 0<br>Idle_pct: 100<br>node: haproxy<br>Stopping: 0<br>Jobs: 6<br>Unstoppable Jobs: 1<br>Listeners: 5<br>ActivePeers: 0<br>ConnectedPeers: 0<br>DroppedLogs: 0<br>BusyPolling: 0<br>FailedResolutions: 0<br>TotalBytesOut: 78033<br>TotalSplicdedBytesOut: 0<br>BytesOutRate: 0<br>DebugCommandsIssued: 0<br>CumRecvLogs: 0<br>Build info: 2.7.1-3e4af0e<br>Memmax_bytes: 0<br>PoolAlloc_bytes: 252168<br>PoolUsed_bytes: 252168<br>Start_time_sec: 1673947932<br>Tainted: 0</p>
+<p>#获取当前连接数<br>[root@haproxy ~]#echo “show info” | socat stdio &#x2F;var&#x2F;lib&#x2F;haproxy&#x2F;haproxy.sock |awk ‘&#x2F;CurrConns&#x2F;{print $2}’<br>0</p>
+<p>#查看当前服务器的状态值<br>[root@haproxy ~]#echo “show servers state” | socat stdio &#x2F;var&#x2F;lib&#x2F;haproxy&#x2F;haproxy.sock<br>1</p>
+<h1 id="be-id-be-name-srv-id-srv-name-srv-addr-srv-op-state-srv-admin-state-srv-uweight-srv-iweight-srv-time-since-last-change-srv-check-status-srv-check-result-srv-check-health-srv-check-state-srv-agent-state-bk-f-forced-id-srv-f-forced-id-srv-fqdn-srv-port-srvrecord-srv-use-ssl-srv-check-port-srv-check-addr-srv-agent-addr-srv-agent-port"><a href="#be-id-be-name-srv-id-srv-name-srv-addr-srv-op-state-srv-admin-state-srv-uweight-srv-iweight-srv-time-since-last-change-srv-check-status-srv-check-result-srv-check-health-srv-check-state-srv-agent-state-bk-f-forced-id-srv-f-forced-id-srv-fqdn-srv-port-srvrecord-srv-use-ssl-srv-check-port-srv-check-addr-srv-agent-addr-srv-agent-port" class="headerlink" title="be_id be_name srv_id srv_name srv_addr srv_op_state srv_admin_state srv_uweight srv_iweight srv_time_since_last_change srv_check_status srv_check_result srv_check_health srv_check_state srv_agent_state bk_f_forced_id srv_f_forced_id srv_fqdn srv_port srvrecord srv_use_ssl srv_check_port srv_check_addr srv_agent_addr srv_agent_port"></a>be_id be_name srv_id srv_name srv_addr srv_op_state srv_admin_state srv_uweight srv_iweight srv_time_since_last_change srv_check_status srv_check_result srv_check_health srv_check_state srv_agent_state bk_f_forced_id srv_f_forced_id srv_fqdn srv_port srvrecord srv_use_ssl srv_check_port srv_check_addr srv_agent_addr srv_agent_port</h1><p>3 <a target="_blank" rel="noopener" href="http://www.mooreyxia.net_80/">www.mooreyxia.net_80</a> 1 web01 10.0.0.204 0 0 1 1 15291 8 2 0 6 0 0 0 - 80 - 0 0 - - 0<br>3 <a target="_blank" rel="noopener" href="http://www.mooreyxia.net_80/">www.mooreyxia.net_80</a> 2 web02 10.0.0.205 0 0 1 1 15288 7 0 0 7 0 0 0 - 80 - 0 0 - - 0<br>5 <a target="_blank" rel="noopener" href="http://www.mooreyxia.org_servers/">www.mooreyxia.org_servers</a> 1 web01 10.0.0.202 2 0 1 1 15292 6 3 7 6 0 0 0 - 80 - 0 0 - - 0<br>5 <a target="_blank" rel="noopener" href="http://www.mooreyxia.org_servers/">www.mooreyxia.org_servers</a> 2 web02 10.0.0.203 2 0 1 1 15292 6 3 7 6 0 0 0 - 80 - 0 0 - - 0</p>
+<p>#获取特定服务器的权重<br>[root@haproxy ~]#echo “get weight <a target="_blank" rel="noopener" href="http://www.mooreyxia.net_80/web02">www.mooreyxia.net_80/web02</a>“ | socat stdio &#x2F;var&#x2F;lib&#x2F;haproxy&#x2F;haproxy.sock<br>1 (initial 1)</p>
+<p>#通过set设置服务器的权重<br>[root@haproxy ~]#echo “set weight <a target="_blank" rel="noopener" href="http://www.mooreyxia.net_80/web02">www.mooreyxia.net_80/web02</a> 2” | socat stdio &#x2F;var&#x2F;lib&#x2F;haproxy&#x2F;haproxy.sock<br>[root@haproxy ~]#echo “get weight <a target="_blank" rel="noopener" href="http://www.mooreyxia.net_80/web02">www.mooreyxia.net_80/web02</a>“ | socat stdio &#x2F;var&#x2F;lib&#x2F;haproxy&#x2F;haproxy.sock<br>2 (initial 1)</p>
+<p>#下线端服务器<br>[root@haproxy ~]#echo “disable server <a target="_blank" rel="noopener" href="http://www.mooreyxia.org_servers/web01">www.mooreyxia.org_servers/web01</a>“ | socat stdio &#x2F;var&#x2F;lib&#x2F;haproxy&#x2F;haproxy.sock</p>
+<p>#上线后端服务器<br>[root@haproxy ~]#echo “enable server <a target="_blank" rel="noopener" href="http://www.mooreyxia.org_servers/web01">www.mooreyxia.org_servers/web01</a>“ | socat stdio &#x2F;var&#x2F;lib&#x2F;haproxy&#x2F;haproxy.sock</p>
+<p>#新的写法<br>#相当于disable server<br>[root@haproxy ~]#echo “set server <a target="_blank" rel="noopener" href="http://www.mooreyxia.org_servers/web01">www.mooreyxia.org_servers/web01</a> state maint” |socat stdio &#x2F;var&#x2F;lib&#x2F;haproxy&#x2F;haproxy.sock<br>#相当于enable server<br>[root@haproxy ~]#echo “set server <a target="_blank" rel="noopener" href="http://www.mooreyxia.org_servers/web01">www.mooreyxia.org_servers/web01</a> state ready” |socat stdio &#x2F;var&#x2F;lib&#x2F;haproxy&#x2F;haproxy.sock<br>#drain - active or backup SOFT STOPPED for maintenance 相当于nginx中的平滑下线，已建立连接的用户不会被断开<br>[root@haproxy ~]#echo “set server <a target="_blank" rel="noopener" href="http://www.mooreyxia.org_servers/web01">www.mooreyxia.org_servers/web01</a> state drain” |socat stdio &#x2F;var&#x2F;lib&#x2F;haproxy&#x2F;haproxy.sock案例：上线和下线后端服务器脚本<br>#查看配置的服务名<br>[root@haproxy ~]#vim &#x2F;etc&#x2F;haproxy&#x2F;conf.d&#x2F;<a target="_blank" rel="noopener" href="http://www.mooreyxia.org.cfg/">www.mooreyxia.org.cfg</a><br>[root@haproxy ~]#cat &#x2F;etc&#x2F;haproxy&#x2F;conf.d&#x2F;<a target="_blank" rel="noopener" href="http://www.mooreyxia.org.cfg/">www.mooreyxia.org.cfg</a><br>listen <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>    bind 192.168.10.200:80<br>    server 10.0.0.202 10.0.0.202:80 check inter 3000 fall 3 rise 5<br>    server 10.0.0.203 10.0.0.203:80 check inter 3000 fall 3 rise 5</p>
+<p>#frontend <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a></p>
+<h1 id="bind-192-168-10-200-80"><a href="#bind-192-168-10-200-80" class="headerlink" title="bind 192.168.10.200:80"></a>bind 192.168.10.200:80</h1><h1 id="use-backend-www-mooreyxia-org-servers"><a href="#use-backend-www-mooreyxia-org-servers" class="headerlink" title="use_backend www.mooreyxia.org_servers"></a>use_backend <a target="_blank" rel="noopener" href="http://www.mooreyxia.org_servers/">www.mooreyxia.org_servers</a></h1><p>#backend <a target="_blank" rel="noopener" href="http://www.mooreyxia.org_servers/">www.mooreyxia.org_servers</a></p>
+<h1 id="server-web01-10-0-0-202-80-check-inter-3000-fall-3-rise-5"><a href="#server-web01-10-0-0-202-80-check-inter-3000-fall-3-rise-5" class="headerlink" title="server web01 10.0.0.202:80 check inter 3000 fall 3 rise 5"></a>server web01 10.0.0.202:80 check inter 3000 fall 3 rise 5</h1><h1 id="server-web02-10-0-0-203-80-check-inter-3000-fall-3-rise-5"><a href="#server-web02-10-0-0-203-80-check-inter-3000-fall-3-rise-5" class="headerlink" title="server web02 10.0.0.203:80 check inter 3000 fall 3 rise 5"></a>server web02 10.0.0.203:80 check inter 3000 fall 3 rise 5</h1><p>#脚本<br>[root@haproxy ~]#vim haproxy_host_up_down.sh<br>[root@haproxy ~]#cat haproxy_host_up_down.sh<br>#!&#x2F;bin&#x2F;bash<br>#<br>#********************************************************************<br>#Author:            mooreyxia<br>#Date:              2023-01-17<br>#FileName:          haproxy_host_up_down.sh<br>#Description:       The test script<br>#Copyright (C):     2023 All rights reserved<br>#********************************************************************</p>
+<p>case $1 in<br>up)<br>    echo “enable server <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/$2">www.mooreyxia.org/$2</a>“ | socat stdio &#x2F;var&#x2F;lib&#x2F;haproxy&#x2F;haproxy.sock<br>    [ $? -eq 0 ] &amp;&amp; echo “$2 is up”<br>    ;;<br>down)<br>    echo “disable server <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/$2">www.mooreyxia.org/$2</a>“ | socat stdio &#x2F;var&#x2F;lib&#x2F;haproxy&#x2F;haproxy.sock<br>    [ $? -eq 0 ] &amp;&amp; echo “$2 is down”<br>    ;;<br>*)<br>    echo “Usage: <code>basename $0</code> up|down IP”<br>    ;;<br>esac</p>
+<p>[root@haproxy ~]#chmod +x haproxy_host_up_down.sh</p>
+<p>#下线202 - 上线执行up即可<br>[root@haproxy ~]#.&#x2F;haproxy_host_up_down.sh down 10.0.0.202</p>
+<p>10.0.0.202 is down<br><img src="/../img/8455bd091fb5036e007056ee251cc731d7a636.png"><br>案例：实现容器服务的上线和下线脚本 - 针对 docker-nginx 服务做平滑升级<br>WEB_SERVERS&#x3D;”<br>10.0.0.101<br>10.0.0.102<br>“<br>for i in $WEB_SERVERS;do<br>  echo “set server <a target="_blank" rel="noopener" href="http://www.mooreyxia.org_nginx/$i">www.mooreyxia.org_nginx/$i</a> state maint” | socat stdio &#x2F;var&#x2F;lib&#x2F;haproxy&#x2F;haproxy.sock<br>  ssh $i docker rm -f nginx<br>  ssh $i “echo DOCKER $i WEBSITE $1 &gt; &#x2F;data&#x2F;www&#x2F;index.html”<br>  ssh $i docker run -d -p 80:80 -v &#x2F;data&#x2F;www:&#x2F;usr&#x2F;share&#x2F;nginx&#x2F;html –name nginx nginx<br>  sleep 10<br>  echo “set server <a target="_blank" rel="noopener" href="http://www.mooreyxia.org_nginx/$i">www.mooreyxia.org_nginx/$i</a> state ready” | socat stdio &#x2F;var&#x2F;lib&#x2F;haproxy&#x2F;haproxy.sock<br>donestatic-rr 算法<br>• static-rr：基于权重的轮询调度，不支持运行时利用socat进行权重的动态调整(只支持0和1）,不支持其它值及后端服务器慢启动，其后端主机数量没有限制，相当于LVS中的 wrr<br>案例：<br>[root@haproxy ~]#cat &#x2F;etc&#x2F;haproxy&#x2F;conf.d&#x2F;<a target="_blank" rel="noopener" href="http://www.mooreyxia.org.cfg/">www.mooreyxia.org.cfg</a><br>listen <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>    balance static-rr<br>    bind 192.168.10.200:80<br>    server 10.0.0.202 10.0.0.202:80 weight 3 check inter 3000 fall 3 rise 5<br>    server 10.0.0.203 10.0.0.203:80 weight 1 check inter 3000 fall 3 rise 5<br>[root@haproxy ~]#systemctl restart haproxy.service</p>
+<p>#测试<br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>10.0.0.202 _web01-<a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>10.0.0.202 _web01-<a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>10.0.0.202 _web01-<a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>10.0.0.203 _web02-<a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>10.0.0.202 _web01-<a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>10.0.0.202 _web01-<a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>10.0.0.202 _web01-<a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>10.0.0.203 _web02-<a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a></p>
+<p>#不支持运行时利用socat进行权重的动态调整<br>[root@haproxy ~]#echo “get weight <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/10.0.0.202">www.mooreyxia.org/10.0.0.202</a> “ |socat stdio &#x2F;var&#x2F;lib&#x2F;haproxy&#x2F;haproxy.sock<br>3 (initial 3)</p>
+<p>[root@haproxy ~]#echo “get weight <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/10.0.0.203">www.mooreyxia.org/10.0.0.203</a> “ |socat stdio &#x2F;var&#x2F;lib&#x2F;haproxy&#x2F;haproxy.sock<br>1 (initial 1)</p>
+<p>#尝试运行时更改权重<br>[root@haproxy ~]#echo “set weight <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/10.0.0.203">www.mooreyxia.org/10.0.0.203</a>  4” |socat stdio &#x2F;var&#x2F;lib&#x2F;haproxy&#x2F;haproxy.sock<br>Backend is using a static LB algorithm and only accepts weights ‘0%’ and ‘100%’.first 算法<br>• first：根据服务器在列表中的位置，自上而下进行调度，但是其只会当第一台服务器的连接数达到上限，新请求才会分配给下一台服务，因此会忽略服务器的权重设置，此方式使用较少<br>• **不支持用socat进行动态修改权重,**可以设置0和1,可以设置其它值但无效<br>案例：<br>#设置最大连接数一个，达到连接上线后全部调度访问另一个服务<br>[root@haproxy ~]#cat &#x2F;etc&#x2F;haproxy&#x2F;conf.d&#x2F;<a target="_blank" rel="noopener" href="http://www.mooreyxia.org.cfg/">www.mooreyxia.org.cfg</a><br>listen <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>    balance first<br>    bind 192.168.10.200:80<br>    server 10.0.0.202 10.0.0.202:80 maxconn 1 weight 3 check inter 3000 fall 3 rise 5<br>    server 10.0.0.203 10.0.0.203:80 weight 1 check inter 3000 fall 3 rise 5</p>
+<p>#占用202<br>[root@internet ~]#wget –limit-rate 10 <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/1.txt">http://www.mooreyxia.org/1.txt</a><br>–2023-01-18 11:43:06–  <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/1.txt">http://www.mooreyxia.org/1.txt</a><br>Resolving <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a> (<a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a>)… 192.168.10.200<br>Connecting to <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a> (<a target="_blank" rel="noopener" href="http://www.mooreyxia.org)|192.168.10.200|/">www.mooreyxia.org)|192.168.10.200|:80</a>… connected.<br>HTTP request sent, awaiting response… 200 OK<br>Length: 654506 (639K) [text&#x2F;plain]<br>Saving to: ‘1.txt.2’</p>
+<p>1.txt.1                      0%[                                       ]   1.28K  10.4 B&#x2F;s    eta 18h 8m ^                                      ]   1.27K  10.0 B&#x2F;s    eta 18h 8m </p>
+<p>#测试访问<br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>10.0.0.203 _web02-<a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>10.0.0.203 _web02-<a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>10.0.0.203 _web02-<a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>10.0.0.203 _web02-<a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>10.0.0.203 _web02-<a target="_blank" rel="noopener" href="http://www.mooreyxia.org动态算法/">www.mooreyxia.org动态算法</a><br>• 动态算法：基于后端服务器状态进行调度适当调整，新请求将优先调度至当前负载较低的服务器，且权重可以在haproxy运行时动态调整无需重启。<br>roundrobin 算法<br>• roundrobin：基于权重的轮询动态调度算法，支持权重的运行时调整，不同于lvs中的rr轮训模式，HAProxy中的roundrobin支持慢启动(新加的服务器会逐渐增加转发数)，其每个后端backend中最多支持4095个real server，支持对real server权重动态调整，roundrobin为默认调度算法,此算法使用广泛<br>案例：<br>[root@haproxy ~]#vim &#x2F;etc&#x2F;haproxy&#x2F;conf.d&#x2F;<a target="_blank" rel="noopener" href="http://www.mooreyxia.org.cfg/">www.mooreyxia.org.cfg</a><br>[root@haproxy ~]#cat &#x2F;etc&#x2F;haproxy&#x2F;conf.d&#x2F;<a target="_blank" rel="noopener" href="http://www.mooreyxia.org.cfg/">www.mooreyxia.org.cfg</a><br>listen <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>    balance roundrobin<br>    bind 192.168.10.200:80<br>    server 10.0.0.202 10.0.0.202:80 weight 3 check inter 3000 fall 3 rise 5<br>    server 10.0.0.203 10.0.0.203:80 weight 1 check inter 3000 fall 3 rise 5</p>
+<p>[root@haproxy ~]#systemctl restart haproxy.service</p>
+<p>#测试<br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>10.0.0.202 _web01-<a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>10.0.0.202 _web01-<a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>10.0.0.202 _web01-<a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>10.0.0.203 _web02-<a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>10.0.0.202 _web01-<a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>10.0.0.202 _web01-<a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>10.0.0.202 _web01-<a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>10.0.0.203 _web02-<a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a></p>
+<p>#尝试运行时更改权重<br>[root@haproxy ~]#echo “set weight <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/10.0.0.203">www.mooreyxia.org/10.0.0.203</a>  5” |socat stdio &#x2F;var&#x2F;lib&#x2F;haproxy&#x2F;haproxy.sock</p>
+<p>[root@haproxy ~]#echo “get weight <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/10.0.0.203">www.mooreyxia.org/10.0.0.203</a> “ |socat stdio &#x2F;var&#x2F;lib&#x2F;haproxy&#x2F;haproxy.sock<br>5 (initial 1)</p>
+<p>[root@haproxy ~]#echo “get weight <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/10.0.0.202">www.mooreyxia.org/10.0.0.202</a> “ |socat stdio &#x2F;var&#x2F;lib&#x2F;haproxy&#x2F;haproxy.sock<br>3 (initial 3)</p>
+<p>#测试<br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>10.0.0.202 _web01-<a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>10.0.0.203 _web02-<a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>10.0.0.203 _web02-<a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>10.0.0.202 _web01-<a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>10.0.0.203 _web02-<a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>10.0.0.202 _web01-<a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>10.0.0.203 _web02-<a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>10.0.0.203 _web02-<a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>10.0.0.202 _web01-<a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>10.0.0.203 _web02-<a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>10.0.0.203 _web02-<a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>10.0.0.202 _web01-<a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>10.0.0.203 _web02-<a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>10.0.0.202 _web01-<a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>10.0.0.203 _web02-<a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>10.0.0.203 _web02-<a target="_blank" rel="noopener" href="http://www.mooreyxia.orgleastconn/">www.mooreyxia.orgleastconn</a> 算法<br>• leastconn 加权的最少连接的动态，支持权重的运行时调整和慢启动，即根据当前连接最少的后端服务器而非权重进行优先调度(新客户端连接)，比较适合长连接的场景使用，相当于LVS的WLC算法。比如：MySQL等场景。<br>案例：<br>[root@haproxy ~]#cat &#x2F;etc&#x2F;haproxy&#x2F;conf.d&#x2F;<a target="_blank" rel="noopener" href="http://www.mooreyxia.org.cfg/">www.mooreyxia.org.cfg</a><br>listen <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>    balance leastconn<br>    bind 192.168.10.200:80<br>    server 10.0.0.202 10.0.0.202:80 weight 1 check inter 3000 fall 3 rise 5<br>    server 10.0.0.203 10.0.0.203:80 weight 1 check inter 3000 fall 3 rise 5random 算法<br>• 在1.9版本开始增加 random的负载平衡算法，其基于随机数作为一致性hash的key，随机负载平衡对于大型服务器场或经常添加或删除服务器非常有用，支持weight的动态调整，weight较大的主机有更大概率获取新请求<br>案例：<br>[root@haproxy ~]#cat &#x2F;etc&#x2F;haproxy&#x2F;conf.d&#x2F;<a target="_blank" rel="noopener" href="http://www.mooreyxia.org.cfg/">www.mooreyxia.org.cfg</a><br>listen <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>    balance random<br>    bind 192.168.10.200:80<br>    server 10.0.0.202 10.0.0.202:80 weight 3 check inter 3000 fall 3 rise 5<br>    server 10.0.0.203 10.0.0.203:80 weight 1 check inter 3000 fall 3 rise 5可动可静的其他算法<br>source 算法<br>• 源地址hash，基于用户源地址hash并将请求转发到后端服务器，后续同一个源地址请求将被转发至同一个后端web服务器。此方式当后端服务器数据量发生变化时，会导致很多用户的请求转发至新的后端服务器，默认为静态方式，但是可以通过hash-type选项进行更改<br>• 这个算法一般是在不插入Cookie的TCP模式下使用，也可给不支持会话cookie的客户提供会话粘性，适用于需要session会话保持但不支持cookie和缓存的场景<br>• 源地址有两种转发客户端请求到后端服务器的服务器选取计算方式，分别是取模法和一致性hash<br>map-base 取模法<br>• map-based：取模法，对source地址进行hash计算，再基于服务器总权重的取模，最终结果决定将此请求转发至对应的后端服务器。此方法是静态的，即不支持在线调整权重，不支持慢启动，可实现对后端服务器均衡调度。缺点是当服务器的总权重发生变化时，即有服务器上线或下线，都会因总权重发生变化而导致调度结果整体改变，hash-type 指定的默认值为此算法<br>map-based算法：基于权重取模，hash(source_ip)%所有后端服务器相加的总权重案例：<br>[root@haproxy ~]#vim &#x2F;etc&#x2F;haproxy&#x2F;conf.d&#x2F;<a target="_blank" rel="noopener" href="http://www.mooreyxia.org.cfg/">www.mooreyxia.org.cfg</a><br>[root@haproxy ~]#cat &#x2F;etc&#x2F;haproxy&#x2F;conf.d&#x2F;<a target="_blank" rel="noopener" href="http://www.mooreyxia.org.cfg/">www.mooreyxia.org.cfg</a><br>listen <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>    balance source<br>    hash-type map-based  –&gt; 默认，可不写<br>    bind 192.168.10.200:80<br>    server 10.0.0.202 10.0.0.202:80 weight 3 check inter 3000 fall 3 rise 5<br>    server 10.0.0.203 10.0.0.203:80 weight 1 check inter 3000 fall 3 rise 5<br>[root@haproxy ~]#systemctl restart haproxy.service</p>
+<p>#测试 - 只要客户端地址是同一地址，调度到服务器的地址固定<br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>10.0.0.202 _web01-<a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>10.0.0.202 _web01-<a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>10.0.0.202 _web01-<a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>10.0.0.202 _web01-<a target="_blank" rel="noopener" href="http://www.mooreyxia.org一致性/">www.mooreyxia.org一致性</a> hash<br>• 一致性哈希，当服务器的总权重发生变化时，对调度结果影响是局部的，不会引起大的变动，hash（o）mod n ，该hash算法是动态的，支持使用 socat等工具进行在线权重调整，支持慢启动<br>#算法：<br>1、key1&#x3D;hash(source_ip)%(2^32) [0—4294967295]<br>2、keyA&#x3D;hash(后端服务器虚拟ip)%(2^32)<br>3、将key1和keyA都放在hash环上，将用户请求调度到离key1最近的keyA对应的后端服务器</p>
+<p>#hash环偏斜问题<br>增加虚拟服务器IP数量，比如：一个后端服务器根据权重为1生成1000个虚拟IP，再hash。而后端服务器权重为2则生成2000的虚拟IP，再进行hash运算,最终在hash环上生成3000个节点，从而解决hash环偏斜问题</p>
+<p>一致性hash示意图：<br><img src="/../img/e7fc9024887ad759b0c6776d4f0fee4bebdd2f.png"><br>案例：<br>[root@haproxy ~]#vim &#x2F;etc&#x2F;haproxy&#x2F;conf.d&#x2F;<a target="_blank" rel="noopener" href="http://www.mooreyxia.org.cfg/">www.mooreyxia.org.cfg</a><br>[root@haproxy ~]#cat &#x2F;etc&#x2F;haproxy&#x2F;conf.d&#x2F;<a target="_blank" rel="noopener" href="http://www.mooreyxia.org.cfg/">www.mooreyxia.org.cfg</a><br>listen <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>    balance source<br>    hash-type consistent<br>    bind 192.168.10.200:80<br>    server 10.0.0.202 10.0.0.202:80 weight 3 check inter 3000 fall 3 rise 5<br>    server 10.0.0.203 10.0.0.203:80 weight 1 check inter 3000 fall 3 rise 5</p>
+<p>[root@haproxy ~]#systemctl restart haproxy.service</p>
+<p>#测试 - 只要客户端地址是同一地址，调度到服务器的地址固定<br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>10.0.0.202 _web01-<a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>10.0.0.202 _web01-<a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>10.0.0.202 _web01-<a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>10.0.0.202 _web01-<a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>10.0.0.202 _web01-<a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>10.0.0.202 _web01-<a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a></p>
+<p>#尝试运行时更改权重<br>[root@haproxy ~]#echo “set weight <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/10.0.0.203">www.mooreyxia.org/10.0.0.203</a> 10” |socat stdio &#x2F;var&#x2F;lib&#x2F;haproxy&#x2F;haproxy.sock</p>
+<p>[root@haproxy ~]#echo “get weight <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/10.0.0.203">www.mooreyxia.org/10.0.0.203</a> “ |socat stdio &#x2F;var&#x2F;lib&#x2F;haproxy&#x2F;haproxy.sock<br>10 (initial 1)uri 算法<br>• 基于对用户请求的URI的左半部分或整个uri做hash，再将hash结果对总权重进行取模后，根据最终结果将请求转发到后端指定服务器，适用于后端是缓存服务器场景，默认是静态算法，可设置动态，通过hash-type指定map-based和consistent，来定义使用取模法还是一致性hash。<br>注意：此算法基于应用层，所以只支持 mode http ，不支持 mode tcp【lvs由于是四层负载均衡，拿不到七层的数据，所以做不了七层相关的算法调度】<br><scheme>:&#x2F;&#x2F;<user>:<password>@<host>:<port>&#x2F;<path>;<params>?<query>#<frag><br>左半部分：&#x2F;<path>;<params><br>整个uri：&#x2F;<path>;<params>?<query>#<frag>案例：<br>#202服务器<br>[root@web01-mooreyxia ~]#cd &#x2F;var&#x2F;www&#x2F;html&#x2F;<br>[root@web01-mooreyxia html]#for i in {1..10};do echo test$i.html on 10.0.0.202 &gt; test$i.html;done<br>[root@web01-mooreyxia html]#ll<br>总用量 696<br>drwxr-xr-x 2 root root   4096  1月 18 13:07 .&#x2F;<br>drwxr-xr-x 3 root root   4096 10月 28 16:31 ..&#x2F;<br>-rw-r–r– 1 root root 654506  1月 18 11:34 1.txt<br>-rw-r–r– 1 root root     36  1月 17 15:13 index.html<br>-rw-r–r– 1 root root    612  1月 16 14:42 index.nginx-debian.html<br>-rw-r–r– 1 root root     26  1月 18 13:07 test10.html<br>-rw-r–r– 1 root root     25  1月 18 13:07 test1.html<br>-rw-r–r– 1 root root     25  1月 18 13:07 test2.html<br>-rw-r–r– 1 root root     25  1月 18 13:07 test3.html<br>-rw-r–r– 1 root root     25  1月 18 13:07 test4.html<br>-rw-r–r– 1 root root     25  1月 18 13:07 test5.html<br>-rw-r–r– 1 root root     25  1月 18 13:07 test6.html<br>-rw-r–r– 1 root root     25  1月 18 13:07 test7.html<br>-rw-r–r– 1 root root     25  1月 18 13:07 test8.html<br>-rw-r–r– 1 root root     25  1月 18 13:07 test9.html<br>[root@web01-mooreyxia html]#cat test1.html<br>test1.html on 10.0.0.202</p>
+<p>#203服务器<br>[root@web02-mooreyxia ~]#cd &#x2F;var&#x2F;www&#x2F;html&#x2F;<br>[root@web02-mooreyxia html]#for i in {1..10};do echo test$i.html on 10.0.0.203 &gt; test$i.html;done<br>[root@web02-mooreyxia html]#ls<br>index.html  index.nginx-debian.html  test10.html  test1.html  test2.html  test3.html  test4.html  test5.html  test6.html  test7.html  test8.html  test9.html<br>[root@web02-mooreyxia html]#cat test3.html<br>test3.html on 10.0.0.203</p>
+<p>#设置uri算法<br>[root@haproxy ~]#vim &#x2F;etc&#x2F;haproxy&#x2F;conf.d&#x2F;<a target="_blank" rel="noopener" href="http://www.mooreyxia.org.cfg/">www.mooreyxia.org.cfg</a><br>[root@haproxy ~]#cat &#x2F;etc&#x2F;haproxy&#x2F;conf.d&#x2F;<a target="_blank" rel="noopener" href="http://www.mooreyxia.org.cfg/">www.mooreyxia.org.cfg</a><br>listen <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>    balance uri<br>    hash-type consistent –&gt; 可设置动态，默认静态<br>    bind 192.168.10.200:80<br>    server 10.0.0.202 10.0.0.202:80 weight 3 check inter 3000 fall 3 rise 5<br>    server 10.0.0.203 10.0.0.203:80 weight 1 check inter 3000 fall 3 rise 5<br>[root@haproxy ~]#systemctl restart haproxy.service</p>
+<p>#测试 - 用户请求的URI不变则调度向同一服务器<br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/test1.html">http://www.mooreyxia.org/test1.html</a><br>test1.html on 10.0.0.202<br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/test1.html">http://www.mooreyxia.org/test1.html</a><br>test1.html on 10.0.0.202<br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/test1.html">http://www.mooreyxia.org/test1.html</a><br>test1.html on 10.0.0.202<br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/test2.html">http://www.mooreyxia.org/test2.html</a><br>test2.html on 10.0.0.202<br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/test2.html">http://www.mooreyxia.org/test2.html</a><br>test2.html on 10.0.0.202<br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/test2.html">http://www.mooreyxia.org/test2.html</a><br>test2.html on 10.0.0.202<br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/test3.html">http://www.mooreyxia.org/test3.html</a><br>test3.html on 10.0.0.203<br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/test3.html">http://www.mooreyxia.org/test3.html</a><br>test3.html on 10.0.0.203<br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/test3.html">http://www.mooreyxia.org/test3.html</a><br>test3.html on 10.0.0.203<br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/test3.html">http://www.mooreyxia.org/test3.html</a><br>test3.html on 10.0.0.203<br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/test3.html">http://www.mooreyxia.org/test3.html</a><br>test3.html on 10.0.0.203<br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/test3.html">http://www.mooreyxia.org/test3.html</a><br>test3.html on 10.0.0.203<br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/test4.html">http://www.mooreyxia.org/test4.html</a><br>test4.html on 10.0.0.203<br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/test4.html">http://www.mooreyxia.org/test4.html</a><br>test4.html on 10.0.0.203<br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/test4.html">http://www.mooreyxia.org/test4.html</a><br>test4.html on 10.0.0.203<br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/test4.html">http://www.mooreyxia.org/test4.html</a><br>test4.html on 10.0.0.203<br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/test5.html">http://www.mooreyxia.org/test5.html</a><br>test5.html on 10.0.0.202<br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/test5.html">http://www.mooreyxia.org/test5.html</a><br>test5.html on 10.0.0.202<br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/test5.html">http://www.mooreyxia.org/test5.html</a><br>test5.html on 10.0.0.202url_param 算法<br>• url_param对用户请求的url中的 params 部分中的一个参数key对应的value值作hash计算，并由服务器总权重相除以后派发至某挑出的服务器；通常用于追踪用户，以确保来自同一个用户的请求始终发往同一个real server，如果无没key，将按roundrobin算法<br>注意：此算法基于应用层<br>案例：<br>[root@haproxy ~]#vim &#x2F;etc&#x2F;haproxy&#x2F;conf.d&#x2F;<a target="_blank" rel="noopener" href="http://www.mooreyxia.org.cfg/">www.mooreyxia.org.cfg</a><br>[root@haproxy ~]#cat &#x2F;etc&#x2F;haproxy&#x2F;conf.d&#x2F;<a target="_blank" rel="noopener" href="http://www.mooreyxia.org.cfg/">www.mooreyxia.org.cfg</a><br>listen <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>    balance url_param userid<br>    hash-type consistent    –&gt; 可设置动态，默认静态<br>    bind 192.168.10.200:80<br>    server 10.0.0.202 10.0.0.202:80 weight 3 check inter 3000 fall 3 rise 5<br>    server 10.0.0.203 10.0.0.203:80 weight 1 check inter 3000 fall 3 rise 5</p>
+<p>[root@haproxy ~]#systemctl restart haproxy.service</p>
+<p>#测试 - key值不变调度至服务器不变<br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/test5.html?userid=1">http://www.mooreyxia.org/test5.html?userid=1</a><br>test5.html on 10.0.0.202<br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/test5.html?userid=1">http://www.mooreyxia.org/test5.html?userid=1</a><br>test5.html on 10.0.0.202<br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/test5.html?userid=1">http://www.mooreyxia.org/test5.html?userid=1</a><br>test5.html on 10.0.0.202<br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/test5.html?userid=2">http://www.mooreyxia.org/test5.html?userid=2</a><br>test5.html on 10.0.0.203<br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/test5.html?userid=2">http://www.mooreyxia.org/test5.html?userid=2</a><br>test5.html on 10.0.0.203<br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/test5.html?userid=2">http://www.mooreyxia.org/test5.html?userid=2</a><br>test5.html on 10.0.0.203<br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/test5.html?userid=2">http://www.mooreyxia.org/test5.html?userid=2</a><br>test5.html on 10.0.0.203<br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/test5.html?userid=3">http://www.mooreyxia.org/test5.html?userid=3</a><br>test5.html on 10.0.0.202<br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/test5.html?userid=3">http://www.mooreyxia.org/test5.html?userid=3</a><br>test5.html on 10.0.0.202<br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/test5.html?userid=3">http://www.mooreyxia.org/test5.html?userid=3</a><br>test5.html on 10.0.0.202<br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/test5.html?userid=4">http://www.mooreyxia.org/test5.html?userid=4</a><br>test5.html on 10.0.0.202<br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/test5.html?userid=4hdr">http://www.mooreyxia.org/test5.html?userid=4hdr</a> 算法<br>• 针对用户每个http头部(header)请求中的指定信息做hash，此处由 name 指定的http首部将会被取出并做hash计算，然后由服务器总权重取模以后派发至某挑出的服务器，如果无有效值，则会使用默认的轮询调度。<br>简单来说就是根据http报文头中的参数做调度运算<br>案例：针对不同的浏览器进行调度<br>[root@haproxy ~]#vim &#x2F;etc&#x2F;haproxy&#x2F;conf.d&#x2F;<a target="_blank" rel="noopener" href="http://www.mooreyxia.org.cfg/">www.mooreyxia.org.cfg</a><br>[root@haproxy ~]#cat &#x2F;etc&#x2F;haproxy&#x2F;conf.d&#x2F;<a target="_blank" rel="noopener" href="http://www.mooreyxia.org.cfg/">www.mooreyxia.org.cfg</a><br>listen <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>    balance hdr(User-Agent)<br>    hash-type consistent    –&gt; 可设置动态，默认静态<br>    bind 192.168.10.200:80<br>    server 10.0.0.202 10.0.0.202:80 weight 3 check inter 3000 fall 3 rise 5<br>    server 10.0.0.203 10.0.0.203:80 weight 1 check inter 3000 fall 3 rise 5</p>
+<p>[root@haproxy ~]#systemctl restart haproxy.service</p>
+<p>#测试<br>#查看浏览器版本 - User-Agent: curl&#x2F;7.61.1<br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">http://www.mooreyxia.org/</a> -Iv</p>
+<ul>
+<li>Trying 192.168.10.200…</li>
+<li>TCP_NODELAY set</li>
+<li>Connected to <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a> (192.168.10.200) port 80 (#0)<blockquote>
+<p>HEAD &#x2F; HTTP&#x2F;1.1<br>Host: <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>User-Agent: curl&#x2F;7.61.1<br>Accept: <em>&#x2F;</em></p>
+</blockquote>
+&lt; HTTP&#x2F;1.1 200 OK<br>HTTP&#x2F;1.1 200 OK<br>&lt; server: nginx&#x2F;1.18.0 (Ubuntu)<br>server: nginx&#x2F;1.18.0 (Ubuntu)<br>&lt; date: Wed, 18 Jan 2023 05:35:17 GMT<br>date: Wed, 18 Jan 2023 05:35:17 GMT<br>&lt; content-type: text&#x2F;html<br>content-type: text&#x2F;html<br>&lt; content-length: 36<br>content-length: 36<br>&lt; last-modified: Tue, 17 Jan 2023 07:13:41 GMT<br>last-modified: Tue, 17 Jan 2023 07:13:41 GMT<br>&lt; etag: “63c64aa5-24”<br>etag: “63c64aa5-24”<br>&lt; accept-ranges: bytes<br>accept-ranges: bytes</li>
+</ul>
+<p>&lt; </p>
+<ul>
+<li>Connection #0 to host <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a> left intact</li>
+</ul>
+<p>#访问<br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">http://www.mooreyxia.org</a><br>10.0.0.202 _web01-<a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">http://www.mooreyxia.org</a><br>10.0.0.202 _web01-<a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">http://www.mooreyxia.org</a><br>10.0.0.202 _web01-<a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">http://www.mooreyxia.org</a><br>10.0.0.202 _web01-<a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>[root@internet ~]#curl <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">http://www.mooreyxia.org</a><br>10.0.0.202 _web01-<a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a></p>
+<p>#更改浏览器版本进行访问<br>[root@internet ~]#curl -A chrome  <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">http://www.mooreyxia.org</a><br>10.0.0.203 _web02-<a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>[root@internet ~]#curl -A chrome  <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">http://www.mooreyxia.org</a><br>10.0.0.203 _web02-<a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>[root@internet ~]#curl -A chrome  <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">http://www.mooreyxia.org</a><br>10.0.0.203 _web02-<a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>[root@internet ~]#curl -A firefox  <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">http://www.mooreyxia.org</a><br>10.0.0.202 _web01-<a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>[root@internet ~]#curl -A firefox  <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">http://www.mooreyxia.org</a><br>10.0.0.202 _web01-<a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>[root@internet ~]#curl -A firefox  <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">http://www.mooreyxia.org</a><br>10.0.0.202 _web01-<a target="_blank" rel="noopener" href="http://www.mooreyxia.orgrdp-cookie/">www.mooreyxia.orgrdp-cookie</a> 算法<br>• rdp-cookie对远windows远程桌面的负载，使用cookie保持会话，默认是静态，也可以通过hash-type指定map-based和consistent，来定义使用取模法还是一致性hash，不常用。<br>案例：<br>[root@haproxy ~]#cat &#x2F;etc&#x2F;haproxy&#x2F;conf.d&#x2F;<a target="_blank" rel="noopener" href="http://www.mooreyxia.org.cfg/">www.mooreyxia.org.cfg</a><br>listen <a target="_blank" rel="noopener" href="http://www.mooreyxia.org/">www.mooreyxia.org</a><br>    balance rdp-cookie<br>    hash-type consistent    –&gt; 可设置动态，默认静态<br>    bind 192.168.10.200:80<br>    server 10.0.0.202 10.0.0.202:80 weight 3 check inter 3000 fall 3 rise 5<br>    server 10.0.0.203 10.0.0.203:80 weight 1 check inter 3000 fall 3 rise 5总结：十种调度算法<br>#静态<br>static-rr———&gt;tcp&#x2F;http<br>first————-&gt;tcp&#x2F;http<br>#动态<br>roundrobin——–&gt;tcp&#x2F;http<br>leastconn———&gt;tcp&#x2F;http<br>random————&gt;tcp&#x2F;http<br>#以下静态和动态取决于hash_type是否consistent<br>source————&gt;tcp&#x2F;http<br>Uri—————&gt;http 七层<br>url_param———&gt;http 七层<br>hdr—————&gt;http 七层<br>rdp-cookie——–&gt;tcp 四层<br>#各种算法使用场景<br>first #使用较少<br>static-rr #做了session共享的 web 集群<br>roundrobin<br>random<br>leastconn #数据库<br>source #基于客户端公网 IP 的会话保持<br>Uri—————&gt;http #缓存服务器，CDN服务商，蓝汛、百度、阿里云、腾讯<br>url_param———&gt;http #可以实现session保持<br>hdr #基于客户端请求报文头部做下一步处理<br>rdp-cookie #基于Windows主机,很少使用我是moore,大家一起加油！！！</p>
+
+      
+       <hr><span style="font-style: italic;color: gray;"> 转载请注明来源，欢迎对文章中的引用来源进行考证，欢迎指出任何有错误或不够清晰的表达。可以在下面评论区评论，也可以邮件至 jaytp@qq.com </span>
+    </div>
+</article>
+
+
+<p>
+    <a  class="dashang" onclick="dashangToggle()">💰</a>
+</p>
+
+
+
+
+
+
+    
+
+
+
+
+    </div>
+    <div class="copyright">
+        <p class="footer-entry">
+    ©2016-2020 Yelog
+</p>
+<p class="footer-entry">Built with <a href="https://hexo.io/" target="_blank">Hexo</a> and <a href="https://github.com/yelog/hexo-theme-3-hexo" target="_blank">3-hexo</a> theme</p>
+
+    </div>
+    <div class="full-toc">
+        <button class="full" data-title="切换全屏 快捷键 s"><span class="min "></span></button>
+<a class="" id="rocket" ></a>
+
+    </div>
+</div>
+
+<div class="hide_box" onclick="dashangToggle()"></div>
+<div class="shang_box">
+    <a class="shang_close"  onclick="dashangToggle()">×</a>
+    <div class="shang_tit">
+        <p>Help us with donation</p>
+    </div>
+    <div class="shang_payimg">
+        <div class="pay_img">
+            <img src="/img/alipay.jpg" class="alipay" title="扫码支持">
+            <img src="/img/weixin.jpg" class="weixin" title="扫码支持">
+        </div>
+    </div>
+    <div class="shang_payselect">
+        <span><label><input type="radio" name="pay" checked value="alipay">alipay</label></span><span><label><input type="radio" name="pay" value="weixin">weixin</label></span>
+    </div>
+</div>
+
+
+</body>
+<script src="/js/jquery.pjax.js?v=1.1.0" ></script>
+
+<script src="/js/script.js?v=1.1.0" ></script>
+<script>
+    var img_resize = 'default';
+    function initArticle() {
+        /*渲染对应的表格样式*/
+        
+            $("#post .pjax table").addClass("green_title");
+        
+
+        /*渲染打赏样式*/
+        
+        $("input[name=pay]").on("click", function () {
+            if($("input[name=pay]:checked").val()=="weixin"){
+                $(".shang_box .shang_payimg .pay_img").addClass("weixin_img");
+            } else {
+                $(".shang_box .shang_payimg .pay_img").removeClass("weixin_img");
+            }
+        })
+        
+
+        /*高亮代码块行号*/
+        
+
+        /*访问数量*/
+        
+        $.getScript("//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js");
+        
+
+        /*代码高亮，行号对齐*/
+        $('.pre-numbering').css('line-height',$('.has-numbering').css('line-height'));
+
+        
+        
+    }
+
+    /*打赏页面隐藏与展示*/
+    
+    function dashangToggle() {
+        $(".shang_box").fadeToggle();
+        $(".hide_box").fadeToggle();
+    }
+    
+
+</script>
+
+<!--加入行号的高亮代码块样式-->
+
+<!--自定义样式设置-->
+<style>
+    
+    
+    .nav {
+        width: 542px;
+    }
+    .nav.fullscreen {
+        margin-left: -542px;
+    }
+    .nav-left {
+        width: 120px;
+    }
+    
+    
+    @media screen and (max-width: 1468px) {
+        .nav {
+            width: 492px;
+        }
+        .nav.fullscreen {
+            margin-left: -492px;
+        }
+        .nav-left {
+            width: 100px;
+        }
+    }
+    
+    
+    @media screen and (max-width: 1024px) {
+        .nav {
+            width: 492px;
+            margin-left: -492px
+        }
+        .nav.fullscreen {
+            margin-left: 0;
+        }
+    }
+    
+    @media screen and (max-width: 426px) {
+        .nav {
+            width: 100%;
+        }
+        .nav-left {
+            width: 100%;
+        }
+    }
+    
+    
+    .nav-right .title-list nav a .post-title, .nav-right .title-list #local-search-result a .post-title {
+        color: #383636;
+    }
+    
+    
+    .nav-right .title-list nav a .post-date, .nav-right .title-list #local-search-result a .post-date {
+        color: #5e5e5f;
+    }
+    
+    
+    .nav-right nav a.hover, #local-search-result a.hover{
+        background-color: #e2e0e0;
+    }
+    
+    
+
+    /*列表样式*/
+    
+
+    /* 背景图样式 */
+    
+    
+
+
+    /*引用块样式*/
+    
+
+    /*文章列表背景图*/
+    
+
+    
+</style>
+
+
+
+
+
+
+
+</html>

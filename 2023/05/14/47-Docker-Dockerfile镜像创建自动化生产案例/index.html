@@ -1,0 +1,1229 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>47-Docker-Dockerfile镜像创建自动化生产案例 | Hexo</title>
+  <meta name="keywords" content="">
+  <meta name="description" content="47-Docker-Dockerfile镜像创建自动化生产案例 | Hexo">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="description" content="基于现有虚拟机磁盘为模版创建新的虚拟机使用 virt-install 创建虚拟机• 虽然使用virt-manager 可以方便的管理虚拟机,但如果需要批量进行虚拟机的创建管理,命令行工具virtinstall更加方便和适合案例：利用 qemu-img命令创建虚拟磁盘#注意: qemu-img create 一定要确认对应路径下没有此文件,如果存在将覆盖原文件  确认现有的虚拟磁盘文件[root@u">
+<meta property="og:type" content="article">
+<meta property="og:title" content="42-KVM虚拟化-基于现有虚拟机磁盘为模版创建新的虚拟机">
+<meta property="og:url" content="http://example.com/2023/05/14/42-KVM%E8%99%9A%E6%8B%9F%E5%8C%96-%E5%9F%BA%E4%BA%8E%E7%8E%B0%E6%9C%89%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%A3%81%E7%9B%98%E4%B8%BA%E6%A8%A1%E7%89%88%E5%88%9B%E5%BB%BA%E6%96%B0%E7%9A%84%E8%99%9A%E6%8B%9F%E6%9C%BA/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="基于现有虚拟机磁盘为模版创建新的虚拟机使用 virt-install 创建虚拟机• 虽然使用virt-manager 可以方便的管理虚拟机,但如果需要批量进行虚拟机的创建管理,命令行工具virtinstall更加方便和适合案例：利用 qemu-img命令创建虚拟磁盘#注意: qemu-img create 一定要确认对应路径下没有此文件,如果存在将覆盖原文件  确认现有的虚拟磁盘文件[root@u">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="http://example.com/img/092d6b54082e04ec1c20121058c692bc5844b5.png">
+<meta property="og:image" content="http://example.com/img/f8bada3025892d742fe1746c42ead86f562ddc.png">
+<meta property="article:published_time" content="2023-05-14T08:21:34.888Z">
+<meta property="article:modified_time" content="2023-05-14T08:23:40.552Z">
+<meta property="article:author" content="John Doe">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/img/092d6b54082e04ec1c20121058c692bc5844b5.png">
+
+
+<link rel="icon" href="/img/avatar.jpg">
+
+<link href="/css/style.css?v=1.1.0" rel="stylesheet">
+
+<link href="/css/hl_theme/atom-light.css?v=1.1.0" rel="stylesheet">
+
+<link href="//cdn.jsdelivr.net/npm/animate.css@4.1.0/animate.min.css" rel="stylesheet">
+
+<script src="//cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js"></script>
+<script src="/js/titleTip.js?v=1.1.0" ></script>
+
+<script src="//cdn.jsdelivr.net/npm/highlightjs@9.16.2/highlight.pack.min.js"></script>
+<script>
+    hljs.initHighlightingOnLoad();
+</script>
+
+<script src="//cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.min.js"></script>
+
+
+
+<script src="//cdn.jsdelivr.net/npm/jquery.cookie@1.4.1/jquery.cookie.min.js" ></script>
+
+<script src="/js/iconfont.js?v=1.1.0" ></script>
+
+<meta name="generator" content="Hexo 6.3.0"></head>
+<div style="display: none">
+  <input class="theme_disqus_on" value="false">
+  <input class="theme_preload_comment" value="">
+  <input class="theme_blog_path" value="">
+  <input id="theme_shortcut" value="true" />
+  <input id="theme_highlight_on" value="true" />
+  <input id="theme_code_copy" value="true" />
+</div>
+
+
+
+<body>
+<aside class="nav">
+    <div class="nav-left">
+        <a href="/"
+   class="avatar_target">
+    <img class="avatar"
+         src="/img/avatar.jpg"/>
+</a>
+<div class="author">
+    <span>John Doe</span>
+</div>
+
+<div class="icon">
+    
+        
+            <a title="rss"
+               href="/atom.xml"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-rss"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="github"
+               href="https://github.com/yelog"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-github"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="facebook"
+               href="https://www.facebook.com/faker.tops"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-facebook"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+    
+        
+    
+        
+            <a title="instagram"
+               href="https://www.facebook.com/faker.tops"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-instagram"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="reddit"
+               href="https://www.reddit.com/user/yelog/"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-reddit"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="weibo"
+               href="http://weibo.com/u/2307534817"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-weibo"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="jianshu"
+               href="https://www.jianshu.com/u/ff56736de7cf"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-jianshu"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="zhihu"
+               href="https://www.zhihu.com/people/jaytp/activities"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-zhihu"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+    
+        
+            <a title="oschina"
+               href="https://my.oschina.net/yelog"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-oschina"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+    
+        
+            <a title="email"
+               href="mailto:jaytp@qq.com"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-email"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="qq"
+               href="http://wpa.qq.com/msgrd?v=3&uin=872336115&site=qq&menu=yes"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-qq"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="kugou"
+               href="https://www.kugou.com/"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-kugou"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="neteasemusic"
+               href="https://music.163.com/#/user/home?id=88151013"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-neteasemusic"></use>
+                    </svg>
+                
+            </a>
+        
+    
+</div>
+
+
+
+
+<ul>
+    <li>
+        <div class="all active" data-rel="All">All
+            
+                <small>(36)</small>
+            
+        </div>
+    </li>
+    
+        
+            
+                <li>
+                    <div data-rel="SRE linux云计算">
+                        
+                        SRE linux云计算
+                        <small>(11)</small>
+                        
+                    </div>
+                    
+                </li>
+            
+        
+    
+        
+            
+                <li>
+                    <div data-rel="云原生">
+                        
+                        云原生
+                        <small>(10)</small>
+                        
+                    </div>
+                    
+                </li>
+            
+        
+    
+        
+            
+                <li>
+                    <div data-rel="PMP管理">
+                        
+                        PMP管理
+                        <small>(1)</small>
+                        
+                    </div>
+                    
+                </li>
+            
+        
+    
+        
+            
+                <li>
+                    <div data-rel="Python 爬虫">
+                        
+                        Python 爬虫
+                        <small>(14)</small>
+                        
+                    </div>
+                    
+                </li>
+            
+        
+    
+</ul>
+<div class="left-bottom">
+    <div class="menus">
+        
+            
+            
+            
+    </div>
+    <div>
+        
+            <a class="about  hasFriend  site_url"
+               
+               href="/about">About</a>
+        
+        <a style="width: 50%"
+                
+                                           class="friends">Friends</a>
+        
+    </div>
+</div>
+<input type="hidden" id="yelog_site_posts_number" value="36">
+
+<div style="display: none">
+    <span id="busuanzi_value_site_uv"></span>
+    <span id="busuanzi_value_site_pv"></span>
+</div>
+
+    </div>
+    <div class="nav-right">
+        <div class="friends-area">
+    <div class="friends-title">
+        Links
+        <i class="iconfont icon-left"></i>
+    </div>
+    <div class="friends-content">
+        <ul>
+            
+            <li><a target="_blank" href="http://yelog.org/">叶落阁</a></li>
+            
+        </ul>
+    </div>
+</div>
+        <div class="title-list">
+    <div class="right-top">
+        <div id="default-panel">
+            <i class="iconfont icon-search" data-title="搜索 快捷键 i"></i>
+            <div class="right-title">All</div>
+            <i class="iconfont icon-file-tree" data-title="切换到大纲视图 快捷键 w"></i>
+        </div>
+        <div id="search-panel">
+            <i class="iconfont icon-left" data-title="返回"></i>
+            <input id="local-search-input" autocomplete="off"/>
+            <label class="border-line" for="input"></label>
+            <i class="iconfont icon-case-sensitive" data-title="大小写敏感"></i>
+            <i class="iconfont icon-tag" data-title="标签"></i>
+        </div>
+        <div id="outline-panel" style="display: none">
+            <div class="right-title">大纲</div>
+            <i class="iconfont icon-list" data-title="切换到文章列表"></i>
+        </div>
+    </div>
+
+    <div class="tags-list">
+    <input id="tag-search" />
+    <div class="tag-wrapper">
+        
+    </div>
+
+</div>
+
+    
+    <nav id="title-list-nav">
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/14/42-KVM%E8%99%9A%E6%8B%9F%E5%8C%96-%E5%9F%BA%E4%BA%8E%E7%8E%B0%E6%9C%89%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%A3%81%E7%9B%98%E4%B8%BA%E6%A8%A1%E7%89%88%E5%88%9B%E5%BB%BA%E6%96%B0%E7%9A%84%E8%99%9A%E6%8B%9F%E6%9C%BA/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="42-KVM虚拟化-基于现有虚拟机磁盘为模版创建新的虚拟机">42-KVM虚拟化-基于现有虚拟机磁盘为模版创建新的虚拟机</span>
+            <span class="post-date" title="2023-05-14 16:21:34">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%B8%89%E7%AB%A0-2-requests%20%E8%BF%9B%E9%98%B6%E2%80%A2%20%E7%88%AC%E5%8F%96%E6%9F%90%E8%A7%86%E9%A2%91%E7%BD%91%E7%9B%B8%E5%85%B3%E8%A7%86%E9%A2%91/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第三章-2-requests 进阶• 爬取某视频网相关视频">Python爬虫-第三章-2-requests 进阶• 爬取某视频网相关视频</span>
+            <span class="post-date" title="2023-05-14 16:20:20">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/14/44-KVM%E8%99%9A%E6%8B%9F%E5%8C%96-%E5%AD%98%E5%82%A8%E7%AE%A1%E7%90%86%E5%92%8C%E7%A3%81%E7%9B%98%E6%89%A9%E5%AE%B9/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="44-KVM虚拟化-存储管理和磁盘扩容">44-KVM虚拟化-存储管理和磁盘扩容</span>
+            <span class="post-date" title="2023-05-14 16:18:30">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%B8%89%E7%AB%A0-3-%E5%88%A9%E7%94%A8re%E6%A8%A1%E5%9D%97%E7%88%AC%E5%8F%96%E6%9F%90%E7%BD%91%E7%94%B5%E5%BD%B1%E6%8E%92%E8%A1%8C%E6%A6%9C/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第三章-3-利用re模块爬取某网电影排行榜">Python爬虫-第三章-3-利用re模块爬取某网电影排行榜</span>
+            <span class="post-date" title="2023-05-14 16:16:51">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/14/46-Docker-Container%E5%AE%B9%E5%99%A8%E7%AE%A1%E7%90%86%E5%90%84%E7%A7%8D%E6%93%8D%E4%BD%9C/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="46-Docker-Container容器管理各种操作">46-Docker-Container容器管理各种操作</span>
+            <span class="post-date" title="2023-05-14 16:14:04">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/14/47-Docker-Dockerfile%E9%95%9C%E5%83%8F%E5%88%9B%E5%BB%BA%E8%87%AA%E5%8A%A8%E5%8C%96%E7%94%9F%E4%BA%A7%E6%A1%88%E4%BE%8B/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="47-Docker-Dockerfile镜像创建自动化生产案例">47-Docker-Dockerfile镜像创建自动化生产案例</span>
+            <span class="post-date" title="2023-05-14 16:09:19">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/14/48-Docker-%E5%A4%9A%E5%AE%B9%E5%99%A8%E6%95%B0%E6%8D%AE%E5%85%B1%E4%BA%AB%E5%8F%8A%E6%8C%81%E4%B9%85%E5%8C%96/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="48-Docker-多容器数据共享及持久化">48-Docker-多容器数据共享及持久化</span>
+            <span class="post-date" title="2023-05-14 16:06:48">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%B8%89%E7%AB%A0-4-%E5%88%A9%E7%94%A8BeautifulSoup%E6%A8%A1%E5%9D%97%E7%88%AC%E5%8F%96%E6%9F%90%E7%BD%91%E5%A3%81%E7%BA%B8%E5%9B%BE%E5%BA%93%E5%9B%BE%E7%89%87/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第三章-4-利用BeautifulSoup模块爬取某网壁纸图库图片">Python爬虫-第三章-4-利用BeautifulSoup模块爬取某网壁纸图库图片</span>
+            <span class="post-date" title="2023-05-14 16:05:34">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%B8%89%E7%AB%A0-5-%E5%88%A9%E7%94%A8xpath%E7%88%AC%E5%8F%96%E6%9F%90%E5%85%AB%E6%88%92%E7%BD%91%E7%9B%B8%E5%85%B3%E8%AF%8D%E8%AF%AD%E5%85%AC%E5%8F%B8%E7%9A%84%E4%BF%A1%E6%81%AF%E5%92%8C%E4%BB%B7%E6%A0%BC/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第三章-5-利用xpath爬取某八戒网相关词语公司的信息和价格">Python爬虫-第三章-5-利用xpath爬取某八戒网相关词语公司的信息和价格</span>
+            <span class="post-date" title="2023-05-14 16:04:16">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%B8%89%E7%AB%A0-6-%E6%8A%93%E5%8F%96%E6%9F%90%E4%BA%91%E9%9F%B3%E4%B9%90%E8%AF%84%E8%AE%BA%E6%95%B0%E6%8D%AE/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第三章-6-抓取某云音乐评论数据">Python爬虫-第三章-6-抓取某云音乐评论数据</span>
+            <span class="post-date" title="2023-05-14 16:03:15">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-1-%E5%A4%9A%E7%BA%BF%E7%A8%8B%E5%A4%9A%E8%BF%9B%E7%A8%8B%E5%B9%B6%E5%8F%91%E7%88%AC%E5%8F%96%E2%85%A0/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-1-多线程多进程并发爬取Ⅰ">Python爬虫-第四章-1-多线程多进程并发爬取Ⅰ</span>
+            <span class="post-date" title="2023-05-14 16:01:27">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-1-%E5%A4%9A%E7%BA%BF%E7%A8%8B%E5%A4%9A%E8%BF%9B%E7%A8%8B%E5%B9%B6%E5%8F%91%E7%88%AC%E5%8F%96%E2%85%A1/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-1-多线程多进程并发爬取Ⅱ">Python爬虫-第四章-1-多线程多进程并发爬取Ⅱ</span>
+            <span class="post-date" title="2023-05-14 16:00:37">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-1-%E5%A4%9A%E7%BA%BF%E7%A8%8B%E5%A4%9A%E8%BF%9B%E7%A8%8B%E5%B9%B6%E5%8F%91%E7%88%AC%E5%8F%96%E2%85%A2-%E7%88%AC%E5%8F%96%E6%9F%90%E8%8F%9C%E5%B8%82%E5%9C%BA%E6%89%B9%E5%8F%91%E4%BB%B7%E6%95%B0%E6%8D%AE/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-1-多线程多进程并发爬取Ⅲ-爬取某菜市场批发价数据">Python爬虫-第四章-1-多线程多进程并发爬取Ⅲ-爬取某菜市场批发价数据</span>
+            <span class="post-date" title="2023-05-14 15:59:35">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-2-%E5%8D%8F%E7%A8%8B%E4%B8%8E%E5%BC%82%E6%AD%A5/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-2-协程与异步">Python爬虫-第四章-2-协程与异步</span>
+            <span class="post-date" title="2023-05-14 15:58:20">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/14/52-HAProxy-10%E7%A7%8D%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E8%B0%83%E5%BA%A6%E7%AE%97%E6%B3%95/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="52-HAProxy-10种负载均衡调度算法">52-HAProxy-10种负载均衡调度算法</span>
+            <span class="post-date" title="2023-05-14 15:56:12">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/14/55-Redis-%E7%BC%96%E8%AF%91%E9%83%A8%E7%BD%B2%E5%8F%8A%E6%95%B0%E6%8D%AE%E6%8C%81%E4%B9%85%E5%8C%96/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="55-Redis-编译部署及数据持久化">55-Redis-编译部署及数据持久化</span>
+            <span class="post-date" title="2023-05-14 15:54:02">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/14/56-Redis%E9%9B%86%E7%BE%A4-%E5%93%A8%E5%85%B5Sentinel%E6%90%AD%E5%BB%BA%E5%AE%9E%E7%8E%B0%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E9%AB%98%E5%8F%AF%E7%94%A8/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="56-Redis集群-哨兵Sentinel搭建实现负载均衡高可用">56-Redis集群-哨兵Sentinel搭建实现负载均衡高可用</span>
+            <span class="post-date" title="2023-05-14 15:41:50">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/14/998-%E6%90%AD%E5%BB%BA%E4%B8%80%E5%8F%B0%E7%A7%81%E7%94%A8%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%A8%E8%BF%87%E7%A8%8B/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="998-搭建一台私用服务器全过程">998-搭建一台私用服务器全过程</span>
+            <span class="post-date" title="2023-05-14 15:36:20">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/%20Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-3-%E5%A4%9A%E7%BA%BF%E7%A8%8B%E5%A4%9A%E8%BF%9B%E7%A8%8B%E6%8F%90%E5%8D%87%E4%BB%BB%E5%8A%A1%E6%89%A7%E8%A1%8C%E6%95%88%E7%8E%87/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-3-多线程多进程提升任务执行效率">Python爬虫-第四章-3-多线程多进程提升任务执行效率</span>
+            <span class="post-date" title="2023-05-14 15:35:16">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/%20Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-4-%E5%88%A9%E7%94%A8%E7%BA%BF%E7%A8%8B%E6%B1%A0%E5%92%8C%E8%BF%9B%E7%A8%8B%E6%B1%A0%E9%AB%98%E6%95%88%E7%88%AC%E5%8F%96%E5%8C%97%E4%BA%AC%E6%9F%90%E5%8F%91%E8%8F%9C%E5%9C%B0%E6%95%B0%E6%8D%AE/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-4-利用线程池和进程池高效爬取北京某发菜地数据">Python爬虫-第四章-4-利用线程池和进程池高效爬取北京某发菜地数据</span>
+            <span class="post-date" title="2023-05-14 15:34:07">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/13/%20Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-5-%E9%AB%98%E6%95%88%E6%8A%93%E5%8F%96%E8%A7%86%E9%A2%91%E7%BD%91%E7%AB%99%E8%A7%86%E9%A2%91%E8%B5%84%E6%BA%90%E8%87%B3%E6%9C%AC%E5%9C%B0/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-5-高效抓取视频网站视频资源至本地">Python爬虫-第四章-5-高效抓取视频网站视频资源至本地</span>
+            <span class="post-date" title="2023-05-13 20:13:14">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/13/%20Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%BA%94%E7%AB%A0-1-%E8%B6%85%E7%BA%A7%E9%B9%B0%E6%8F%92%E4%BB%B6%E5%AE%9E%E7%8E%B0%E8%87%AA%E5%8A%A8%E5%A1%AB%E5%86%99%E8%AF%86%E5%88%AB%E7%A0%81%E5%B9%B6%E7%99%BB%E5%BD%9512306%E7%BD%91%E7%AB%99/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第五章-1-超级鹰插件实现自动填写识别码并登录12306网站">Python爬虫-第五章-1-超级鹰插件实现自动填写识别码并登录12306网站</span>
+            <span class="post-date" title="2023-05-13 19:54:30">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/13/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%BA%94%E7%AB%A0-2-%E7%88%AC%E5%8F%96%E6%9F%90%E7%BD%91%E7%AB%99%E5%9B%BE%E5%BA%93/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第五章-2-爬取某网站图库">Python爬虫-第五章-2-爬取某网站图库</span>
+            <span class="post-date" title="2023-05-13 19:52:47">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/66-CICD%E6%8C%81%E7%BB%AD%E9%9B%86%E6%88%90%E5%B7%A5%E5%85%B7-Jenkins%E5%A3%B0%E6%98%8E%E5%BC%8FPipeline%E9%83%A8%E7%BD%B2JAVA%E7%A8%8B%E5%BA%8F%E7%94%9F%E4%BA%A7%E6%A1%88%E4%BE%8B(%E5%8C%85%E5%90%ABDocker%E6%A1%88%E4%BE%8B)/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="66-CICD持续集成工具-Jenkins声明式Pipeline部署JAVA程序生产案例(包含Docker案例)">66-CICD持续集成工具-Jenkins声明式Pipeline部署JAVA程序生产案例(包含Docker案例)</span>
+            <span class="post-date" title="2023-05-13 19:49:20">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/997-%E6%89%A9%E5%B1%95KVM%E8%99%9A%E6%8B%9F%E6%9C%BA%E9%80%BB%E8%BE%91%E5%8D%B7/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="67-日志分析系统ELK-ELK架构简述">67-日志分析系统ELK-ELK架构简述</span>
+            <span class="post-date" title="2023-05-13 19:47:57">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/67-%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90%E7%B3%BB%E7%BB%9FELK-ELK%E6%9E%B6%E6%9E%84%E7%AE%80%E8%BF%B0/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="67-日志分析系统ELK-ELK架构简述">67-日志分析系统ELK-ELK架构简述</span>
+            <span class="post-date" title="2023-05-13 19:46:06">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/68-%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90%E7%B3%BB%E7%BB%9FELK-Elasticsearch%E5%8D%95%E7%82%B9%E9%83%A8%E7%BD%B2%E5%92%8C%E9%85%8D%E7%BD%AE%E4%BC%98%E5%8C%96%EF%BC%88%E5%90%AB%E5%9F%BA%E4%BA%8EDocker%E5%8D%95%E7%82%B9%E9%83%A8%E7%BD%B2%E6%A1%88%E4%BE%8B%EF%BC%89/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="68-日志分析系统ELK-Elasticsearch单点部署和配置优化（含基于Docker单点部署案例）">68-日志分析系统ELK-Elasticsearch单点部署和配置优化（含基于Docker单点部署案例）</span>
+            <span class="post-date" title="2023-05-13 19:44:06">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/13/78-%E4%BA%91%E5%8E%9F%E7%94%9F%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-Kubernetes%E9%9B%86%E7%BE%A4%E8%8A%82%E7%82%B9%E6%A8%AA%E5%90%91%E4%BC%B8%E7%BC%A9%E5%8F%8A%E6%A0%B8%E5%BF%83%E7%BB%84%E4%BB%B6%E7%89%88%E6%9C%AC%E5%8D%87%E7%BA%A7/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="78-云原生操作系统-Kubernetes集群节点横向伸缩及核心组件版本升级">78-云原生操作系统-Kubernetes集群节点横向伸缩及核心组件版本升级</span>
+            <span class="post-date" title="2023-05-13 17:37:37">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/13/79-%E4%BA%91%E5%8E%9F%E7%94%9F%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-Kubectl%E5%91%BD%E4%BB%A4%E4%BB%A5%E5%8F%8AEtcd%E5%9F%BA%E4%BA%8E%E5%BF%AB%E7%85%A7%E7%9A%84%E6%95%B0%E6%8D%AE%E5%A4%87%E4%BB%BD%E4%B8%8E%E6%81%A2%E5%A4%8D/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="79-云原生操作系统-Kubectl命令以及Etcd基于快照的数据备份与恢复">79-云原生操作系统-Kubectl命令以及Etcd基于快照的数据备份与恢复</span>
+            <span class="post-date" title="2023-05-13 17:34:14">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All PMP管理 "
+           href="/2023/05/13/%E9%A2%84%E6%B5%8B%E5%9E%8B%E9%A1%B9%E7%9B%AE%E7%AE%A1%E7%90%86-6-%E9%A1%B9%E7%9B%AE%E8%BF%9B%E5%BA%A6%E7%AE%A1%E7%90%86%E2%85%A1/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="预测型项目管理-6-项目进度管理Ⅱ">预测型项目管理-6-项目进度管理Ⅱ</span>
+            <span class="post-date" title="2023-05-13 17:32:31">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/13/84-%E4%BA%91%E5%8E%9F%E7%94%9F%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-%E5%9F%BA%E4%BA%8Enerdctl%20+%20buildkitd%E6%9E%84%E5%BB%BA%E5%AE%B9%E5%99%A8%E9%95%9C%E5%83%8F20230513/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="84-云原生操作系统-基于nerdctl + buildkitd构建容器镜像">84-云原生操作系统-基于nerdctl + buildkitd构建容器镜像</span>
+            <span class="post-date" title="2023-05-13 17:22:54">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/13/86-%E4%BA%91%E5%8E%9F%E7%94%9F%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-Zookeeper%E9%9B%86%E7%BE%A4%E5%8F%8A%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%8A%A8%E6%80%81%E6%B3%A8%E5%86%8C%E5%92%8C%E5%8F%91%E7%8E%B0%E4%B8%9A%E5%8A%A1%E5%AE%B9%E5%99%A8%E5%8C%96%E6%A1%88%E4%BE%8B/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="86-云原生操作系统-Zookeeper集群及微服务动态注册和发现业务容器化案例">86-云原生操作系统-Zookeeper集群及微服务动态注册和发现业务容器化案例</span>
+            <span class="post-date" title="2023-05-13 17:13:23">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/13/87-%E4%BA%91%E5%8E%9F%E7%94%9F%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-Redis%E5%8D%95%E6%9C%BA%E5%92%8C%E9%9B%86%E7%BE%A4%E4%B8%9A%E5%8A%A1%E5%AE%B9%E5%99%A8%E5%8C%96%E6%A1%88%E4%BE%8B/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="87-云原生操作系统-Redis单机和集群业务容器化案例">87-云原生操作系统-Redis单机和集群业务容器化案例</span>
+            <span class="post-date" title="2023-05-13 17:08:49">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/997-%E4%BD%BF%E7%94%A8ChatGPT%E5%81%9A%E8%BF%90%E7%BB%B4%E5%BA%94%E7%94%A8%E5%B7%A5%E5%85%B7%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E8%A7%A3%E7%AD%94/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="997-使用ChatGPT做运维应用工具常见问题解答">997-使用ChatGPT做运维应用工具常见问题解答</span>
+            <span class="post-date" title="2023-05-13 15:49:52">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/%E5%A4%A7%E5%9E%8B%E4%BA%92%E8%81%94%E7%BD%91%E5%BE%AE%E6%9C%8D%E5%8A%A1%E6%9E%B6%E6%9E%84%E5%9B%BE/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="大型互联网微服务架构图">大型互联网微服务架构图</span>
+            <span class="post-date" title="2023-05-13 15:47:16">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/%E4%BA%91%E8%AE%A1%E7%AE%97%E6%9E%B6%E6%9E%84%E5%9B%BE/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="云计算架构图">云计算架构图</span>
+            <span class="post-date" title="2023-05-13 15:24:25">2023/05/13</span>
+        </a>
+        
+        <div id="no-item-tips">
+
+        </div>
+    </nav>
+    <div id="outline-list">
+    </div>
+</div>
+
+    </div>
+    <div class="hide-list">
+        <div class="semicircle" data-title="切换全屏 快捷键 s">
+            <div class="brackets first"><</div>
+            <div class="brackets">&gt;</div>
+        </div>
+    </div>
+</aside>
+<div id="post">
+    <div class="pjax">
+        <article id="post-47-Docker-Dockerfile镜像创建自动化生产案例" class="article article-type-post" itemscope itemprop="blogPost">
+    
+        <h1 class="article-title">47-Docker-Dockerfile镜像创建自动化生产案例</h1>
+    
+    <div class="article-meta">
+        
+        
+        
+        <span class="book">
+            <i class="iconfont icon-category"></i>
+            
+            
+            <a  data-rel="云原生">云原生</a>
+            
+        </span>
+        
+        
+    </div>
+    <div class="article-meta">
+        
+            Created At : <time class="date" title='Updated At: 2023-05-14 16:13:04'>2023-05-14 16:09</time>
+        
+    </div>
+    <div class="article-meta">
+        
+        
+        <span id="busuanzi_container_page_pv">
+            Views 👀 :<span id="busuanzi_value_page_pv">
+                <span class="count-comment">
+                    <span class="spinner">
+                      <div class="cube1"></div>
+                      <div class="cube2"></div>
+                    </span>
+                </span>
+            </span>
+        </span>
+        
+        
+    </div>
+    
+    <div class="toc-ref">
+    
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-text"></span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#NOTE-THIS-DOCKERFILE-IS-GENERATED-VIA-%E2%80%9Cupdate-sh%E2%80%9D"><span class="toc-text">NOTE: THIS DOCKERFILE IS GENERATED VIA “update.sh”</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#-1"><span class="toc-text"></span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#PLEASE-DO-NOT-EDIT-IT-DIRECTLY"><span class="toc-text">PLEASE DO NOT EDIT IT DIRECTLY.</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#-2"><span class="toc-text"></span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#create-nginx-user-x2F-group-first-to-be-consistent-throughout-docker-variants"><span class="toc-text">create nginx user&#x2F;group first, to be consistent throughout docker variants</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#arches-officialy-built-by-upstream"><span class="toc-text">arches officialy built by upstream</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#we%E2%80%99re-on-an-architecture-upstream-doesn%E2%80%99t-officially-build-for"><span class="toc-text">we’re on an architecture upstream doesn’t officially build for</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#let%E2%80%99s-build-binaries-from-the-published-source-packages"><span class="toc-text">let’s build binaries from the published source packages</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#new-directory-for-storing-sources-and-deb-files"><span class="toc-text">new directory for storing sources and .deb files</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#777-to-ensure-APT%E2%80%99s-%E2%80%9C-apt%E2%80%9D-user-can-access-it-too"><span class="toc-text">(777 to ensure APT’s “_apt” user can access it too)</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#save-list-of-currently-installed-packages-so-build-dependencies-can-be-cleanly-removed-later"><span class="toc-text">save list of currently-installed packages so build dependencies can be cleanly removed later</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#build-deb-files-from-upstream%E2%80%99s-source-packages-which-are-verified-by-apt-get"><span class="toc-text">build .deb files from upstream’s source packages (which are verified by apt-get)</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#we-don%E2%80%99t-remove-APT-lists-here-because-they-get-re-downloaded-and-removed-later"><span class="toc-text">we don’t remove APT lists here because they get re-downloaded and removed later</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#reset-apt-mark%E2%80%99s-%E2%80%9Cmanual%E2%80%9D-list-so-that-%E2%80%9Cpurge-%E2%80%93auto-remove%E2%80%9D-will-remove-all-build-dependencies"><span class="toc-text">reset apt-mark’s “manual” list so that “purge –auto-remove” will remove all build dependencies</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#which-is-done-after-we-install-the-built-packages-so-we-don%E2%80%99t-have-to-redownload-any-overlapping-dependencies"><span class="toc-text">(which is done after we install the built packages so we don’t have to redownload any overlapping dependencies)</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#create-a-temporary-local-APT-repo-to-install-from-so-that-dependency-resolution-can-be-handled-by-APT-as-it-should-be"><span class="toc-text">create a temporary local APT repo to install from (so that dependency resolution can be handled by APT, as it should be)</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#work-around-the-following-APT-issue-by-using-%E2%80%9CAcquire-GzipIndexes-x3D-false%E2%80%9D-overriding-%E2%80%9C-x2F-etc-x2F-apt-x2F-apt-conf-d-x2F-docker-gzip-indexes%E2%80%9D"><span class="toc-text">work around the following APT issue by using “Acquire::GzipIndexes&#x3D;false” (overriding “&#x2F;etc&#x2F;apt&#x2F;apt.conf.d&#x2F;docker-gzip-indexes”)</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Could-not-open-file-x2F-var-x2F-lib-x2F-apt-x2F-lists-x2F-partial-x2F-tmp-tmp-ODWljpQfkE-Packages-open-13-Permission-denied"><span class="toc-text">Could not open file &#x2F;var&#x2F;lib&#x2F;apt&#x2F;lists&#x2F;partial&#x2F;tmp_tmp.ODWljpQfkE._Packages - open (13: Permission denied)</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E2%80%A6"><span class="toc-text">…</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#E-Failed-to-fetch-store-x2F-var-x2F-lib-x2F-apt-x2F-lists-x2F-partial-x2F-tmp-tmp-ODWljpQfkE-Packages-Could-not-open-file-x2F-var-x2F-lib-x2F-apt-x2F-lists-x2F-partial-x2F-tmp-tmp-ODWljpQfkE-Packages-open-13-Permission-denied"><span class="toc-text">E: Failed to fetch store:&#x2F;var&#x2F;lib&#x2F;apt&#x2F;lists&#x2F;partial&#x2F;tmp_tmp.ODWljpQfkE._Packages  Could not open file &#x2F;var&#x2F;lib&#x2F;apt&#x2F;lists&#x2F;partial&#x2F;tmp_tmp.ODWljpQfkE._Packages - open (13: Permission denied)</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#if-we-have-leftovers-from-building-let%E2%80%99s-purge-them-including-extra-unnecessary-build-deps"><span class="toc-text">if we have leftovers from building, let’s purge them (including extra, unnecessary build deps)</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#forward-request-and-error-logs-to-docker-log-collector"><span class="toc-text">forward request and error logs to docker log collector</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#create-a-docker-entrypoint-d-directory"><span class="toc-text">create a docker-entrypoint.d directory</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Versinotallow-x3D-%E2%80%9Dv1%E2%80%9D"><span class="toc-text">Versinotallow&#x3D;”v1”</span></a></li></ol>
+    
+<style>
+    .left-col .switch-btn,
+    .left-col .switch-area {
+        display: none;
+    }
+    .toc-level-3 i,
+    .toc-level-3 ol {
+        display: none !important;
+    }
+</style>
+</div>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>基于容器手动制作镜像步骤具体如下:</p>
+<ol>
+<li>下载一个系统的官方基础镜像，如: CentOS 或 Ubuntu</li>
+<li>基于基础镜像启动一个容器,并进入到容器</li>
+<li>在容器里面做配置操作</li>
+</ol>
+<p>安装基础命令</p>
+<p>配置运行环境</p>
+<p>安装服务和配置服务</p>
+<p>放业务程序代码4. 提交为一个新镜像 docker commit<br>5. 基于自己的的镜像创建容器并测试访问<br>注意：手动制作镜像的方式显示全部的容器制作过程比较困难，且需要前台执行方式添加命令不支持自动化，生产不实用<br>作为帮助理解镜像的制作过程就比较容易理解<br>案例：利用官方提供的基础镜像制作一个初始化镜像并提交到docker官方，再从官方拉取镜像到本地<br>#下载一个系统的官方基础镜像<br>[root@ubuntu2204 ~]#docker pull alpine<br>[root@ubuntu2204 ~]#docker images<br>REPOSITORY    TAG       IMAGE ID       CREATED         SIZE<br>alpine        latest    49176f190c7e   6 weeks ago     7.05MB<br>#基于基础镜像启动一个容器,并进入到容器<br>[root@ubuntu2204 ~]#docker run -it –name alpine-image-latest  alpine:latest sh<br>#在容器里面做配置操作 - 把容器的镜像源替换成国内地址<br>[root@ubuntu2204 ~]#docker cp alpine-image-latest:&#x2F;etc&#x2F;apk&#x2F;repositories .<br>[root@ubuntu2204 ~]#cat repositories<br><a target="_blank" rel="noopener" href="https://dl-cdn.alpinelinux.org/alpine/v3.17/main">https://dl-cdn.alpinelinux.org/alpine/v3.17/main</a><br><a target="_blank" rel="noopener" href="https://dl-cdn.alpinelinux.org/alpine/v3.17/community">https://dl-cdn.alpinelinux.org/alpine/v3.17/community</a><br>[root@ubuntu2204 ~]#sed -i ‘s&#x2F;dl-cdn.alpinelinux.org&#x2F;mirrors.ustc.edu.cn&#x2F;‘ repositories<br>[root@ubuntu2204 ~]#cat repositories<br><a target="_blank" rel="noopener" href="https://mirrors.ustc.edu.cn/alpine/v3.17/main">https://mirrors.ustc.edu.cn/alpine/v3.17/main</a><br><a target="_blank" rel="noopener" href="https://mirrors.ustc.edu.cn/alpine/v3.17/community">https://mirrors.ustc.edu.cn/alpine/v3.17/community</a><br>[root@ubuntu2204 ~]#docker cp repositories  alpine-image-latest:&#x2F;etc&#x2F;apk&#x2F;repositories<br>[root@ubuntu2204 ~]#docker exec -it alpine-image-latest  sh<br>&#x2F; # cat &#x2F;etc&#x2F;apk&#x2F;repositories<br><a target="_blank" rel="noopener" href="https://mirrors.ustc.edu.cn/alpine/v3.17/main">https://mirrors.ustc.edu.cn/alpine/v3.17/main</a><br><a target="_blank" rel="noopener" href="https://mirrors.ustc.edu.cn/alpine/v3.17/community">https://mirrors.ustc.edu.cn/alpine/v3.17/community</a><br>#安装常用软件<br>&#x2F; # apk update &amp;&amp; apk –no-cache add iotop gcc libgcc libc-dev libcurl libc-utils<br>pcre-dev zlib-dev libnfs make pcre pcre2 zip unzip net-tools pstree wget tzdata<br>libevent libevent-dev iproute2 vim<br>&#x2F; # apk exit<br>#基于现有容器提交为一个新镜像 docker commit<br>[root@ubuntu2204 ~]#docker ps -a<br>CONTAINER ID   IMAGE           COMMAND   CREATED         STATUS                          PORTS     NAMES<br>027d1de130f0   alpine:latest   “sh”      8 minutes ago   Exited (0) About a minute ago             alpine-image-latest<br>[root@ubuntu2204 ~]#docker commit<br>“docker commit” requires at least 1 and at most 2 arguments.<br>See ‘docker commit –help’.</p>
+<p>Usage:  docker commit [OPTIONS] CONTAINER [REPOSITORY[:TAG]]</p>
+<p>Create a new image from a container’s changes<br>[root@ubuntu2204 ~]#docker commit alpine-image-latest alpine-mooreyxia:latest<br>sha256:c837f55017976cf25c4a8b257967019eccba0d8ac67e284242434f1ac668a44c<br>[root@ubuntu2204 ~]#docker images<br>REPOSITORY         TAG       IMAGE ID       CREATED         SIZE<br>alpine-mooreyxia   latest    c837f5501797   6 seconds ago   221MB<br>alpine             latest    49176f190c7e   6 weeks ago     7.05MB</p>
+<p>#上传到hub镜像官网<br>[root@ubuntu2204 ~]#docker tag alpine-mooreyxia:latest mooreyxia&#x2F;alpine-mooreyxia-20230107:latest<br>[root@ubuntu2204 ~]#docker images<br>REPOSITORY                            TAG       IMAGE ID       CREATED          SIZE<br>alpine-mooreyxia                      latest    c837f5501797   36 minutes ago   221MB<br>mooreyxia&#x2F;alpine-mooreyxia-20230107   latest    c837f5501797   36 minutes ago   221MB<br>busybox                               latest    827365c7baf1   2 weeks ago      4.86MB<br>nginx                                 latest    1403e55ab369   2 weeks ago      142MB<br>ubuntu                                latest    6b7dfa7e8fdb   4 weeks ago      77.8MB<br>alpine                                latest    49176f190c7e   6 weeks ago      7.05MB<br>hello-world                           latest    feb5d9fea6a5   15 months ago    13.3kB<br>mysql                                 5.7.32    cc8775c0fe94   24 months ago    449MB<br>[root@ubuntu2204 ~]#docker login<br>Login with your Docker ID to push and pull images from Docker Hub. If you don’t have a Docker ID, head over to <a target="_blank" rel="noopener" href="https://hub.docker.com/">https://hub.docker.com</a> to create one.<br>Username: mooreyxia<br>Password:<br>WARNING! Your password will be stored unencrypted in &#x2F;root&#x2F;.docker&#x2F;config.json.<br>Configure a credential helper to remove this warning. See<br><a target="_blank" rel="noopener" href="https://docs.docker.com/engine/reference/commandline/login/#credentials-store">https://docs.docker.com/engine/reference/commandline/login/#credentials-store</a></p>
+<p>Login Succeeded<br>[root@ubuntu2204 <del>]#docker push mooreyxia&#x2F;alpine-mooreyxia-20230107:latest<br>The push refers to repository [docker.io&#x2F;mooreyxia&#x2F;alpine-mooreyxia-20230107]<br>8d5f0fc33c4a: Pushed<br>ded7a220bb05: Mounted from library&#x2F;alpine<br>latest: digest: sha256:4e87307a2a9e831d181c5a42b2660e5dce1d0d2e3d0916f6b649b1cef1cdc477 size: 740<br><img src="/../img/a4ebdd9253dbd4659ab914c6d0b459c9f0feb5.png"><br>#在另外一台机子上拉取镜像，默认是公开镜像，可以直接使用<br>[root@ubuntu2204 ~]#docker pull mooreyxia&#x2F;alpine-mooreyxia-20230107:latest<br>latest: Pulling from mooreyxia&#x2F;alpine-mooreyxia-20230107<br>c158987b0551: Pull complete<br>e2cd06421e04: Pull complete<br>Digest: sha256:4e87307a2a9e831d181c5a42b2660e5dce1d0d2e3d0916f6b649b1cef1cdc477<br>Status: Downloaded newer image for mooreyxia&#x2F;alpine-mooreyxia-20230107:latest<br>docker.io&#x2F;mooreyxia&#x2F;alpine-mooreyxia-20230107:latest<br>[root@ubuntu2204 ~]#docker images<br>REPOSITORY                            TAG       IMAGE ID       CREATED                  SIZE<br>mooreyxia&#x2F;alpine-mooreyxia-20230107   latest    c837f5501797   Less than a second ago   221MB<br>#测试<br>[root@ubuntu2204 ~]#docker run -d –name alpine-test1 mooreyxia&#x2F;alpine-mooreyxia-20230107 sleep 1000<br>b5328aa1a2e76e09ed1628a2e9763a716837a0285ae01a2cff322cbddc57da99<br>[root@ubuntu2204 ~]#docker ps<br>CONTAINER ID   IMAGE                                 COMMAND        CREATED         STATUS         PORTS     NAMES<br>b5328aa1a2e7   mooreyxia&#x2F;alpine-mooreyxia-20230107   “sleep 1000”   4 seconds ago   Up 2 seconds             alpine-test1<br>[root@ubuntu2204 ~]#docker exec -it alpine-test1 sh<br>&#x2F; # ss -ntlp<br>State               Recv-Q               Send-Q                             Local Address:Port                               Peer Address:Port               Process<br>&#x2F; # exit利用 DockerFile 文件执行 docker build 自动构建镜像<br><img src="/../img/a197e5a9372916127d6108e376c7514ccb6c81.png"><br>Dockerfile 介绍<br>• Docker程序读取DockerFile并根据指令生成Docker镜像，相比手动制作镜像的方式，DockerFile更能直观的展示镜像是怎么产生的，有了DockerFile，当后期有额外的需求时，只要在之前的DockerFile添加或者修改响应的命令即可重新生成新的Docker镜像，避免了重复手动制作镜像的麻烦,类似与shell脚本一样,可以方便高效的制作镜像<br>• Docker将尽可能重用中间镜像层（缓存），以显著加速docker build 命令的执行过程，这由Usingcache 控制台输出中的消息指示<br>案例：<br>#查看nginx官方的镜像指令执行结果<br>[root@ubuntu2204 ~]#docker pull nginx:1.22.0<br>1.22.0: Pulling from library&#x2F;nginx<br>bd159e379b3b: Pull complete<br>265da2307f4a: Pull complete<br>9f5a323076dc: Pull complete<br>1cb127bd9321: Pull complete<br>20d83d630f2b: Pull complete<br>e0c68760750a: Pull complete<br>Digest: sha256:f0d28f2047853cbc10732d6eaa1b57f1f4db9b017679b9fd7966b6a2f9ccc2d1<br>Status: Downloaded newer image for nginx:1.22.0<br>docker.io&#x2F;library&#x2F;nginx:1.22.0<br>#可以看到镜像指令从下往上一层层执行<br>[root@ubuntu2204 ~]#docker history nginx:1.22.0<br>IMAGE          CREATED        CREATED BY                                      SIZE      COMMENT<br>08a1cbf9c69e   3 months ago   &#x2F;bin&#x2F;sh -c #(nop)  CMD [“nginx” “-g” “daemon…   0B<br><missing>      3 months ago   &#x2F;bin&#x2F;sh -c #(nop)  STOPSIGNAL SIGQUIT           0B<br><missing>      3 months ago   &#x2F;bin&#x2F;sh -c #(nop)  EXPOSE 80                    0B<br><missing>      3 months ago   &#x2F;bin&#x2F;sh -c #(nop)  ENTRYPOINT [“&#x2F;docker-entr…   0B<br><missing>      3 months ago   &#x2F;bin&#x2F;sh -c #(nop) COPY file:09a214a3e07c919a…   4.61kB<br><missing>      3 months ago   &#x2F;bin&#x2F;sh -c #(nop) COPY file:0fd5fca330dcd6a7…   1.04kB<br><missing>      3 months ago   &#x2F;bin&#x2F;sh -c #(nop) COPY file:0b866ff3fc1ef5b0…   1.96kB<br><missing>      3 months ago   &#x2F;bin&#x2F;sh -c #(nop) COPY file:65504f71f5855ca0…   1.2kB<br><missing>      3 months ago   &#x2F;bin&#x2F;sh -c set -x     &amp;&amp; addgroup –system -…   61.1MB<br><missing>      3 months ago   &#x2F;bin&#x2F;sh -c #(nop)  ENV PKG_RELEASE&#x3D;1</del>bullseye   0B<br><missing>      3 months ago   &#x2F;bin&#x2F;sh -c #(nop)  ENV NJS_VERSION&#x3D;0.7.6        0B<br><missing>      3 months ago   &#x2F;bin&#x2F;sh -c #(nop)  ENV NGINX_VERSION&#x3D;1.22.0     0B<br><missing>      3 months ago   &#x2F;bin&#x2F;sh -c #(nop)  LABEL maintainer&#x3D;NGINX Do…   0B<br><missing>      3 months ago   &#x2F;bin&#x2F;sh -c #(nop)  CMD [“bash”]                 0B<br><missing>      3 months ago   &#x2F;bin&#x2F;sh -c #(nop) ADD file:b78b777208be08edd…   80.5MB官方的 Docker file 脚本<br><a target="_blank" rel="noopener" href="https://github.com/nginxinc/docker-nginx/blob/fef51235521d1cdf8b05d8cb1378a526d2abf421/stable/debian/Dockerfile">https://github.com/nginxinc/docker-nginx/blob/fef51235521d1cdf8b05d8cb1378a526d2abf421/stable/debian/Dockerfile</a></p>
+<h1 id=""><a href="#" class="headerlink" title=""></a></h1><h1 id="NOTE-THIS-DOCKERFILE-IS-GENERATED-VIA-“update-sh”"><a href="#NOTE-THIS-DOCKERFILE-IS-GENERATED-VIA-“update-sh”" class="headerlink" title="NOTE: THIS DOCKERFILE IS GENERATED VIA “update.sh”"></a>NOTE: THIS DOCKERFILE IS GENERATED VIA “update.sh”</h1><h1 id="-1"><a href="#-1" class="headerlink" title=""></a></h1><h1 id="PLEASE-DO-NOT-EDIT-IT-DIRECTLY"><a href="#PLEASE-DO-NOT-EDIT-IT-DIRECTLY" class="headerlink" title="PLEASE DO NOT EDIT IT DIRECTLY."></a>PLEASE DO NOT EDIT IT DIRECTLY.</h1><h1 id="-2"><a href="#-2" class="headerlink" title=""></a></h1><p>FROM debian:bullseye-slim</p>
+<p>LABEL maintainer&#x3D;”NGINX Docker Maintainers <a href="mailto:&#100;&#111;&#99;&#x6b;&#101;&#x72;&#x2d;&#x6d;&#x61;&#105;&#x6e;&#116;&#x40;&#110;&#103;&#x69;&#x6e;&#120;&#x2e;&#99;&#x6f;&#109;">&#100;&#111;&#99;&#x6b;&#101;&#x72;&#x2d;&#x6d;&#x61;&#105;&#x6e;&#116;&#x40;&#110;&#103;&#x69;&#x6e;&#120;&#x2e;&#99;&#x6f;&#109;</a>“</p>
+<p>ENV NGINX_VERSION   1.22.1<br>ENV NJS_VERSION     0.7.7<br>ENV PKG_RELEASE     1~bullseye</p>
+<p>RUN set -x \</p>
+<h1 id="create-nginx-user-x2F-group-first-to-be-consistent-throughout-docker-variants"><a href="#create-nginx-user-x2F-group-first-to-be-consistent-throughout-docker-variants" class="headerlink" title="create nginx user&#x2F;group first, to be consistent throughout docker variants"></a>create nginx user&#x2F;group first, to be consistent throughout docker variants</h1><pre><code>&amp;&amp; addgroup --system --gid 101 nginx \
+&amp;&amp; adduser --system --disabled-login --ingroup nginx --no-create-home --home /nonexistent --gecos &quot;nginx user&quot; --shell /bin/false --uid 101 nginx \
+&amp;&amp; apt-get update \
+&amp;&amp; apt-get install --no-install-recommends --no-install-suggests -y gnupg1 ca-certificates \
+&amp;&amp; \
+NGINX_GPGKEY=573BFD6B3D8FBC641079A6ABABF5BD827BD9BF62; \
+found=&#39;&#39;; \
+for server in \
+    hkp://keyserver.ubuntu.com:80 \
+    pgp.mit.edu \
+; do \
+    echo &quot;Fetching GPG key $NGINX_GPGKEY from $server&quot;; \
+    apt-key adv --keyserver &quot;$server&quot; --keyserver-options timeout=10 --recv-keys &quot;$NGINX_GPGKEY&quot; &amp;&amp; found=yes &amp;&amp; break; \
+done; \
+test -z &quot;$found&quot; &amp;&amp; echo &gt;&amp;2 &quot;error: failed to fetch GPG key $NGINX_GPGKEY&quot; &amp;&amp; exit 1; \
+apt-get remove --purge --auto-remove -y gnupg1 &amp;&amp; rm -rf /var/lib/apt/lists/* \
+&amp;&amp; dpkgArch=&quot;$(dpkg --print-architecture)&quot; \
+&amp;&amp; nginxPackages=&quot; \
+    nginx=$&#123;NGINX_VERSION&#125;-$&#123;PKG_RELEASE&#125; \
+    nginx-module-xslt=$&#123;NGINX_VERSION&#125;-$&#123;PKG_RELEASE&#125; \
+    nginx-module-geoip=$&#123;NGINX_VERSION&#125;-$&#123;PKG_RELEASE&#125; \
+    nginx-module-image-filter=$&#123;NGINX_VERSION&#125;-$&#123;PKG_RELEASE&#125; \
+    nginx-module-njs=$&#123;NGINX_VERSION&#125;+$&#123;NJS_VERSION&#125;-$&#123;PKG_RELEASE&#125; \
+&quot; \
+&amp;&amp; case &quot;$dpkgArch&quot; in \
+    amd64|arm64) \
+</code></pre>
+<h1 id="arches-officialy-built-by-upstream"><a href="#arches-officialy-built-by-upstream" class="headerlink" title="arches officialy built by upstream"></a>arches officialy built by upstream</h1><pre><code>        echo &quot;deb https://nginx.org/packages/debian/ bullseye nginx&quot; &gt;&gt; /etc/apt/sources.list.d/nginx.list \
+        &amp;&amp; apt-get update \
+        ;; \
+    *) \
+</code></pre>
+<h1 id="we’re-on-an-architecture-upstream-doesn’t-officially-build-for"><a href="#we’re-on-an-architecture-upstream-doesn’t-officially-build-for" class="headerlink" title="we’re on an architecture upstream doesn’t officially build for"></a>we’re on an architecture upstream doesn’t officially build for</h1><h1 id="let’s-build-binaries-from-the-published-source-packages"><a href="#let’s-build-binaries-from-the-published-source-packages" class="headerlink" title="let’s build binaries from the published source packages"></a>let’s build binaries from the published source packages</h1><pre><code>        echo &quot;deb-src https://nginx.org/packages/debian/ bullseye nginx&quot; &gt;&gt; /etc/apt/sources.list.d/nginx.list \
+        \
+</code></pre>
+<h1 id="new-directory-for-storing-sources-and-deb-files"><a href="#new-directory-for-storing-sources-and-deb-files" class="headerlink" title="new directory for storing sources and .deb files"></a>new directory for storing sources and .deb files</h1><pre><code>        &amp;&amp; tempDir=&quot;$(mktemp -d)&quot; \
+        &amp;&amp; chmod 777 &quot;$tempDir&quot; \
+</code></pre>
+<h1 id="777-to-ensure-APT’s-“-apt”-user-can-access-it-too"><a href="#777-to-ensure-APT’s-“-apt”-user-can-access-it-too" class="headerlink" title="(777 to ensure APT’s “_apt” user can access it too)"></a>(777 to ensure APT’s “_apt” user can access it too)</h1><pre><code>        \
+</code></pre>
+<h1 id="save-list-of-currently-installed-packages-so-build-dependencies-can-be-cleanly-removed-later"><a href="#save-list-of-currently-installed-packages-so-build-dependencies-can-be-cleanly-removed-later" class="headerlink" title="save list of currently-installed packages so build dependencies can be cleanly removed later"></a>save list of currently-installed packages so build dependencies can be cleanly removed later</h1><pre><code>        &amp;&amp; savedAptMark=&quot;$(apt-mark showmanual)&quot; \
+        \
+</code></pre>
+<h1 id="build-deb-files-from-upstream’s-source-packages-which-are-verified-by-apt-get"><a href="#build-deb-files-from-upstream’s-source-packages-which-are-verified-by-apt-get" class="headerlink" title="build .deb files from upstream’s source packages (which are verified by apt-get)"></a>build .deb files from upstream’s source packages (which are verified by apt-get)</h1><pre><code>        &amp;&amp; apt-get update \
+        &amp;&amp; apt-get build-dep -y $nginxPackages \
+        &amp;&amp; ( \
+            cd &quot;$tempDir&quot; \
+            &amp;&amp; DEB_BUILD_OPTIONS=&quot;nocheck parallel=$(nproc)&quot; \
+                apt-get source --compile $nginxPackages \
+        ) \
+</code></pre>
+<h1 id="we-don’t-remove-APT-lists-here-because-they-get-re-downloaded-and-removed-later"><a href="#we-don’t-remove-APT-lists-here-because-they-get-re-downloaded-and-removed-later" class="headerlink" title="we don’t remove APT lists here because they get re-downloaded and removed later"></a>we don’t remove APT lists here because they get re-downloaded and removed later</h1><pre><code>        \
+</code></pre>
+<h1 id="reset-apt-mark’s-“manual”-list-so-that-“purge-–auto-remove”-will-remove-all-build-dependencies"><a href="#reset-apt-mark’s-“manual”-list-so-that-“purge-–auto-remove”-will-remove-all-build-dependencies" class="headerlink" title="reset apt-mark’s “manual” list so that “purge –auto-remove” will remove all build dependencies"></a>reset apt-mark’s “manual” list so that “purge –auto-remove” will remove all build dependencies</h1><h1 id="which-is-done-after-we-install-the-built-packages-so-we-don’t-have-to-redownload-any-overlapping-dependencies"><a href="#which-is-done-after-we-install-the-built-packages-so-we-don’t-have-to-redownload-any-overlapping-dependencies" class="headerlink" title="(which is done after we install the built packages so we don’t have to redownload any overlapping dependencies)"></a>(which is done after we install the built packages so we don’t have to redownload any overlapping dependencies)</h1><pre><code>        &amp;&amp; apt-mark showmanual | xargs apt-mark auto &gt; /dev/null \
+        &amp;&amp; &#123; [ -z &quot;$savedAptMark&quot; ] || apt-mark manual $savedAptMark; &#125; \
+        \
+</code></pre>
+<h1 id="create-a-temporary-local-APT-repo-to-install-from-so-that-dependency-resolution-can-be-handled-by-APT-as-it-should-be"><a href="#create-a-temporary-local-APT-repo-to-install-from-so-that-dependency-resolution-can-be-handled-by-APT-as-it-should-be" class="headerlink" title="create a temporary local APT repo to install from (so that dependency resolution can be handled by APT, as it should be)"></a>create a temporary local APT repo to install from (so that dependency resolution can be handled by APT, as it should be)</h1><pre><code>        &amp;&amp; ls -lAFh &quot;$tempDir&quot; \
+        &amp;&amp; ( cd &quot;$tempDir&quot; &amp;&amp; dpkg-scanpackages . &gt; Packages ) \
+        &amp;&amp; grep &#39;^Package: &#39; &quot;$tempDir/Packages&quot; \
+        &amp;&amp; echo &quot;deb [ trusted=yes ] file://$tempDir ./&quot; &gt; /etc/apt/sources.list.d/temp.list \
+</code></pre>
+<h1 id="work-around-the-following-APT-issue-by-using-“Acquire-GzipIndexes-x3D-false”-overriding-“-x2F-etc-x2F-apt-x2F-apt-conf-d-x2F-docker-gzip-indexes”"><a href="#work-around-the-following-APT-issue-by-using-“Acquire-GzipIndexes-x3D-false”-overriding-“-x2F-etc-x2F-apt-x2F-apt-conf-d-x2F-docker-gzip-indexes”" class="headerlink" title="work around the following APT issue by using “Acquire::GzipIndexes&#x3D;false” (overriding “&#x2F;etc&#x2F;apt&#x2F;apt.conf.d&#x2F;docker-gzip-indexes”)"></a>work around the following APT issue by using “Acquire::GzipIndexes&#x3D;false” (overriding “&#x2F;etc&#x2F;apt&#x2F;apt.conf.d&#x2F;docker-gzip-indexes”)</h1><h1 id="Could-not-open-file-x2F-var-x2F-lib-x2F-apt-x2F-lists-x2F-partial-x2F-tmp-tmp-ODWljpQfkE-Packages-open-13-Permission-denied"><a href="#Could-not-open-file-x2F-var-x2F-lib-x2F-apt-x2F-lists-x2F-partial-x2F-tmp-tmp-ODWljpQfkE-Packages-open-13-Permission-denied" class="headerlink" title="Could not open file &#x2F;var&#x2F;lib&#x2F;apt&#x2F;lists&#x2F;partial&#x2F;tmp_tmp.ODWljpQfkE._Packages - open (13: Permission denied)"></a>Could not open file &#x2F;var&#x2F;lib&#x2F;apt&#x2F;lists&#x2F;partial&#x2F;<em>tmp_tmp.ODWljpQfkE</em>._Packages - open (13: Permission denied)</h1><h1 id="…"><a href="#…" class="headerlink" title="…"></a>…</h1><h1 id="E-Failed-to-fetch-store-x2F-var-x2F-lib-x2F-apt-x2F-lists-x2F-partial-x2F-tmp-tmp-ODWljpQfkE-Packages-Could-not-open-file-x2F-var-x2F-lib-x2F-apt-x2F-lists-x2F-partial-x2F-tmp-tmp-ODWljpQfkE-Packages-open-13-Permission-denied"><a href="#E-Failed-to-fetch-store-x2F-var-x2F-lib-x2F-apt-x2F-lists-x2F-partial-x2F-tmp-tmp-ODWljpQfkE-Packages-Could-not-open-file-x2F-var-x2F-lib-x2F-apt-x2F-lists-x2F-partial-x2F-tmp-tmp-ODWljpQfkE-Packages-open-13-Permission-denied" class="headerlink" title="E: Failed to fetch store:&#x2F;var&#x2F;lib&#x2F;apt&#x2F;lists&#x2F;partial&#x2F;tmp_tmp.ODWljpQfkE._Packages  Could not open file &#x2F;var&#x2F;lib&#x2F;apt&#x2F;lists&#x2F;partial&#x2F;tmp_tmp.ODWljpQfkE._Packages - open (13: Permission denied)"></a>E: Failed to fetch store:&#x2F;var&#x2F;lib&#x2F;apt&#x2F;lists&#x2F;partial&#x2F;<em>tmp_tmp.ODWljpQfkE</em>._Packages  Could not open file &#x2F;var&#x2F;lib&#x2F;apt&#x2F;lists&#x2F;partial&#x2F;<em>tmp_tmp.ODWljpQfkE</em>._Packages - open (13: Permission denied)</h1><pre><code>        &amp;&amp; apt-get -o Acquire::GzipIndexes=false update \
+        ;; \
+esac \
+\
+&amp;&amp; apt-get install --no-install-recommends --no-install-suggests -y \
+                    $nginxPackages \
+                    gettext-base \
+                    curl \
+&amp;&amp; apt-get remove --purge --auto-remove -y &amp;&amp; rm -rf /var/lib/apt/lists/* /etc/apt/sources.list.d/nginx.list \
+\
+</code></pre>
+<h1 id="if-we-have-leftovers-from-building-let’s-purge-them-including-extra-unnecessary-build-deps"><a href="#if-we-have-leftovers-from-building-let’s-purge-them-including-extra-unnecessary-build-deps" class="headerlink" title="if we have leftovers from building, let’s purge them (including extra, unnecessary build deps)"></a>if we have leftovers from building, let’s purge them (including extra, unnecessary build deps)</h1><pre><code>&amp;&amp; if [ -n &quot;$tempDir&quot; ]; then \
+    apt-get purge -y --auto-remove \
+    &amp;&amp; rm -rf &quot;$tempDir&quot; /etc/apt/sources.list.d/temp.list; \
+fi \
+</code></pre>
+<h1 id="forward-request-and-error-logs-to-docker-log-collector"><a href="#forward-request-and-error-logs-to-docker-log-collector" class="headerlink" title="forward request and error logs to docker log collector"></a>forward request and error logs to docker log collector</h1><pre><code>&amp;&amp; ln -sf /dev/stdout /var/log/nginx/access.log \
+&amp;&amp; ln -sf /dev/stderr /var/log/nginx/error.log \
+</code></pre>
+<h1 id="create-a-docker-entrypoint-d-directory"><a href="#create-a-docker-entrypoint-d-directory" class="headerlink" title="create a docker-entrypoint.d directory"></a>create a docker-entrypoint.d directory</h1><pre><code>&amp;&amp; mkdir /docker-entrypoint.d
+</code></pre>
+<p>COPY docker-entrypoint.sh &#x2F;<br>COPY 10-listen-on-ipv6-by-default.sh &#x2F;docker-entrypoint.d<br>COPY 20-envsubst-on-templates.sh &#x2F;docker-entrypoint.d<br>COPY 30-tune-worker-processes.sh &#x2F;docker-entrypoint.d<br>ENTRYPOINT [“&#x2F;docker-entrypoint.sh”]</p>
+<p>EXPOSE 80</p>
+<p>STOPSIGNAL SIGQUIT</p>
+<p>CMD [“nginx”, “-g”, “daemon off;”]<br>Dockerfile文件的制作镜像的分层结构<br><img src="/../img/d92cb32447409ad3db58286177aec63a60c6c5.png"><br>案例：<br>#按照业务类型或系统类型等方式划分创建目录环境，方便后期镜像比较多的时候进行分类<br>[root@ubuntu2204 ~]#mkdir &#x2F;data&#x2F;dockerfile&#x2F;{web&#x2F;{nginx,apache,tomcat,jdk},system&#x2F;{centos,ubuntu,alpine,debian}} -p<br>[root@ubuntu2204 ~]#tree &#x2F;data&#x2F;dockerfile&#x2F;<br>&#x2F;data&#x2F;dockerfile&#x2F;<br>├── system<br>│   ├── alpine<br>│   ├── centos<br>│   ├── debian<br>│   └── ubuntu<br>└── web<br>    ├── apache<br>    ├── jdk<br>    ├── nginx<br>    └── tomcat</p>
+<p>10 directories, 0 filesDockerfile 文件格式<br>• 每一行以Dockerfile的指令开头，指令不区分大小写，但是惯例使用大写<br>• 使用 # 开始作为注释<br>• 每一行只支持一条指令，每条指令可以携带多个参数<br>• 指令按文件的顺序从上至下进行执行<br>• 每个指令的执行会生成一个新的镜像层，为了减少分层和镜像大小，尽可能将多条指令合并成一条指令<br>• 制作镜像一般可能需要反复多次，每次执行dockfile都按顺序执行，从头开始，已经执行过的指令自动缓存，不需要再执行，如果后续有一行新的指令没执行过，其往后的指令将会重新执行，所以为加速镜像制作，将最常变化的内容放下dockerfile的文件的后面<br>#dockerfile 文件中的常见指令:<br>ADD<br>COPY<br>ENV<br>EXPOSE<br>FROM<br>LABEL<br>STOPSIGNAL<br>USER<br>VOLUME<br>WORKDIRFROM: 指定基础镜像<br>FROM 指定基础镜像，此指令通常必需放在Dockerfile文件第一个非注释行。后续的指令都是运行于此基准镜像所提供的运行环境<br>#格式：<br>FROM [–platform&#x3D;<platform>] <image>[:<tag>] [AS <name>]</p>
+<p>*说明: 关于scratch 镜像<br>该镜像是一个空的镜像，可以用于构建busybox等超小镜像<br><img src="/../img/15e7b6062d7960976ed390817fad331b6e5e9a.png"><br>案例：Dockerfile 制作基于基础镜像的Base镜像 - 将上述手工制作镜像方式用Docker file的方式实现<br>#准备目录结构，下载镜像并初始化系统<br>[root@ubuntu2204 ~]#mkdir &#x2F;data&#x2F;dockerfile&#x2F;{web&#x2F;{nginx,apache,tomcat,jdk},system&#x2F;{centos,ubuntu,alpine,debian}} -p<br>[root@ubuntu2204 ~]#tree &#x2F;data&#x2F;dockerfile&#x2F;<br>&#x2F;data&#x2F;dockerfile&#x2F;<br>├── system<br>│   ├── alpine<br>│   ├── centos<br>│   ├── debian<br>│   └── ubuntu<br>└── web<br>    ├── apache<br>    ├── jdk<br>    ├── nginx<br>    └── tomcat</p>
+<p>10 directories, 0 files</p>
+<p>#下载基础镜像<br>[root@ubuntu2204 ~]#docker pull alpine<br>[root@ubuntu2204 ~]#docker images<br>REPOSITORY   TAG       IMAGE ID       CREATED         SIZE<br>busybox      latest    827365c7baf1   2 weeks ago     4.86MB<br>nginx        latest    1403e55ab369   2 weeks ago     142MB<br>ubuntu       latest    6b7dfa7e8fdb   4 weeks ago     77.8MB<br>alpine       latest    49176f190c7e   6 weeks ago     7.05MB<br>nginx        1.22.0    08a1cbf9c69e   3 months ago    142MB<br>mysql        5.7.32    cc8775c0fe94   24 months ago   449MB</p>
+<p>#先制作基于基础镜像的系统Base镜像<br>[root@ubuntu2204 ~]#cd &#x2F;data&#x2F;dockerfile&#x2F;system&#x2F;alpine&#x2F;</p>
+<p>#创建Dockerfile，注意可以是dockerfile，但无语法着色功能<br>[root@ubuntu2204 alpine]#vim Dockerfile<br>[root@ubuntu2204 alpine]#cat Dockerfile<br>#This is moore test dockerfile<br>FROM alpine:latest</p>
+<p>#可以指定镜像元数据，如: 镜像作者等，可以有多个<br>LABEL maintainer&#x3D;”mooreyxia.org”<br>#或者<br>#ABEL Auther&#x3D;”mooreyxia”\</p>
+<h1 id="Versinotallow-x3D-”v1”"><a href="#Versinotallow-x3D-”v1”" class="headerlink" title="Versinotallow&#x3D;”v1”"></a>Versinotallow&#x3D;”v1”</h1><p>RUN sed -i ‘s&#x2F;dl-cdn.alpinelinux.org&#x2F;mirrors.ustc.edu.cn&#x2F;‘ &#x2F;etc&#x2F;apk&#x2F;repositories <br>    &amp;&amp; apk update \<br>    &amp;&amp; apk –no-cache add iotop gcc libgcc libc-dev libcurl libc-utils <br>        pcre-dev zlib-dev libnfs make pcre pcre2 zip unzip net-tools <br>        pstree wget libevent libevent-dev iproute2 tzdata vim</p>
+<p>[root@ubuntu2204 alpine]#vim build.sh<br>[root@ubuntu2204 alpine]#cat build.sh<br>#!&#x2F;bin&#x2F;bash<br>#<br>#********************************************************************<br>#Author:            mooreyxia<br>#Date:              2023-01-09<br>#FileName:          build.sh<br>#Description:       The test script<br>#Copyright (C):     2023 All rights reserved<br>#********************************************************************</p>
+<p>#!&#x2F;bin&#x2F;bash<br>#<br>docker build -t alpine-base:v1 .</p>
+<p>#执行<br>[root@ubuntu2204 alpine]#.&#x2F;build.sh<br>Sending build context to Docker daemon  3.072kB<br>Step 1&#x2F;3 : FROM alpine:latest<br> —&gt; 49176f190c7e<br>Step 2&#x2F;3 : LABEL maintainer&#x3D;”mooreyxia.org”<br> —&gt; Running in c806bbbfc0bb<br>Removing intermediate container c806bbbfc0bb<br> —&gt; bb5f403269ac<br>Step 3&#x2F;3 : RUN sed -i ‘s&#x2F;dl-cdn.alpinelinux.org&#x2F;mirrors.ustc.edu.cn&#x2F;‘ &#x2F;etc&#x2F;apk&#x2F;repositories     &amp;&amp; apk update     &amp;&amp; apk –no-cache add iotop gcc libgcc libc-dev libcurl libc-utils         pcre-dev zlib-dev libnfs make pcre pcre2 zip unzip net-tools         pstree wget libevent libevent-dev iproute2<br> —&gt; Running in 853b191ec719<br>fetch <a target="_blank" rel="noopener" href="https://mirrors.ustc.edu.cn/alpine/v3.17/main/x86_64/APKINDEX.tar.gz">https://mirrors.ustc.edu.cn/alpine/v3.17/main/x86_64/APKINDEX.tar.gz</a><br>fetch <a target="_blank" rel="noopener" href="https://mirrors.ustc.edu.cn/alpine/v3.17/community/x86_64/APKINDEX.tar.gz">https://mirrors.ustc.edu.cn/alpine/v3.17/community/x86_64/APKINDEX.tar.gz</a><br>v3.17.0-332-g13963e2526 [<a target="_blank" rel="noopener" href="https://mirrors.ustc.edu.cn/alpine/v3.17/main]">https://mirrors.ustc.edu.cn/alpine/v3.17/main]</a><br>v3.17.0-348-g6f4479fa00 [<a target="_blank" rel="noopener" href="https://mirrors.ustc.edu.cn/alpine/v3.17/community]">https://mirrors.ustc.edu.cn/alpine/v3.17/community]</a><br>OK: 17816 distinct packages available<br>fetch <a target="_blank" rel="noopener" href="https://mirrors.ustc.edu.cn/alpine/v3.17/main/x86_64/APKINDEX.tar.gz">https://mirrors.ustc.edu.cn/alpine/v3.17/main/x86_64/APKINDEX.tar.gz</a><br>fetch <a target="_blank" rel="noopener" href="https://mirrors.ustc.edu.cn/alpine/v3.17/community/x86_64/APKINDEX.tar.gz">https://mirrors.ustc.edu.cn/alpine/v3.17/community/x86_64/APKINDEX.tar.gz</a><br>(1&#x2F;58) Installing libgcc (12.2.1_git20220924-r4)<br>(2&#x2F;58) Installing libstdc++ (12.2.1_git20220924-r4)<br>(3&#x2F;58) Installing binutils (2.39-r2)<br>(4&#x2F;58) Installing libgomp (12.2.1_git20220924-r4)<br>(5&#x2F;58) Installing libatomic (12.2.1_git20220924-r4)<br>(6&#x2F;58) Installing gmp (6.2.1-r2)<br>(7&#x2F;58) Installing isl25 (0.25-r0)<br>(8&#x2F;58) Installing mpfr4 (4.1.0-r0)<br>(9&#x2F;58) Installing mpc1 (1.2.1-r1)<br>(10&#x2F;58) Installing gcc (12.2.1_git20220924-r4)<br>(11&#x2F;58) Installing libbz2 (1.0.8-r4)<br>(12&#x2F;58) Installing libexpat (2.5.0-r0)<br>(13&#x2F;58) Installing libffi (3.4.4-r0)<br>(14&#x2F;58) Installing gdbm (1.23-r0)<br>(15&#x2F;58) Installing xz-libs (5.2.9-r0)<br>(16&#x2F;58) Installing mpdecimal (2.5.1-r1)<br>(17&#x2F;58) Installing ncurses-terminfo-base (6.3_p20221119-r0)<br>(18&#x2F;58) Installing ncurses-libs (6.3_p20221119-r0)<br>(19&#x2F;58) Installing readline (8.2.0-r0)<br>(20&#x2F;58) Installing sqlite-libs (3.40.1-r0)<br>(21&#x2F;58) Installing python3 (3.10.9-r1)<br>(22&#x2F;58) Installing iotop (0.6-r9)<br>(23&#x2F;58) Installing libcap2 (2.66-r0)<br>(24&#x2F;58) Installing musl-fts (1.2.7-r3)<br>(25&#x2F;58) Installing libelf (0.187-r2)<br>(26&#x2F;58) Installing libmnl (1.0.5-r0)<br>(27&#x2F;58) Installing iproute2-minimal (6.0.0-r1)<br>(28&#x2F;58) Installing libnftnl (1.2.4-r0)<br>(29&#x2F;58) Installing iptables (1.8.8-r2)<br>(30&#x2F;58) Installing iproute2-tc (6.0.0-r1)<br>(31&#x2F;58) Installing iproute2-ss (6.0.0-r1)<br>(32&#x2F;58) Installing iproute2 (6.0.0-r1)<br>Executing iproute2-6.0.0-r1.post-install<br>(33&#x2F;58) Installing musl-dev (1.2.3-r4)<br>(34&#x2F;58) Installing libc-dev (0.7.2-r3)<br>(35&#x2F;58) Installing ca-certificates (20220614-r3)<br>(36&#x2F;58) Installing brotli-libs (1.0.9-r9)<br>(37&#x2F;58) Installing nghttp2-libs (1.51.0-r0)<br>(38&#x2F;58) Installing libcurl (7.87.0-r0)<br>(39&#x2F;58) Installing libevent (2.1.12-r5)<br>(40&#x2F;58) Installing pkgconf (1.9.3-r0)<br>(41&#x2F;58) Installing libevent-dev (2.1.12-r5)<br>(42&#x2F;58) Installing libnfs (5.0.2-r0)<br>(43&#x2F;58) Installing make (4.3-r1)<br>(44&#x2F;58) Installing mii-tool (2.10-r0)<br>(45&#x2F;58) Installing net-tools (2.10-r0)<br>(46&#x2F;58) Installing pcre (8.45-r2)<br>(47&#x2F;58) Installing libpcre16 (8.45-r2)<br>(48&#x2F;58) Installing libpcre32 (8.45-r2)<br>(49&#x2F;58) Installing libpcrecpp (8.45-r2)<br>(50&#x2F;58) Installing pcre-dev (8.45-r2)<br>(51&#x2F;58) Installing pcre2 (10.42-r0)<br>(52&#x2F;58) Installing pstree (2.40-r0)<br>(53&#x2F;58) Installing unzip (6.0-r13)<br>(54&#x2F;58) Installing libunistring (1.1-r0)<br>(55&#x2F;58) Installing libidn2 (2.3.4-r0)<br>(56&#x2F;58) Installing wget (1.21.3-r2)<br>(57&#x2F;58) Installing zip (3.0-r10)<br>(58&#x2F;58) Installing zlib-dev (1.2.13-r0)<br>Executing busybox-1.35.0-r29.trigger<br>Executing ca-certificates-20220614-r3.trigger<br>OK: 219 MiB in 73 packages<br>Removing intermediate container 853b191ec719<br> —&gt; 4c7eada5d9cf<br>Successfully built 4c7eada5d9cf<br>Successfully tagged alpine-base:v1</p>
+<p>[root@ubuntu2204 alpine]#docker images<br>REPOSITORY    TAG       IMAGE ID       CREATED         SIZE<br>alpine-base   v1        4c7eada5d9cf   2 minutes ago   221MB<br>alpine        latest    49176f190c7e   6 weeks ago     7.05MB</p>
+<p>[root@ubuntu2204 alpine]#docker inspect 4c7eada5d9cf<br>[<br>    {<br>        “Id”: “sha256:4c7eada5d9cfcc8e0ad050751cd18c5441b82b80e1309acf51bf34ba71954040”,<br>        “RepoTags”: [<br>            “alpine-base:v1”<br>        ],<br>        “RepoDigests”: [],<br>        “Parent”: “sha256:bb5f403269acf4ab918a154dfbedfdf479a2ae81fd3a4aa74ba88674289ba7ab”,<br>        “Comment”: “”,<br>        “Created”: “2023-01-09T08:25:42.38248152Z”,<br>        “Container”: “853b191ec7194f38a30381f26d1a47328541ce42723f384c0b0a262bc6049b46”,<br>        “ContainerConfig”: {<br>            “Hostname”: “”,<br>            “Domainname”: “”,<br>            “User”: “”,<br>            “AttachStdin”: false,<br>            “AttachStdout”: false,<br>            “AttachStderr”: false,<br>            “Tty”: false,<br>            “OpenStdin”: false,<br>            “StdinOnce”: false,<br>            “Env”: [<br>                “PATH&#x3D;&#x2F;usr&#x2F;local&#x2F;sbin:&#x2F;usr&#x2F;local&#x2F;bin:&#x2F;usr&#x2F;sbin:&#x2F;usr&#x2F;bin:&#x2F;sbin:&#x2F;bin”<br>            ],<br>            “Cmd”: [<br>                “&#x2F;bin&#x2F;sh”,<br>                “-c”,<br>                “sed -i ‘s&#x2F;dl-cdn.alpinelinux.org&#x2F;mirrors.ustc.edu.cn&#x2F;‘ &#x2F;etc&#x2F;apk&#x2F;repositories     &amp;&amp; apk update     &amp;&amp; apk –no-cache add iotop gcc libgcc libc-dev libcurl libc-utils         pcre-dev zlib-dev libnfs make pcre pcre2 zip unzip net-tools         pstree wget libevent libevent-dev iproute2”<br>            ],<br>            “Image”: “sha256:bb5f403269acf4ab918a154dfbedfdf479a2ae81fd3a4aa74ba88674289ba7ab”,<br>            “Volumes”: null,<br>            “WorkingDir”: “”,<br>            “Entrypoint”: null,<br>            “OnBuild”: null,<br>            “Labels”: {<br>                “maintainer”: “mooreyxia.org”<br>            }<br>        },<br>        “DockerVersion”: “20.10.12”,<br>        “Author”: “”,<br>        “Config”: {<br>            “Hostname”: “”,<br>            “Domainname”: “”,<br>            “User”: “”,<br>            “AttachStdin”: false,<br>            “AttachStdout”: false,<br>            “AttachStderr”: false,<br>            “Tty”: false,<br>            “OpenStdin”: false,<br>            “StdinOnce”: false,<br>            “Env”: [<br>                “PATH&#x3D;&#x2F;usr&#x2F;local&#x2F;sbin:&#x2F;usr&#x2F;local&#x2F;bin:&#x2F;usr&#x2F;sbin:&#x2F;usr&#x2F;bin:&#x2F;sbin:&#x2F;bin”<br>            ],<br>            “Cmd”: [<br>                “&#x2F;bin&#x2F;sh”<br>            ],<br>            “Image”: “sha256:bb5f403269acf4ab918a154dfbedfdf479a2ae81fd3a4aa74ba88674289ba7ab”,<br>            “Volumes”: null,<br>            “WorkingDir”: “”,<br>            “Entrypoint”: null,<br>            “OnBuild”: null,<br>            “Labels”: {<br>                “maintainer”: “mooreyxia.org”<br>            }<br>        },<br>        “Architecture”: “amd64”,<br>        “Os”: “linux”,<br>        “Size”: 221144303,<br>        “VirtualSize”: 221144303,<br>        “GraphDriver”: {<br>            “Data”: {<br>                “LowerDir”: “&#x2F;data&#x2F;docker&#x2F;overlay2&#x2F;4f1e571f109868c90e38a6f0538c5abf9daff5c47ffedb19894d56ce1edd9b37&#x2F;diff”,<br>                “MergedDir”: “&#x2F;data&#x2F;docker&#x2F;overlay2&#x2F;57aa8f1abaf5561f9fb390f5e7f3888a64124b5b78c667d6ded505500a74178d&#x2F;merged”,<br>                “UpperDir”: “&#x2F;data&#x2F;docker&#x2F;overlay2&#x2F;57aa8f1abaf5561f9fb390f5e7f3888a64124b5b78c667d6ded505500a74178d&#x2F;diff”,<br>                “WorkDir”: “&#x2F;data&#x2F;docker&#x2F;overlay2&#x2F;57aa8f1abaf5561f9fb390f5e7f3888a64124b5b78c667d6ded505500a74178d&#x2F;work”<br>            },<br>            “Name”: “overlay2”<br>        },<br>        “RootFS”: {<br>            “Type”: “layers”,<br>            “Layers”: [<br>                “sha256:ded7a220bb058e28ee3254fbba04ca90b679070424424761a53a043b93b612bf”,<br>                “sha256:c8619f65f27764df0501bd18b0133d2573c6ba0d773db3064a7e2032ff265603”<br>            ]<br>        },<br>        “Metadata”: {<br>            “LastTagTime”: “2023-01-09T16:25:42.994959939+08:00”<br>        }<br>    }<br>]RUN: 执行 shell命令<br>• RUN 指令用来在构建镜像阶段需要执行 FROM 指定镜像所支持的Shell命令<br>• RUN 可以写多个，每一个RUN指令都会建立一个镜像层，所以尽可能合并成一条指令,比如将多个shell命令通过 &amp;&amp; 连接一起成为在一条指令<br>• 每个RUN都是独立运行的,和前一个RUN无关 - 例如进入目录创建文件 cd &amp;&amp; touch 而非分层<br>案例：<br>RUN sed -i ‘s&#x2F;dl-cdn.alpinelinux.org&#x2F;mirrors.ustc.edu.cn&#x2F;‘ &#x2F;etc&#x2F;apk&#x2F;repositories <br>    &amp;&amp; apk update \<br>    &amp;&amp; apk –no-cache add iotop gcc libgcc libc-dev libcurl libc-utils <br>        pcre-dev zlib-dev libnfs make pcre pcre2 zip unzip net-tools <br>        pstree wget libevent libevent-dev iproute2 tzdata vim <br>    &amp;&amp; ln -s &#x2F;usr&#x2F;share&#x2F;zoneinfo&#x2F;Asia&#x2F;Shanghai &#x2F;etc&#x2F;localtime <br>    &amp;&amp; echo “Asia&#x2F;Shanghai” &gt; &#x2F;etc&#x2F;timezone构建镜像docker build 命令<br>docker build [OPTIONS] PATH | URL | -<br>说明:<br>PATH | URL | - #可以使是本地路径，也可以是URL路径。若设置为 - ，则从标准输入获取Dockerfile的内容<br>-f, –file string #Dockerfile文件名,默认为 PATH&#x2F;Dockerfile<br>–force-rm #总是删除中间层容器,创建镜像失败时，删除临时容器<br>–no-cache #不使用之前构建中创建的缓存<br>-q –quiet&#x3D;false #不显示Dockerfile的RUN运行的输出结果<br>–rm&#x3D;true #创建镜像成功时，删除临时容器<br>-t –tag list #设置注册名称、镜像名称、标签。格式为 &lt;注册名称&gt;&#x2F;&lt;镜像名称&gt;:&lt;标签&gt;（标签默认为latest）</p>
+<p>#案例：<br>[root@ubuntu2204 alpine]#cat build.sh<br>#!&#x2F;bin&#x2F;bash<br>#<br>#********************************************************************<br>#Author:            mooreyxia<br>#Date:              2023-01-09<br>#FileName:          build.sh<br>#Description:       The test script<br>#Copyright (C):     2023 All rights reserved<br>#********************************************************************</p>
+<p>#!&#x2F;bin&#x2F;bash<br>#</p>
+<p>TAG&#x3D;$1<br>docker build -t alpine-base:$1 .</p>
+<p>[root@ubuntu2204 alpine]#. build.sh v1.1<br>Sending build context to Docker daemon  3.584kB<br>Step 1&#x2F;3 : FROM alpine:latest<br> —&gt; 49176f190c7e<br>Step 2&#x2F;3 : LABEL Auther&#x3D;”mooreyxia”      Versinotallow&#x3D;”v1”<br> —&gt; Using cache<br> —&gt; f21dcac829d1<br>Step 3&#x2F;3 : RUN sed -i ‘s&#x2F;dl-cdn.alpinelinux.org&#x2F;mirrors.ustc.edu.cn&#x2F;‘ &#x2F;etc&#x2F;apk&#x2F;repositories     &amp;&amp; apk update     &amp;&amp; apk –no-cache add iotop gcc libgcc libc-dev libcurl libc-utils         pcre-dev zlib-dev libnfs make pcre pcre2 zip unzip net-tools         pstree wget libevent libevent-dev iproute2 tzdata vim     &amp;&amp; ln -s &#x2F;usr&#x2F;share&#x2F;zoneinfo&#x2F;Asia&#x2F;Shanghai &#x2F;etc&#x2F;localtime     &amp;&amp; echo “Asia&#x2F;Shanghai” &gt; &#x2F;etc&#x2F;timezone<br> —&gt; Using cache<br> —&gt; 4f60390e7b99<br>Successfully built 4f60390e7b99<br>Successfully tagged alpine-base:v1.1<br>[root@ubuntu2204 alpine]#docker images<br>REPOSITORY    TAG       IMAGE ID       CREATED          SIZE<br>alpine-base   v1.1      4f60390e7b99   3 minutes ago    250MB<br>alpine-base   v1.2      4f60390e7b99   3 minutes ago    250MB<br><none>        <none>    90c6146f1aac   16 minutes ago   222MB –&gt; 重新构建一个镜像时原来镜像会挂起<br>alpine-base   v1        148f122d0a66   37 minutes ago   221MB<br>busybox       latest    827365c7baf1   2 weeks ago      4.86MB<br>nginx         latest    1403e55ab369   2 weeks ago      142MB<br>ubuntu        latest    6b7dfa7e8fdb   4 weeks ago      77.8MB<br>alpine        latest    49176f190c7e   6 weeks ago      7.05MB<br>nginx         1.22.0    08a1cbf9c69e   3 months ago     142MB<br>mysql         5.7.32    cc8775c0fe94   24 months ago    449MBprune删除所有不使用包括挂起的镜像<br>案例：<br>[root@ubuntu2204 alpine]#docker images<br>REPOSITORY    TAG       IMAGE ID       CREATED          SIZE<br>alpine-base   v1.1      4f60390e7b99   3 minutes ago    250MB<br><none>        <none>    90c6146f1aac   16 minutes ago   222MB –&gt; 重新构建一个镜像时原来镜像会挂起</p>
+<p>[root@ubuntu2204 ~]#docker system prune –help</p>
+<p>Usage:  docker system prune [OPTIONS]</p>
+<p>Remove unused data</p>
+<p>Options:<br>  -a, –all             Remove all unused images not just dangling ones<br>      –filter filter   Provide filter values (e.g. ‘label&#x3D;<key>&#x3D;<value>‘)<br>  -f, –force           Do not prompt for confirmation<br>      –volumes         Prune volumes</p>
+<p>[root@ubuntu2204 ~]#docker system prune<br>WARNING! This will remove:</p>
+<ul>
+<li>all stopped containers</li>
+<li>all networks not used by at least one container</li>
+<li>all dangling images</li>
+<li>all dangling build cache</li>
+</ul>
+<p>Are you sure you want to continue? [y&#x2F;N] y<br>Deleted Containers:<br>57a886a0346ae833425b3efab9deab277de3f5a6ad6033c255fcd0a3a841eb2c<br>a295f70ed1036d2a8d55103d4c2cd43f0d2da3146ac36f7070e0bd98c7fc639a</p>
+<p>Deleted Images:<br>deleted: sha256:90c6146f1aac717807fefee47b9643170a6f637717ab2d571da553fc6c2fc430<br>deleted: sha256:fe020435cafaa4e384c938696469c3595b23bb30a7e0dc284e7479015913c8e8</p>
+<p>Total reclaimed space: 489.1MBADD: 复制和解包文件<br>该命令可认为是增强版的COPY，不仅支持COPY，还支持自动解压缩。<br>• 可以是Dockerfile所在目录的一个相对路径；也可是一个 URL；还可是一个 tar 文件（自动解压）<br>• 可以是绝对路径或者是WORKDIR 指定的相对路径<br>• 如果是目录，只复制目录中的内容，而非目录本身<br>• 如果是一个 URL ，下载后的文件权限自动设置为 600<br>• 如果为URL且不以&#x2F;结尾，则指定的文件将被下载并直接被创建为,如果以 &#x2F; 结尾，则文件名URL指定的文件将被直接下载并保存为&#x2F;&lt; filename&gt;<br>• 如果是一个本地文件系统上的打包文件,如: gz, bz2 ,xz ，它将被解包 ，其行为类似于”tar -x”命令,但是通过URL获取到的tar文件将不会自动展开<br>• 如果有多个，或其间接或直接使用了通配符，则必须是一个以&#x2F;结尾的目录路径;如果不以&#x2F;结尾，则其被视作一个普通文件，的内容将被直接写入到<br>案例：基于 Alpine 基础镜像制作 Nginx 镜像<br>#制作基于 Alpine 自定义镜像的 Nginx 镜像<br>[root@ubuntu2204 ~]#docker images<br>REPOSITORY    TAG       IMAGE ID       CREATED         SIZE<br>alpine-base   v1.2      4f60390e7b99   2 hours ago     250MB</p>
+<p>[root@ubuntu2204 alpine]#tree &#x2F;data&#x2F;dockerfile&#x2F;<br>&#x2F;data&#x2F;dockerfile&#x2F;<br>├── system<br>│   ├── alpine<br>│   │   ├── build.sh<br>│   │   └── Dockerfile<br>│   ├── centos<br>│   ├── debian<br>│   └── ubuntu<br>└── web<br>    ├── apache<br>    ├── jdk<br>    ├── nginx<br>    └── tomcat<br>[root@ubuntu2204 alpine]#cd &#x2F;data&#x2F;dockerfile&#x2F;web&#x2F;nginx&#x2F;<br>[root@ubuntu2204 nginx]#mkdir 1.16.1-alpine -pv<br>[root@ubuntu2204 nginx]#ll<br>总用量 16<br>drwxr-xr-x 4 root root 4096  1月  9 19:41  .&#x2F;<br>drwxr-xr-x 6 root root 4096  1月  9 15:38  ..&#x2F;<br>drwxr-xr-x 2 root root 4096  1月  9 19:41  1.16.1-alpine&#x2F;<br>[root@ubuntu2204 nginx]#cd 1.16.1-alpine&#x2F;<br>[root@ubuntu2204 1.16.1-alpine]#wget <a target="_blank" rel="noopener" href="http://nginx.org/download/nginx-1.16.1.tar.gz">http://nginx.org/download/nginx-1.16.1.tar.gz</a><br>–2023-01-09 19:44:49–  <a target="_blank" rel="noopener" href="http://nginx.org/download/nginx-1.16.1.tar.gz">http://nginx.org/download/nginx-1.16.1.tar.gz</a><br>正在解析主机 nginx.org (nginx.org)… 52.58.199.22, 3.125.197.172, 2a05:d014:edb:5702::6, …<br>正在连接 nginx.org (nginx.org)|52.58.199.22|:80… 已连接。<br>已发出 HTTP 请求，正在等待回应… 200 OK<br>长度： 1032630 (1008K) [application&#x2F;octet-stream]<br>正在保存至: ‘nginx-1.16.1.tar.gz’</p>
+<p>nginx-1.16.1.tar.gz                          100%[&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&gt;]   1008K  25.5KB&#x2F;s    用时 69s   </p>
+<p>2023-01-09 19:46:00 (14.6 KB&#x2F;s) - 已保存 ‘nginx-1.16.1.tar.gz’ [1032630&#x2F;1032630])</p>
+<p>[root@ubuntu2204 1.16.1-alpine]#ll<br>总用量 1020<br>drwxr-xr-x 2 root root    4096  1月  9 19:44 .&#x2F;<br>drwxr-xr-x 3 root root    4096  1月  9 19:42 ..&#x2F;<br>-rw-r–r– 1 root root 1032630  8月 14  2019 nginx-1.16.1.tar.gz<br>[root@ubuntu2204 1.16.1-alpine]#echo Test Page based nginx-alpine &gt; index.html<br>[root@ubuntu2204 1.16.1-alpine]#vim nginx.conf<br>[root@ubuntu2204 1.16.1-alpine]#cat nginx.conf </p>
+<p>user  nginx;<br>worker_processes  1;<br>daemon off; *****</p>
+<p>#error_log  logs&#x2F;error.log;<br>#error_log  logs&#x2F;error.log  notice;<br>#error_log  logs&#x2F;error.log  info;</p>
+<p>#pid        logs&#x2F;nginx.pid;</p>
+<p>events {<br>    worker_connections  1024;<br>}</p>
+<p>http {<br>    include       mime.types;<br>    default_type  application&#x2F;octet-stream;</p>
+<pre><code>#log_format  main  &#39;$remote_addr - $remote_user [$time_local] &quot;$request&quot; &#39;
+#                  &#39;$status $body_bytes_sent &quot;$http_referer&quot; &#39;
+#                  &#39;&quot;$http_user_agent&quot; &quot;$http_x_forwarded_for&quot;&#39;;
+
+#access_log  logs/access.log  main;
+
+sendfile        on;
+#tcp_nopush     on;
+
+#keepalive_timeout  0;
+keepalive_timeout  65;
+
+#gzip  on;
+
+server &#123;
+    listen       80;
+    server_name  localhost;
+
+    #charset koi8-r;
+
+    #access_log  logs/host.access.log  main;
+
+    location / &#123;
+        root   /data/nginx/html;
+        index  index.html index.htm;
+    &#125;
+
+    #error_page  404              /404.html;
+
+    # redirect server error pages to the static page /50x.html
+    #
+    error_page   500 502 503 504  /50x.html;
+    location = /50x.html &#123;
+        root   html;
+    &#125;
+
+    # proxy the PHP scripts to Apache listening on 127.0.0.1:80
+    #
+    #location ~ \.php$ &#123;
+    #    proxy_pass   http://127.0.0.1;
+    #&#125;
+
+    # pass the PHP scripts to FastCGI server listening on 127.0.0.1:9000
+    #
+    #location ~ \.php$ &#123;
+    #    root           html;
+    #    fastcgi_pass   127.0.0.1:9000;
+    #    fastcgi_index  index.php;
+    #    fastcgi_param  SCRIPT_FILENAME  /scripts$fastcgi_script_name;
+    #    include        fastcgi_params;
+    #&#125;
+
+    # deny access to .htaccess files, if Apache&#39;s document root
+    # concurs with nginx&#39;s one
+    #
+    #location ~ /\.ht &#123;
+    #    deny  all;
+    #&#125;
+&#125;
+
+
+# another virtual host using mix of IP-, name-, and port-based configuration
+#
+#server &#123;
+#    listen       8000;
+#    listen       somename:8080;
+#    server_name  somename  alias  another.alias;
+
+#    location / &#123;
+#        root   html;
+#        index  index.html index.htm;
+#    &#125;
+#&#125;
+
+
+# HTTPS server
+#
+#server &#123;
+#    listen       443 ssl;
+#    server_name  localhost;
+
+#    ssl_certificate      cert.pem;
+#    ssl_certificate_key  cert.key;
+
+#    ssl_session_cache    shared:SSL:1m;
+#    ssl_session_timeout  5m;
+
+#    ssl_ciphers  HIGH:!aNULL:!MD5;
+#    ssl_prefer_server_ciphers  on;
+
+#    location / &#123;
+#        root   html;
+#        index  index.html index.htm;
+#    &#125;
+#&#125;
+</code></pre>
+<p>}</p>
+<p>[root@ubuntu2204 1.16.1-alpine]#ll<br>总用量 1028<br>drwxr-xr-x 2 root root    4096  1月  9 20:04 .&#x2F;<br>drwxr-xr-x 3 root root    4096  1月  9 19:42 ..&#x2F;<br>-rw-r–r– 1 root root      29  1月  9 19:47 index.html<br>-rw-r–r– 1 root root 1032630  8月 14  2019 nginx-1.16.1.tar.gz<br>-rw-r–r– 1 root root     558  1月  9 20:04 nginx.conf</p>
+<p>#编写Dockerfile文件<br>[root@ubuntu2204 1.16.1-alpine]#vim Dockerfile<br>[root@ubuntu2204 1.16.1-alpine]#cat Dockerfile<br>FROM alpine-base:v1.2<br>LABEL author&#x3D;”mooreyxia” <br>      versinotallow&#x3D;”1.0”<br>ADD nginx-1.16.1.tar.gz &#x2F;usr&#x2F;local&#x2F;src<br>RUN cd &#x2F;usr&#x2F;local&#x2F;src&#x2F;nginx-1.16.1 <br>    &amp;&amp; .&#x2F;configure –prefix&#x3D;&#x2F;apps&#x2F;nginx <br>    &amp;&amp; make &amp;&amp; make install <br>    &amp;&amp; ln -s &#x2F;apps&#x2F;nginx&#x2F;sbin&#x2F;nginx &#x2F;usr&#x2F;bin&#x2F;<br>RUN addgroup -g 2019 -S nginx <br>    &amp;&amp; adduser -s &#x2F;sbin&#x2F;nologin -S -D -u 2019 -G nginx nginx<br>COPY nginx.conf &#x2F;apps&#x2F;nginx&#x2F;conf&#x2F;nginx.conf<br>ADD index.html &#x2F;data&#x2F;nginx&#x2F;html&#x2F;index.html<br>RUN chown -R nginx.nginx &#x2F;data&#x2F;nginx&#x2F; &#x2F;apps&#x2F;nginx&#x2F;<br>EXPOSE 80 443<br>CMD [“nginx”]</p>
+<p>#构建镜像<br>[root@ubuntu2204 1.16.1-alpine]#vim build.sh<br>[root@ubuntu2204 1.16.1-alpine]#cat build.sh<br>#!&#x2F;bin&#x2F;bash<br>#<br>#********************************************************************<br>#Author:            mooreyxia<br>#Date:              2023-01-09<br>#FileName:          build.sh<br>#Description:       The test script<br>#Copyright (C):     2023 All rights reserved<br>#********************************************************************</p>
+<p>#!&#x2F;bin&#x2F;bash</p>
+<p>docker build -t nginx-alpine:1.16.1 .</p>
+<p>[root@ubuntu2204 1.16.1-alpine]#ls<br>build.sh  Dockerfile  index.html  nginx-1.16.1.tar.gz  nginx.conf</p>
+<p>#生成容器测试镜像<br>[root@ubuntu2204 1.16.1-alpine]#. build.sh<br>Sending build context to Docker daemon  1.039MB<br>Step 1&#x2F;10 : FROM alpine-base:v1.2<br> —&gt; 4f60390e7b99<br>Step 2&#x2F;10 : LABEL auther&#x3D;”mooreyxia”       versinotallow&#x3D;”1.0”<br> —&gt; Running in f740a1bd93b4<br>Removing intermediate container f740a1bd93b4<br> —&gt; 5fe0cd6e2ca0<br>Step 3&#x2F;10 : ADD nginx-1.16.1.tar.gz &#x2F;usr&#x2F;local&#x2F;src<br> —&gt; ed8ce5d0d3ab<br>Step 4&#x2F;10 : RUN cd &#x2F;usr&#x2F;local&#x2F;src&#x2F;nginx-1.16.1     &amp;&amp; .&#x2F;configure –prefix&#x3D;&#x2F;apps&#x2F;nginx     &amp;&amp; make &amp;&amp; make install     &amp;&amp; ln -s &#x2F;apps&#x2F;nginx&#x2F;sbin&#x2F;nginx &#x2F;usr&#x2F;bin&#x2F;<br> —&gt; Running in 39f7b1062b2d<br>checking for OS</p>
+<ul>
+<li>Linux 5.15.0-57-generic x86_64<br>checking for C compiler … found</li>
+<li>using GNU C compiler</li>
+<li>gcc version: 12.2.1 20220924 (Alpine 12.2.1_git20220924-r4)<br>…</li>
+</ul>
+<p>#查看生成的镜像<br>[root@ubuntu2204 1.16.1-alpine]#docker images<br>REPOSITORY     TAG       IMAGE ID       CREATED         SIZE<br>nginx-alpine   1.16.1    3421f2c681d8   2 minutes ago   274MB<br>[root@ubuntu2204 1.16.1-alpine]#docker inspect nginx-alpine:1.16.1<br>[<br>    {<br>        “Id”: “sha256:34b3eb9eef98b99d9523ecf66c7dd4def9663123edbc55944a15d36fe11effd7”,<br>        “RepoTags”: [<br>            “nginx-alpine:1.16.1”<br>        ],<br>        “RepoDigests”: [],<br>        “Parent”: “sha256:3ec4abd8c21fdeff2613d69454a80c3044cc070b280acce82dc1a3132b219bbd”,<br>        “Comment”: “”,<br>        “Created”: “2023-01-09T13:33:09.338140302Z”,<br>        “Container”: “bd347f3726e2913185bdbcf2363f63b8206fa6e1d6025c062ab73df766ee9603”,<br>        “ContainerConfig”: {<br>            “Hostname”: “bd347f3726e2”,<br>            “Domainname”: “”,<br>            “User”: “”,<br>            “AttachStdin”: false,<br>            “AttachStdout”: false,<br>            “AttachStderr”: false,<br>            “ExposedPorts”: {<br>                “443&#x2F;tcp”: {},<br>                “80&#x2F;tcp”: {}<br>            },<br>            “Tty”: false,<br>            “OpenStdin”: false,<br>            “StdinOnce”: false,<br>            “Env”: [<br>                “PATH&#x3D;&#x2F;usr&#x2F;local&#x2F;sbin:&#x2F;usr&#x2F;local&#x2F;bin:&#x2F;usr&#x2F;sbin:&#x2F;usr&#x2F;bin:&#x2F;sbin:&#x2F;bin”<br>            ],<br>            “Cmd”: [<br>                “&#x2F;bin&#x2F;sh”,<br>                “-c”,<br>                “#(nop) “,<br>                “CMD [&quot;nginx&quot;]”<br>            ],<br>            “Image”: “sha256:3ec4abd8c21fdeff2613d69454a80c3044cc070b280acce82dc1a3132b219bbd”,<br>            “Volumes”: null,<br>            “WorkingDir”: “”,<br>            “Entrypoint”: null,<br>            “OnBuild”: null,<br>            “Labels”: {<br>                “Auther”: “mooreyxia”,<br>                “Version”: “v1”,<br>                “auther”: “mooreyxia”,<br>                “version”: “1.0”<br>            }<br>        },<br>        “DockerVersion”: “20.10.12”,<br>        “Author”: “”,<br>        “Config”: {<br>            “Hostname”: “”,<br>            “Domainname”: “”,<br>            “User”: “”,<br>            “AttachStdin”: false,<br>            “AttachStdout”: false,<br>            “AttachStderr”: false,<br>            “ExposedPorts”: {<br>                “443&#x2F;tcp”: {},<br>                “80&#x2F;tcp”: {}<br>            },<br>            “Tty”: false,<br>            “OpenStdin”: false,<br>            “StdinOnce”: false,<br>            “Env”: [<br>                “PATH&#x3D;&#x2F;usr&#x2F;local&#x2F;sbin:&#x2F;usr&#x2F;local&#x2F;bin:&#x2F;usr&#x2F;sbin:&#x2F;usr&#x2F;bin:&#x2F;sbin:&#x2F;bin”<br>            ],<br>            “Cmd”: [<br>                “nginx”<br>            ],<br>            “Image”: “sha256:3ec4abd8c21fdeff2613d69454a80c3044cc070b280acce82dc1a3132b219bbd”,<br>            “Volumes”: null,<br>            “WorkingDir”: “”,<br>            “Entrypoint”: null,<br>            “OnBuild”: null,<br>            “Labels”: {<br>                “Auther”: “mooreyxia”,<br>                “Version”: “v1”,<br>                “auther”: “mooreyxia”,<br>                “version”: “1.0”<br>            }<br>        },<br>        “Architecture”: “amd64”,<br>        “Os”: “linux”,<br>        “Size”: 273518494,<br>        “VirtualSize”: 273518494,<br>        “GraphDriver”: {<br>            “Data”: {<br>                “LowerDir”: “&#x2F;data&#x2F;docker&#x2F;overlay2&#x2F;af7dbf5445243ce62ea3332d6e8de09ac9343507eb09c6bf33af1536d0ea4bb6&#x2F;diff:&#x2F;data&#x2F;docker&#x2F;overlay2&#x2F;6c24180effae6e89f5340c4cb97d4d16cf16dc078ea07fd0c83d974a93d29390&#x2F;diff:&#x2F;data&#x2F;docker&#x2F;overlay2&#x2F;37d92a852bed1006ae43fbb7370d279f5eac095ded055f1c3da31e114357ad87&#x2F;diff:&#x2F;data&#x2F;docker&#x2F;overlay2&#x2F;6aaf443aeea3dfaac29f6d4a9ccad2b90a44cb1f69590ba4028168be32c65f27&#x2F;diff:&#x2F;data&#x2F;docker&#x2F;overlay2&#x2F;c43183788449098ba9809d7a8a58666db201daef8eb41ef81e6ce9cbb6818df7&#x2F;diff:&#x2F;data&#x2F;docker&#x2F;overlay2&#x2F;31316f8b67f97e6c4a9543dfc4328c0e3c29d52f7dfcdd1af66d66d0c658dcc7&#x2F;diff:&#x2F;data&#x2F;docker&#x2F;overlay2&#x2F;4f1e571f109868c90e38a6f0538c5abf9daff5c47ffedb19894d56ce1edd9b37&#x2F;diff”,<br>                “MergedDir”: “&#x2F;data&#x2F;docker&#x2F;overlay2&#x2F;3719ac9519537c60c9232d10a4f8cf8886795dd10dc77e1419366cf6620a6f4a&#x2F;merged”,<br>                “UpperDir”: “&#x2F;data&#x2F;docker&#x2F;overlay2&#x2F;3719ac9519537c60c9232d10a4f8cf8886795dd10dc77e1419366cf6620a6f4a&#x2F;diff”,<br>                “WorkDir”: “&#x2F;data&#x2F;docker&#x2F;overlay2&#x2F;3719ac9519537c60c9232d10a4f8cf8886795dd10dc77e1419366cf6620a6f4a&#x2F;work”<br>            },<br>            “Name”: “overlay2”<br>        },<br>        “RootFS”: {<br>            “Type”: “layers”,<br>            “Layers”: [<br>                “sha256:ded7a220bb058e28ee3254fbba04ca90b679070424424761a53a043b93b612bf”,<br>                “sha256:9fa45c5f10892d041fd7f3beb5f6b14ed4183ba367a50684eed57f799b801987”,<br>                “sha256:e2dc414ff3be5847f1b2582822d6553ecb69d584e60312681be631f66bd0f1b0”,<br>                “sha256:b3dd37fd4cfa61bacb4daba3f3065e295f350c12b92d5636f738287d6398907d”,<br>                “sha256:5ccc4c24bcac5474970645ba58d920f5b7a0182d67b60509a146d2e749a081b8”,<br>                “sha256:daa344f0fb22b1cf6c567578ef0ae9e2a5796344c5bc487e5fc4119636689d0c”,<br>                “sha256:0273e525dd0ac59e7e5400abc8d470a1e801af620eeb9377e9f7ed46c1196318”,<br>                “sha256:f54ca93f29a889f6f8e3866d3c48f1380eabffa39d6271b17d1b60cd32914b75”<br>            ]<br>        },<br>        “Metadata”: {<br>            “LastTagTime”: “2023-01-09T21:33:09.357016469+08:00”<br>        }<br>    }<br>]</p>
+<p>#生成容器测试镜像<br>[root@ubuntu2204 1.16.1-alpine]#docker run -d -p 8080:80  nginx-alpine:1.16.1<br>e5d7cda02369cb1cdfdd3108fae99cb39a69210b8b835e5e8f054ee2c7bad5c1<br>[root@ubuntu2204 1.16.1-alpine]#docker ps<br>CONTAINER ID   IMAGE                 COMMAND   CREATED         STATUS         PORTS                                            NAMES<br>e5d7cda02369   nginx-alpine:1.16.1   “nginx”   6 seconds ago   Up 5 seconds   443&#x2F;tcp, 0.0.0.0:8080-&gt;80&#x2F;tcp, :::8080-&gt;80&#x2F;tcp   dreamy_gauss<br>[root@ubuntu2204 1.16.1-alpine]#curl 127.0.0.1:8080<br>Test Page based nginx-alpine<br>[root@ubuntu2204 1.16.1-alpine]#docker exec -it dreamy_gauss  sh<br>&#x2F; # ps aux<br>PID   USER     TIME  COMMAND<br>    1 root      0:00 nginx: master process nginx<br>    7 nginx     0:00 nginx: worker process<br>    8 root      0:00 sh<br>   15 root      0:00 ps auxCMD: 容器启动命令<br>一个容器中需要持续运行的进程一般只有一个,CMD 用来指定启动容器时默认执行的一个命令，且其运行结束后,容器也会停止,所以一般CMD 指定的命令为持续运行且为前台命令.<br>• 如果docker run没有指定任何的执行命令或者dockerfile里面也没有ENTRYPOINT命令，那么开启容器时就会使用执行CMD指定的默认的命令<br>• RUN 命令是在构建镜像时执行的命令,注意二者的不同之处<br>• 每个 Dockerfile 只能有一条 CMD 命令。如指定了多条，只有最后一条被执行<br>• 如果用户启动容器时用 docker run xxx 指定运行的命令，则会覆盖 CMD 指定的命令<br>案例：<br>[root@ubuntu2204 1.16.1-alpine]#vim Dockerfile<br>[root@ubuntu2204 1.16.1-alpine]#cat Dockerfile<br>FROM alpine-base:v1.2<br>LABEL author&#x3D;”mooreyxia” versinotallow&#x3D;”1.0”<br>ENV NGINX_VERSION 1.16.1<br>ENV NGINX_INSTALL_DIR &#x2F;apps&#x2F;nginx<br>ADD nginx-1.16.1.tar.gz &#x2F;usr&#x2F;local&#x2F;src<br>RUN cd &#x2F;usr&#x2F;local&#x2F;src&#x2F;nginx-${NGINX_VERSION} <br>    &amp;&amp; .&#x2F;configure –prefix&#x3D;${NGINX_INSTALL_DIR} <br>    &amp;&amp; make &amp;&amp; make install <br>    &amp;&amp; ln -s ${NGINX_INSTALL_DIR}&#x2F;sbin&#x2F;nginx &#x2F;usr&#x2F;bin&#x2F;<br>RUN addgroup -g 2019 -S nginx <br>    &amp;&amp; adduser -s &#x2F;sbin&#x2F;nologin -S -D -u 2019 -G nginx nginx<br>COPY nginx.conf ${NGINX_INSTALL_DIR}&#x2F;conf&#x2F;nginx.conf<br>ADD index.html &#x2F;data&#x2F;nginx&#x2F;html&#x2F;index.html<br>RUN chown -R nginx.nginx &#x2F;data&#x2F;nginx&#x2F; ${NGINX_INSTALL_DIR}&#x2F;<br>EXPOSE 80 443<br>CMD [“${NGINX_INSTALL_DIR}&#x2F;sbin&#x2F;nginx”,”-g”,”daemon off”]我是moore,大家一起加油！这两天打了会PS4,放松一下….</p>
+
+      
+       <hr><span style="font-style: italic;color: gray;"> 转载请注明来源，欢迎对文章中的引用来源进行考证，欢迎指出任何有错误或不够清晰的表达。可以在下面评论区评论，也可以邮件至 jaytp@qq.com </span>
+    </div>
+</article>
+
+
+<p>
+    <a  class="dashang" onclick="dashangToggle()">💰</a>
+</p>
+
+
+
+
+
+
+    
+
+
+
+
+    </div>
+    <div class="copyright">
+        <p class="footer-entry">
+    ©2016-2020 Yelog
+</p>
+<p class="footer-entry">Built with <a href="https://hexo.io/" target="_blank">Hexo</a> and <a href="https://github.com/yelog/hexo-theme-3-hexo" target="_blank">3-hexo</a> theme</p>
+
+    </div>
+    <div class="full-toc">
+        <button class="full" data-title="切换全屏 快捷键 s"><span class="min "></span></button>
+<a class="" id="rocket" ></a>
+
+    </div>
+</div>
+
+<div class="hide_box" onclick="dashangToggle()"></div>
+<div class="shang_box">
+    <a class="shang_close"  onclick="dashangToggle()">×</a>
+    <div class="shang_tit">
+        <p>Help us with donation</p>
+    </div>
+    <div class="shang_payimg">
+        <div class="pay_img">
+            <img src="/img/alipay.jpg" class="alipay" title="扫码支持">
+            <img src="/img/weixin.jpg" class="weixin" title="扫码支持">
+        </div>
+    </div>
+    <div class="shang_payselect">
+        <span><label><input type="radio" name="pay" checked value="alipay">alipay</label></span><span><label><input type="radio" name="pay" value="weixin">weixin</label></span>
+    </div>
+</div>
+
+
+</body>
+<script src="/js/jquery.pjax.js?v=1.1.0" ></script>
+
+<script src="/js/script.js?v=1.1.0" ></script>
+<script>
+    var img_resize = 'default';
+    function initArticle() {
+        /*渲染对应的表格样式*/
+        
+            $("#post .pjax table").addClass("green_title");
+        
+
+        /*渲染打赏样式*/
+        
+        $("input[name=pay]").on("click", function () {
+            if($("input[name=pay]:checked").val()=="weixin"){
+                $(".shang_box .shang_payimg .pay_img").addClass("weixin_img");
+            } else {
+                $(".shang_box .shang_payimg .pay_img").removeClass("weixin_img");
+            }
+        })
+        
+
+        /*高亮代码块行号*/
+        
+
+        /*访问数量*/
+        
+        $.getScript("//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js");
+        
+
+        /*代码高亮，行号对齐*/
+        $('.pre-numbering').css('line-height',$('.has-numbering').css('line-height'));
+
+        
+        
+    }
+
+    /*打赏页面隐藏与展示*/
+    
+    function dashangToggle() {
+        $(".shang_box").fadeToggle();
+        $(".hide_box").fadeToggle();
+    }
+    
+
+</script>
+
+<!--加入行号的高亮代码块样式-->
+
+<!--自定义样式设置-->
+<style>
+    
+    
+    .nav {
+        width: 542px;
+    }
+    .nav.fullscreen {
+        margin-left: -542px;
+    }
+    .nav-left {
+        width: 120px;
+    }
+    
+    
+    @media screen and (max-width: 1468px) {
+        .nav {
+            width: 492px;
+        }
+        .nav.fullscreen {
+            margin-left: -492px;
+        }
+        .nav-left {
+            width: 100px;
+        }
+    }
+    
+    
+    @media screen and (max-width: 1024px) {
+        .nav {
+            width: 492px;
+            margin-left: -492px
+        }
+        .nav.fullscreen {
+            margin-left: 0;
+        }
+    }
+    
+    @media screen and (max-width: 426px) {
+        .nav {
+            width: 100%;
+        }
+        .nav-left {
+            width: 100%;
+        }
+    }
+    
+    
+    .nav-right .title-list nav a .post-title, .nav-right .title-list #local-search-result a .post-title {
+        color: #383636;
+    }
+    
+    
+    .nav-right .title-list nav a .post-date, .nav-right .title-list #local-search-result a .post-date {
+        color: #5e5e5f;
+    }
+    
+    
+    .nav-right nav a.hover, #local-search-result a.hover{
+        background-color: #e2e0e0;
+    }
+    
+    
+
+    /*列表样式*/
+    
+
+    /* 背景图样式 */
+    
+    
+
+
+    /*引用块样式*/
+    
+
+    /*文章列表背景图*/
+    
+
+    
+</style>
+
+
+
+
+
+
+
+</html>

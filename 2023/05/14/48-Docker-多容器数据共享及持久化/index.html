@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>48-Docker-多容器数据共享及持久化 | Hexo</title>
+  <meta name="keywords" content="">
+  <meta name="description" content="48-Docker-多容器数据共享及持久化 | Hexo">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="description" content="基于现有虚拟机磁盘为模版创建新的虚拟机使用 virt-install 创建虚拟机• 虽然使用virt-manager 可以方便的管理虚拟机,但如果需要批量进行虚拟机的创建管理,命令行工具virtinstall更加方便和适合案例：利用 qemu-img命令创建虚拟磁盘#注意: qemu-img create 一定要确认对应路径下没有此文件,如果存在将覆盖原文件  确认现有的虚拟磁盘文件[root@u">
+<meta property="og:type" content="article">
+<meta property="og:title" content="42-KVM虚拟化-基于现有虚拟机磁盘为模版创建新的虚拟机">
+<meta property="og:url" content="http://example.com/2023/05/14/42-KVM%E8%99%9A%E6%8B%9F%E5%8C%96-%E5%9F%BA%E4%BA%8E%E7%8E%B0%E6%9C%89%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%A3%81%E7%9B%98%E4%B8%BA%E6%A8%A1%E7%89%88%E5%88%9B%E5%BB%BA%E6%96%B0%E7%9A%84%E8%99%9A%E6%8B%9F%E6%9C%BA/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="基于现有虚拟机磁盘为模版创建新的虚拟机使用 virt-install 创建虚拟机• 虽然使用virt-manager 可以方便的管理虚拟机,但如果需要批量进行虚拟机的创建管理,命令行工具virtinstall更加方便和适合案例：利用 qemu-img命令创建虚拟磁盘#注意: qemu-img create 一定要确认对应路径下没有此文件,如果存在将覆盖原文件  确认现有的虚拟磁盘文件[root@u">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="http://example.com/img/092d6b54082e04ec1c20121058c692bc5844b5.png">
+<meta property="og:image" content="http://example.com/img/f8bada3025892d742fe1746c42ead86f562ddc.png">
+<meta property="article:published_time" content="2023-05-14T08:21:34.888Z">
+<meta property="article:modified_time" content="2023-05-14T08:23:40.552Z">
+<meta property="article:author" content="John Doe">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/img/092d6b54082e04ec1c20121058c692bc5844b5.png">
+
+
+<link rel="icon" href="/img/avatar.jpg">
+
+<link href="/css/style.css?v=1.1.0" rel="stylesheet">
+
+<link href="/css/hl_theme/atom-light.css?v=1.1.0" rel="stylesheet">
+
+<link href="//cdn.jsdelivr.net/npm/animate.css@4.1.0/animate.min.css" rel="stylesheet">
+
+<script src="//cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js"></script>
+<script src="/js/titleTip.js?v=1.1.0" ></script>
+
+<script src="//cdn.jsdelivr.net/npm/highlightjs@9.16.2/highlight.pack.min.js"></script>
+<script>
+    hljs.initHighlightingOnLoad();
+</script>
+
+<script src="//cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.min.js"></script>
+
+
+
+<script src="//cdn.jsdelivr.net/npm/jquery.cookie@1.4.1/jquery.cookie.min.js" ></script>
+
+<script src="/js/iconfont.js?v=1.1.0" ></script>
+
+<meta name="generator" content="Hexo 6.3.0"></head>
+<div style="display: none">
+  <input class="theme_disqus_on" value="false">
+  <input class="theme_preload_comment" value="">
+  <input class="theme_blog_path" value="">
+  <input id="theme_shortcut" value="true" />
+  <input id="theme_highlight_on" value="true" />
+  <input id="theme_code_copy" value="true" />
+</div>
+
+
+
+<body>
+<aside class="nav">
+    <div class="nav-left">
+        <a href="/"
+   class="avatar_target">
+    <img class="avatar"
+         src="/img/avatar.jpg"/>
+</a>
+<div class="author">
+    <span>John Doe</span>
+</div>
+
+<div class="icon">
+    
+        
+            <a title="rss"
+               href="/atom.xml"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-rss"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="github"
+               href="https://github.com/yelog"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-github"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="facebook"
+               href="https://www.facebook.com/faker.tops"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-facebook"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+    
+        
+    
+        
+            <a title="instagram"
+               href="https://www.facebook.com/faker.tops"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-instagram"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="reddit"
+               href="https://www.reddit.com/user/yelog/"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-reddit"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="weibo"
+               href="http://weibo.com/u/2307534817"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-weibo"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="jianshu"
+               href="https://www.jianshu.com/u/ff56736de7cf"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-jianshu"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="zhihu"
+               href="https://www.zhihu.com/people/jaytp/activities"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-zhihu"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+    
+        
+            <a title="oschina"
+               href="https://my.oschina.net/yelog"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-oschina"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+    
+        
+            <a title="email"
+               href="mailto:jaytp@qq.com"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-email"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="qq"
+               href="http://wpa.qq.com/msgrd?v=3&uin=872336115&site=qq&menu=yes"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-qq"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="kugou"
+               href="https://www.kugou.com/"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-kugou"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="neteasemusic"
+               href="https://music.163.com/#/user/home?id=88151013"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-neteasemusic"></use>
+                    </svg>
+                
+            </a>
+        
+    
+</div>
+
+
+
+
+<ul>
+    <li>
+        <div class="all active" data-rel="All">All
+            
+                <small>(36)</small>
+            
+        </div>
+    </li>
+    
+        
+            
+                <li>
+                    <div data-rel="SRE linux云计算">
+                        
+                        SRE linux云计算
+                        <small>(11)</small>
+                        
+                    </div>
+                    
+                </li>
+            
+        
+    
+        
+            
+                <li>
+                    <div data-rel="云原生">
+                        
+                        云原生
+                        <small>(10)</small>
+                        
+                    </div>
+                    
+                </li>
+            
+        
+    
+        
+            
+                <li>
+                    <div data-rel="PMP管理">
+                        
+                        PMP管理
+                        <small>(1)</small>
+                        
+                    </div>
+                    
+                </li>
+            
+        
+    
+        
+            
+                <li>
+                    <div data-rel="Python 爬虫">
+                        
+                        Python 爬虫
+                        <small>(14)</small>
+                        
+                    </div>
+                    
+                </li>
+            
+        
+    
+</ul>
+<div class="left-bottom">
+    <div class="menus">
+        
+            
+            
+            
+    </div>
+    <div>
+        
+            <a class="about  hasFriend  site_url"
+               
+               href="/about">About</a>
+        
+        <a style="width: 50%"
+                
+                                           class="friends">Friends</a>
+        
+    </div>
+</div>
+<input type="hidden" id="yelog_site_posts_number" value="36">
+
+<div style="display: none">
+    <span id="busuanzi_value_site_uv"></span>
+    <span id="busuanzi_value_site_pv"></span>
+</div>
+
+    </div>
+    <div class="nav-right">
+        <div class="friends-area">
+    <div class="friends-title">
+        Links
+        <i class="iconfont icon-left"></i>
+    </div>
+    <div class="friends-content">
+        <ul>
+            
+            <li><a target="_blank" href="http://yelog.org/">叶落阁</a></li>
+            
+        </ul>
+    </div>
+</div>
+        <div class="title-list">
+    <div class="right-top">
+        <div id="default-panel">
+            <i class="iconfont icon-search" data-title="搜索 快捷键 i"></i>
+            <div class="right-title">All</div>
+            <i class="iconfont icon-file-tree" data-title="切换到大纲视图 快捷键 w"></i>
+        </div>
+        <div id="search-panel">
+            <i class="iconfont icon-left" data-title="返回"></i>
+            <input id="local-search-input" autocomplete="off"/>
+            <label class="border-line" for="input"></label>
+            <i class="iconfont icon-case-sensitive" data-title="大小写敏感"></i>
+            <i class="iconfont icon-tag" data-title="标签"></i>
+        </div>
+        <div id="outline-panel" style="display: none">
+            <div class="right-title">大纲</div>
+            <i class="iconfont icon-list" data-title="切换到文章列表"></i>
+        </div>
+    </div>
+
+    <div class="tags-list">
+    <input id="tag-search" />
+    <div class="tag-wrapper">
+        
+    </div>
+
+</div>
+
+    
+    <nav id="title-list-nav">
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/14/42-KVM%E8%99%9A%E6%8B%9F%E5%8C%96-%E5%9F%BA%E4%BA%8E%E7%8E%B0%E6%9C%89%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%A3%81%E7%9B%98%E4%B8%BA%E6%A8%A1%E7%89%88%E5%88%9B%E5%BB%BA%E6%96%B0%E7%9A%84%E8%99%9A%E6%8B%9F%E6%9C%BA/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="42-KVM虚拟化-基于现有虚拟机磁盘为模版创建新的虚拟机">42-KVM虚拟化-基于现有虚拟机磁盘为模版创建新的虚拟机</span>
+            <span class="post-date" title="2023-05-14 16:21:34">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%B8%89%E7%AB%A0-2-requests%20%E8%BF%9B%E9%98%B6%E2%80%A2%20%E7%88%AC%E5%8F%96%E6%9F%90%E8%A7%86%E9%A2%91%E7%BD%91%E7%9B%B8%E5%85%B3%E8%A7%86%E9%A2%91/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第三章-2-requests 进阶• 爬取某视频网相关视频">Python爬虫-第三章-2-requests 进阶• 爬取某视频网相关视频</span>
+            <span class="post-date" title="2023-05-14 16:20:20">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/14/44-KVM%E8%99%9A%E6%8B%9F%E5%8C%96-%E5%AD%98%E5%82%A8%E7%AE%A1%E7%90%86%E5%92%8C%E7%A3%81%E7%9B%98%E6%89%A9%E5%AE%B9/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="44-KVM虚拟化-存储管理和磁盘扩容">44-KVM虚拟化-存储管理和磁盘扩容</span>
+            <span class="post-date" title="2023-05-14 16:18:30">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%B8%89%E7%AB%A0-3-%E5%88%A9%E7%94%A8re%E6%A8%A1%E5%9D%97%E7%88%AC%E5%8F%96%E6%9F%90%E7%BD%91%E7%94%B5%E5%BD%B1%E6%8E%92%E8%A1%8C%E6%A6%9C/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第三章-3-利用re模块爬取某网电影排行榜">Python爬虫-第三章-3-利用re模块爬取某网电影排行榜</span>
+            <span class="post-date" title="2023-05-14 16:16:51">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/14/46-Docker-Container%E5%AE%B9%E5%99%A8%E7%AE%A1%E7%90%86%E5%90%84%E7%A7%8D%E6%93%8D%E4%BD%9C/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="46-Docker-Container容器管理各种操作">46-Docker-Container容器管理各种操作</span>
+            <span class="post-date" title="2023-05-14 16:14:04">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/14/47-Docker-Dockerfile%E9%95%9C%E5%83%8F%E5%88%9B%E5%BB%BA%E8%87%AA%E5%8A%A8%E5%8C%96%E7%94%9F%E4%BA%A7%E6%A1%88%E4%BE%8B/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="47-Docker-Dockerfile镜像创建自动化生产案例">47-Docker-Dockerfile镜像创建自动化生产案例</span>
+            <span class="post-date" title="2023-05-14 16:09:19">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/14/48-Docker-%E5%A4%9A%E5%AE%B9%E5%99%A8%E6%95%B0%E6%8D%AE%E5%85%B1%E4%BA%AB%E5%8F%8A%E6%8C%81%E4%B9%85%E5%8C%96/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="48-Docker-多容器数据共享及持久化">48-Docker-多容器数据共享及持久化</span>
+            <span class="post-date" title="2023-05-14 16:06:48">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%B8%89%E7%AB%A0-4-%E5%88%A9%E7%94%A8BeautifulSoup%E6%A8%A1%E5%9D%97%E7%88%AC%E5%8F%96%E6%9F%90%E7%BD%91%E5%A3%81%E7%BA%B8%E5%9B%BE%E5%BA%93%E5%9B%BE%E7%89%87/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第三章-4-利用BeautifulSoup模块爬取某网壁纸图库图片">Python爬虫-第三章-4-利用BeautifulSoup模块爬取某网壁纸图库图片</span>
+            <span class="post-date" title="2023-05-14 16:05:34">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%B8%89%E7%AB%A0-5-%E5%88%A9%E7%94%A8xpath%E7%88%AC%E5%8F%96%E6%9F%90%E5%85%AB%E6%88%92%E7%BD%91%E7%9B%B8%E5%85%B3%E8%AF%8D%E8%AF%AD%E5%85%AC%E5%8F%B8%E7%9A%84%E4%BF%A1%E6%81%AF%E5%92%8C%E4%BB%B7%E6%A0%BC/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第三章-5-利用xpath爬取某八戒网相关词语公司的信息和价格">Python爬虫-第三章-5-利用xpath爬取某八戒网相关词语公司的信息和价格</span>
+            <span class="post-date" title="2023-05-14 16:04:16">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%B8%89%E7%AB%A0-6-%E6%8A%93%E5%8F%96%E6%9F%90%E4%BA%91%E9%9F%B3%E4%B9%90%E8%AF%84%E8%AE%BA%E6%95%B0%E6%8D%AE/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第三章-6-抓取某云音乐评论数据">Python爬虫-第三章-6-抓取某云音乐评论数据</span>
+            <span class="post-date" title="2023-05-14 16:03:15">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-1-%E5%A4%9A%E7%BA%BF%E7%A8%8B%E5%A4%9A%E8%BF%9B%E7%A8%8B%E5%B9%B6%E5%8F%91%E7%88%AC%E5%8F%96%E2%85%A0/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-1-多线程多进程并发爬取Ⅰ">Python爬虫-第四章-1-多线程多进程并发爬取Ⅰ</span>
+            <span class="post-date" title="2023-05-14 16:01:27">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-1-%E5%A4%9A%E7%BA%BF%E7%A8%8B%E5%A4%9A%E8%BF%9B%E7%A8%8B%E5%B9%B6%E5%8F%91%E7%88%AC%E5%8F%96%E2%85%A1/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-1-多线程多进程并发爬取Ⅱ">Python爬虫-第四章-1-多线程多进程并发爬取Ⅱ</span>
+            <span class="post-date" title="2023-05-14 16:00:37">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-1-%E5%A4%9A%E7%BA%BF%E7%A8%8B%E5%A4%9A%E8%BF%9B%E7%A8%8B%E5%B9%B6%E5%8F%91%E7%88%AC%E5%8F%96%E2%85%A2-%E7%88%AC%E5%8F%96%E6%9F%90%E8%8F%9C%E5%B8%82%E5%9C%BA%E6%89%B9%E5%8F%91%E4%BB%B7%E6%95%B0%E6%8D%AE/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-1-多线程多进程并发爬取Ⅲ-爬取某菜市场批发价数据">Python爬虫-第四章-1-多线程多进程并发爬取Ⅲ-爬取某菜市场批发价数据</span>
+            <span class="post-date" title="2023-05-14 15:59:35">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-2-%E5%8D%8F%E7%A8%8B%E4%B8%8E%E5%BC%82%E6%AD%A5/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-2-协程与异步">Python爬虫-第四章-2-协程与异步</span>
+            <span class="post-date" title="2023-05-14 15:58:20">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/14/52-HAProxy-10%E7%A7%8D%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E8%B0%83%E5%BA%A6%E7%AE%97%E6%B3%95/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="52-HAProxy-10种负载均衡调度算法">52-HAProxy-10种负载均衡调度算法</span>
+            <span class="post-date" title="2023-05-14 15:56:12">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/14/55-Redis-%E7%BC%96%E8%AF%91%E9%83%A8%E7%BD%B2%E5%8F%8A%E6%95%B0%E6%8D%AE%E6%8C%81%E4%B9%85%E5%8C%96/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="55-Redis-编译部署及数据持久化">55-Redis-编译部署及数据持久化</span>
+            <span class="post-date" title="2023-05-14 15:54:02">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/14/56-Redis%E9%9B%86%E7%BE%A4-%E5%93%A8%E5%85%B5Sentinel%E6%90%AD%E5%BB%BA%E5%AE%9E%E7%8E%B0%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E9%AB%98%E5%8F%AF%E7%94%A8/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="56-Redis集群-哨兵Sentinel搭建实现负载均衡高可用">56-Redis集群-哨兵Sentinel搭建实现负载均衡高可用</span>
+            <span class="post-date" title="2023-05-14 15:41:50">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/14/998-%E6%90%AD%E5%BB%BA%E4%B8%80%E5%8F%B0%E7%A7%81%E7%94%A8%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%A8%E8%BF%87%E7%A8%8B/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="998-搭建一台私用服务器全过程">998-搭建一台私用服务器全过程</span>
+            <span class="post-date" title="2023-05-14 15:36:20">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/%20Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-3-%E5%A4%9A%E7%BA%BF%E7%A8%8B%E5%A4%9A%E8%BF%9B%E7%A8%8B%E6%8F%90%E5%8D%87%E4%BB%BB%E5%8A%A1%E6%89%A7%E8%A1%8C%E6%95%88%E7%8E%87/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-3-多线程多进程提升任务执行效率">Python爬虫-第四章-3-多线程多进程提升任务执行效率</span>
+            <span class="post-date" title="2023-05-14 15:35:16">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/%20Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-4-%E5%88%A9%E7%94%A8%E7%BA%BF%E7%A8%8B%E6%B1%A0%E5%92%8C%E8%BF%9B%E7%A8%8B%E6%B1%A0%E9%AB%98%E6%95%88%E7%88%AC%E5%8F%96%E5%8C%97%E4%BA%AC%E6%9F%90%E5%8F%91%E8%8F%9C%E5%9C%B0%E6%95%B0%E6%8D%AE/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-4-利用线程池和进程池高效爬取北京某发菜地数据">Python爬虫-第四章-4-利用线程池和进程池高效爬取北京某发菜地数据</span>
+            <span class="post-date" title="2023-05-14 15:34:07">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/13/%20Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-5-%E9%AB%98%E6%95%88%E6%8A%93%E5%8F%96%E8%A7%86%E9%A2%91%E7%BD%91%E7%AB%99%E8%A7%86%E9%A2%91%E8%B5%84%E6%BA%90%E8%87%B3%E6%9C%AC%E5%9C%B0/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-5-高效抓取视频网站视频资源至本地">Python爬虫-第四章-5-高效抓取视频网站视频资源至本地</span>
+            <span class="post-date" title="2023-05-13 20:13:14">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/13/%20Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%BA%94%E7%AB%A0-1-%E8%B6%85%E7%BA%A7%E9%B9%B0%E6%8F%92%E4%BB%B6%E5%AE%9E%E7%8E%B0%E8%87%AA%E5%8A%A8%E5%A1%AB%E5%86%99%E8%AF%86%E5%88%AB%E7%A0%81%E5%B9%B6%E7%99%BB%E5%BD%9512306%E7%BD%91%E7%AB%99/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第五章-1-超级鹰插件实现自动填写识别码并登录12306网站">Python爬虫-第五章-1-超级鹰插件实现自动填写识别码并登录12306网站</span>
+            <span class="post-date" title="2023-05-13 19:54:30">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/13/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%BA%94%E7%AB%A0-2-%E7%88%AC%E5%8F%96%E6%9F%90%E7%BD%91%E7%AB%99%E5%9B%BE%E5%BA%93/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第五章-2-爬取某网站图库">Python爬虫-第五章-2-爬取某网站图库</span>
+            <span class="post-date" title="2023-05-13 19:52:47">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/66-CICD%E6%8C%81%E7%BB%AD%E9%9B%86%E6%88%90%E5%B7%A5%E5%85%B7-Jenkins%E5%A3%B0%E6%98%8E%E5%BC%8FPipeline%E9%83%A8%E7%BD%B2JAVA%E7%A8%8B%E5%BA%8F%E7%94%9F%E4%BA%A7%E6%A1%88%E4%BE%8B(%E5%8C%85%E5%90%ABDocker%E6%A1%88%E4%BE%8B)/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="66-CICD持续集成工具-Jenkins声明式Pipeline部署JAVA程序生产案例(包含Docker案例)">66-CICD持续集成工具-Jenkins声明式Pipeline部署JAVA程序生产案例(包含Docker案例)</span>
+            <span class="post-date" title="2023-05-13 19:49:20">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/997-%E6%89%A9%E5%B1%95KVM%E8%99%9A%E6%8B%9F%E6%9C%BA%E9%80%BB%E8%BE%91%E5%8D%B7/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="67-日志分析系统ELK-ELK架构简述">67-日志分析系统ELK-ELK架构简述</span>
+            <span class="post-date" title="2023-05-13 19:47:57">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/67-%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90%E7%B3%BB%E7%BB%9FELK-ELK%E6%9E%B6%E6%9E%84%E7%AE%80%E8%BF%B0/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="67-日志分析系统ELK-ELK架构简述">67-日志分析系统ELK-ELK架构简述</span>
+            <span class="post-date" title="2023-05-13 19:46:06">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/68-%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90%E7%B3%BB%E7%BB%9FELK-Elasticsearch%E5%8D%95%E7%82%B9%E9%83%A8%E7%BD%B2%E5%92%8C%E9%85%8D%E7%BD%AE%E4%BC%98%E5%8C%96%EF%BC%88%E5%90%AB%E5%9F%BA%E4%BA%8EDocker%E5%8D%95%E7%82%B9%E9%83%A8%E7%BD%B2%E6%A1%88%E4%BE%8B%EF%BC%89/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="68-日志分析系统ELK-Elasticsearch单点部署和配置优化（含基于Docker单点部署案例）">68-日志分析系统ELK-Elasticsearch单点部署和配置优化（含基于Docker单点部署案例）</span>
+            <span class="post-date" title="2023-05-13 19:44:06">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/13/78-%E4%BA%91%E5%8E%9F%E7%94%9F%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-Kubernetes%E9%9B%86%E7%BE%A4%E8%8A%82%E7%82%B9%E6%A8%AA%E5%90%91%E4%BC%B8%E7%BC%A9%E5%8F%8A%E6%A0%B8%E5%BF%83%E7%BB%84%E4%BB%B6%E7%89%88%E6%9C%AC%E5%8D%87%E7%BA%A7/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="78-云原生操作系统-Kubernetes集群节点横向伸缩及核心组件版本升级">78-云原生操作系统-Kubernetes集群节点横向伸缩及核心组件版本升级</span>
+            <span class="post-date" title="2023-05-13 17:37:37">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/13/79-%E4%BA%91%E5%8E%9F%E7%94%9F%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-Kubectl%E5%91%BD%E4%BB%A4%E4%BB%A5%E5%8F%8AEtcd%E5%9F%BA%E4%BA%8E%E5%BF%AB%E7%85%A7%E7%9A%84%E6%95%B0%E6%8D%AE%E5%A4%87%E4%BB%BD%E4%B8%8E%E6%81%A2%E5%A4%8D/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="79-云原生操作系统-Kubectl命令以及Etcd基于快照的数据备份与恢复">79-云原生操作系统-Kubectl命令以及Etcd基于快照的数据备份与恢复</span>
+            <span class="post-date" title="2023-05-13 17:34:14">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All PMP管理 "
+           href="/2023/05/13/%E9%A2%84%E6%B5%8B%E5%9E%8B%E9%A1%B9%E7%9B%AE%E7%AE%A1%E7%90%86-6-%E9%A1%B9%E7%9B%AE%E8%BF%9B%E5%BA%A6%E7%AE%A1%E7%90%86%E2%85%A1/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="预测型项目管理-6-项目进度管理Ⅱ">预测型项目管理-6-项目进度管理Ⅱ</span>
+            <span class="post-date" title="2023-05-13 17:32:31">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/13/84-%E4%BA%91%E5%8E%9F%E7%94%9F%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-%E5%9F%BA%E4%BA%8Enerdctl%20+%20buildkitd%E6%9E%84%E5%BB%BA%E5%AE%B9%E5%99%A8%E9%95%9C%E5%83%8F20230513/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="84-云原生操作系统-基于nerdctl + buildkitd构建容器镜像">84-云原生操作系统-基于nerdctl + buildkitd构建容器镜像</span>
+            <span class="post-date" title="2023-05-13 17:22:54">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/13/86-%E4%BA%91%E5%8E%9F%E7%94%9F%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-Zookeeper%E9%9B%86%E7%BE%A4%E5%8F%8A%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%8A%A8%E6%80%81%E6%B3%A8%E5%86%8C%E5%92%8C%E5%8F%91%E7%8E%B0%E4%B8%9A%E5%8A%A1%E5%AE%B9%E5%99%A8%E5%8C%96%E6%A1%88%E4%BE%8B/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="86-云原生操作系统-Zookeeper集群及微服务动态注册和发现业务容器化案例">86-云原生操作系统-Zookeeper集群及微服务动态注册和发现业务容器化案例</span>
+            <span class="post-date" title="2023-05-13 17:13:23">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/13/87-%E4%BA%91%E5%8E%9F%E7%94%9F%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-Redis%E5%8D%95%E6%9C%BA%E5%92%8C%E9%9B%86%E7%BE%A4%E4%B8%9A%E5%8A%A1%E5%AE%B9%E5%99%A8%E5%8C%96%E6%A1%88%E4%BE%8B/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="87-云原生操作系统-Redis单机和集群业务容器化案例">87-云原生操作系统-Redis单机和集群业务容器化案例</span>
+            <span class="post-date" title="2023-05-13 17:08:49">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/997-%E4%BD%BF%E7%94%A8ChatGPT%E5%81%9A%E8%BF%90%E7%BB%B4%E5%BA%94%E7%94%A8%E5%B7%A5%E5%85%B7%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E8%A7%A3%E7%AD%94/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="997-使用ChatGPT做运维应用工具常见问题解答">997-使用ChatGPT做运维应用工具常见问题解答</span>
+            <span class="post-date" title="2023-05-13 15:49:52">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/%E5%A4%A7%E5%9E%8B%E4%BA%92%E8%81%94%E7%BD%91%E5%BE%AE%E6%9C%8D%E5%8A%A1%E6%9E%B6%E6%9E%84%E5%9B%BE/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="大型互联网微服务架构图">大型互联网微服务架构图</span>
+            <span class="post-date" title="2023-05-13 15:47:16">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/%E4%BA%91%E8%AE%A1%E7%AE%97%E6%9E%B6%E6%9E%84%E5%9B%BE/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="云计算架构图">云计算架构图</span>
+            <span class="post-date" title="2023-05-13 15:24:25">2023/05/13</span>
+        </a>
+        
+        <div id="no-item-tips">
+
+        </div>
+    </nav>
+    <div id="outline-list">
+    </div>
+</div>
+
+    </div>
+    <div class="hide-list">
+        <div class="semicircle" data-title="切换全屏 快捷键 s">
+            <div class="brackets first"><</div>
+            <div class="brackets">&gt;</div>
+        </div>
+    </div>
+</aside>
+<div id="post">
+    <div class="pjax">
+        <article id="post-48-Docker-多容器数据共享及持久化" class="article article-type-post" itemscope itemprop="blogPost">
+    
+        <h1 class="article-title">48-Docker-多容器数据共享及持久化</h1>
+    
+    <div class="article-meta">
+        
+        
+        
+        <span class="book">
+            <i class="iconfont icon-category"></i>
+            
+            
+            <a  data-rel="云原生">云原生</a>
+            
+        </span>
+        
+        
+    </div>
+    <div class="article-meta">
+        
+            Created At : <time class="date" title='Updated At: 2023-05-14 16:08:43'>2023-05-14 16:06</time>
+        
+    </div>
+    <div class="article-meta">
+        
+        
+        <span id="busuanzi_container_page_pv">
+            Views 👀 :<span id="busuanzi_value_page_pv">
+                <span class="count-comment">
+                    <span class="spinner">
+                      <div class="cube1"></div>
+                      <div class="cube2"></div>
+                    </span>
+                </span>
+            </span>
+        </span>
+        
+        
+    </div>
+    
+    <div class="toc-ref">
+    
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-text">403 Forbidden</span></a></li></ol>
+    
+<style>
+    .left-col .switch-btn,
+    .left-col .switch-area {
+        display: none;
+    }
+    .toc-level-3 i,
+    .toc-level-3 ol {
+        display: none !important;
+    }
+</style>
+</div>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>Docker镜像数据读写原理<br>• Docker镜像由多个只读层叠加而成，启动容器时，Docker会加载只读镜像层并在镜像栈顶部添加一个读写层<br>• 如果运行中的容器修改了现有的一个已经存在的文件，那该文件将会从读写层下面的只读层复制到读写层，该文件的只读版本仍然存在，只是已经被读写层中该文件的副本所隐藏，此即“写时复制(COW copyon write)”机制<br>• COW机制节约空间,但会导致性低下,虽然关闭重启容器,数据不受影响,但会随着容器的删除,其对应的可写层也会随之而删除,即数据也会丢失.如果容器需要持久保存数据,并不影响性能可以用数据卷技术实现<br>Docker容器的分层<br>Docker镜像是分层设计的，镜像层是只读的，通过镜像启动的容器添加了一层可读写的文件系统，用户写入的数据都保存在这一层中。<br>容器的数据分层目录<br>• LowerDir: image 镜像层,即镜像本身，只读<br>• UpperDir: 容器的上层,可读写 ,容器变化的数据存放在此处<br>• MergedDir: 容器的文件系统，使用Union FS（联合文件系统）将lowerdir 和 upperdir 合并完成后给容器使用,最终呈现给用户的统一视图<br>• WorkDir: 容器在宿主机的工作目录,挂载后内容会被清空，且在使用过程中其内容用户不可见<br>案例：<br>“GraphDriver”: {<br>            “Data”: {<br>                “LowerDir”: “&#x2F;data&#x2F;docker&#x2F;overlay2&#x2F;086a9610ca8e8299ccfa6656cc8939f10d981c670eb3d8e0dace3578566e1950-init&#x2F;diff:&#x2F;data&#x2F;docker&#x2F;overlay2&#x2F;3719ac9519537c60c9232d10a4f8cf8886795dd10dc77e1419366cf6620a6f4a&#x2F;diff:&#x2F;data&#x2F;docker&#x2F;overlay2&#x2F;af7dbf5445243ce62ea3332d6e8de09ac9343507eb09c6bf33af1536d0ea4bb6&#x2F;diff:&#x2F;data&#x2F;docker&#x2F;overlay2&#x2F;6c24180effae6e89f5340c4cb97d4d16cf16dc078ea07fd0c83d974a93d29390&#x2F;diff:&#x2F;data&#x2F;docker&#x2F;overlay2&#x2F;37d92a852bed1006ae43fbb7370d279f5eac095ded055f1c3da31e114357ad87&#x2F;diff:&#x2F;data&#x2F;docker&#x2F;overlay2&#x2F;6aaf443aeea3dfaac29f6d4a9ccad2b90a44cb1f69590ba4028168be32c65f27&#x2F;diff:&#x2F;data&#x2F;docker&#x2F;overlay2&#x2F;c43183788449098ba9809d7a8a58666db201daef8eb41ef81e6ce9cbb6818df7&#x2F;diff:&#x2F;data&#x2F;docker&#x2F;overlay2&#x2F;31316f8b67f97e6c4a9543dfc4328c0e3c29d52f7dfcdd1af66d66d0c658dcc7&#x2F;diff:&#x2F;data&#x2F;docker&#x2F;overlay2&#x2F;4f1e571f109868c90e38a6f0538c5abf9daff5c47ffedb19894d56ce1edd9b37&#x2F;diff”,<br>                “MergedDir”: “&#x2F;data&#x2F;docker&#x2F;overlay2&#x2F;086a9610ca8e8299ccfa6656cc8939f10d981c670eb3d8e0dace3578566e1950&#x2F;merged”,<br>                “UpperDir”: “&#x2F;data&#x2F;docker&#x2F;overlay2&#x2F;086a9610ca8e8299ccfa6656cc8939f10d981c670eb3d8e0dace3578566e1950&#x2F;diff”,<br>                “WorkDir”: “&#x2F;data&#x2F;docker&#x2F;overlay2&#x2F;086a9610ca8e8299ccfa6656cc8939f10d981c670eb3d8e0dace3578566e1950&#x2F;work”<br>            },<br>            “Name”: “overlay2”<br>        },容器数据持久保存的两种方式<br>如果要将写入到容器的数据永久保存，则需要将容器中的数据保存到宿主机的指定目录</p>
+<p>Docker的数据类型分为两种:• 数据卷(Data Volume): 直接将宿主机目录挂载至容器的指定的目录 ，推荐使用此种方式<br>• 数据卷容器(Data Volume Container): 间接使用宿主机空间，数据卷容器是将宿主机的目录挂载至一个专门的数据卷容器，然后让其他容器通过数据卷容器读写宿主机的数据 ，此方式不常用</p>
+<ol>
+<li>数据卷的使用<br>数据卷使用场景<br>• 数据库<br>• 日志输出<br>• 静态web页面<br>• 应用配置文件<br>• 多容器间目录或文件共享<br>数据卷的特点<br>• 数据卷是目录或者文件，并且可以在多个容器之间共同使用,实现容器之间共享和重用<br>• 对数据卷更改数据在所有容器里面会立即更新。<br>• 数据卷的数据可以持久保存，即使删除使用使用该容器卷的容器也不影响。<br>• 在容器里面的写入数据不会影响到镜像本身,即数据卷的变化不会影响镜像的更新<br>• 依赖于宿主机目录，宿主机出问题，上面容器会受影响，当宿主机较多时，不方便统一管理<br>• 匿名和命名数据卷在容器启动时初始化，如果容器使用的镜像在挂载点包含了数据，会拷贝到新初始化的数据卷中<br>数据卷分类<br>• 指定宿主机目录或文件: 指定宿主机的具体路径和容器路径的挂载关系，此方式不会创建数据卷<br>• 匿名卷: 不指定数据名称,只指定容器内目录路径充当挂载点,docker自动指定宿主机的路径进行挂载，此方式会创建匿名数据卷,Dockerfile中VOLUME指定的卷即为此种<br>• 命名卷: 指定数据卷的名称和容器路径的挂载关系，此方式会创建命名数据卷<br>数据卷使用语法<br>-v, –volume&#x3D;[host-src:]container-dest[:<options>]<options>
+ro 从容器内对此数据卷是只读，不写此项默认为可读可写
+rw 从容器内对此数据卷可读可写,此为默认值</li>
+</ol>
+<p>方式1：<br>#指定宿主机目录或文件格式:<br>-v &lt;宿主机绝对路径的目录或文件&gt;:&lt;容器目录或文件&gt;[:ro] #将宿主机目录挂载容器目录，两个目录都可自动创建<br>案例：<br>[root@ubuntu2204 ~]#mkdir -pv &#x2F;opt&#x2F;nginx&#x2F;html&#x2F;<br>mkdir: 已创建目录 ‘&#x2F;opt&#x2F;nginx’<br>mkdir: 已创建目录 ‘&#x2F;opt&#x2F;nginx&#x2F;html&#x2F;‘<br>[root@ubuntu2204 ~]#echo ‘Hello Moore,Nice to meet you’ &gt; &#x2F;opt&#x2F;nginx&#x2F;html&#x2F;index.html<br>[root@ubuntu2204 ~]#docker run -d -p 8080:80 -v &#x2F;opt&#x2F;nginx&#x2F;html&#x2F;:&#x2F;data&#x2F;nginx&#x2F;html&#x2F;  nginx-alpine:1.16.1<br>bb8b25caf71b1b641a5d25c45f074a7c4c5e611374214e97bcf6c8eeb2f218d3<br>[root@ubuntu2204 ~]#curl 127.0.0.1:8080<br>Hello Moore,Nice to meet you</p>
+<hr>
+<p>方式2<br>#匿名卷,只指定容器内路径,没有指定宿主机路径信息,宿主机自动生成&#x2F;var&#x2F;lib&#x2F;docker&#x2F;volumes&#x2F;&lt;卷ID&gt;&#x2F;_data目录,并挂载至容器指定路径<br>-v &lt;容器内路径&gt;<br>#案例:<br>[root@ubuntu2204 1.16.1-alpine]#cat Dockerfile<br>FROM alpine-base:v1.2<br>LABEL auther&#x3D;”mooreyxia” <br>      version&#x3D;”1.0”<br>ADD nginx-1.16.1.tar.gz &#x2F;usr&#x2F;local&#x2F;src<br>RUN cd &#x2F;usr&#x2F;local&#x2F;src&#x2F;nginx-1.16.1 <br>    &amp;&amp; .&#x2F;configure –prefix&#x3D;&#x2F;apps&#x2F;nginx <br>    &amp;&amp; make &amp;&amp; make install <br>    &amp;&amp; ln -s &#x2F;apps&#x2F;nginx&#x2F;sbin&#x2F;nginx &#x2F;usr&#x2F;bin&#x2F;<br>RUN addgroup -g 2019 -S nginx <br>    &amp;&amp; adduser -s &#x2F;sbin&#x2F;nologin -S -D -u 2019 -G nginx nginx<br>COPY nginx.conf &#x2F;apps&#x2F;nginx&#x2F;conf&#x2F;nginx.conf<br>ADD index.html &#x2F;data&#x2F;nginx&#x2F;html&#x2F;index.html<br>RUN chown -R nginx.nginx &#x2F;data&#x2F;nginx&#x2F; &#x2F;apps&#x2F;nginx&#x2F;<br>EXPOSE 80 443<br>CMD [“nginx”]<br>VOLUME &#x2F;data&#x2F;nginx&#x2F;html&#x2F; –&gt; Dockerfile中直接设置也可 </p>
+<p>#或者在run命令中直接指定，生成的数据卷名称是随机的<br>[root@ubuntu2204 1.16.1-alpine]#docker run -d -p 83:80 -v &#x2F;data&#x2F;nginx&#x2F;html&#x2F; –name anon-server  nginx-alpine:1.16.1<br>d10e8dcb46a335b9cc3d8ae4322c51f501a45da96d660e0d84bb0c79352027f1<br>[root@ubuntu2204 1.16.1-alpine]#docker volume ls<br>DRIVER    VOLUME NAME<br>local     169341e0045107bbdea856220db8221082c950408918d7c58f03fffc09e73997</p>
+<hr>
+<p>方式3<br>#命名卷将固定的存放在&#x2F;var&#x2F;lib&#x2F;docker&#x2F;volumes&#x2F;&lt;卷名&gt;&#x2F;_data<br>-v &lt;卷名&gt;:&lt;容器目录路径&gt;<br>#可以通过命令事先创建,如可没有事先创建卷名,docker run时也会自动创建卷docker volume create &lt;卷名&gt;</p>
+<p>案例：<br>[root@ubuntu2204 1.16.1-alpine]#docker run -d -p 84:80 -v website:&#x2F;data&#x2F;nginx&#x2F;html&#x2F;  nginx-alpine:1.16.1<br>f895a3ce97ac7fd6cd1935dc92311f6f921deb161f8bb396ea7a92f7ef7db6ab<br>[root@ubuntu2204 1.16.1-alpine]#docker volume ls<br>DRIVER    VOLUME NAME<br>local     website管理数据卷命令<br>#数据卷的删除或者是不用的数据卷都可以删除，用rm -f 的方式容易有残留文件<br>[root@ubuntu2204 1.16.1-alpine]#docker volume –help</p>
+<p>Usage:  docker volume COMMAND</p>
+<p>Manage volumes</p>
+<p>Commands:<br>  create      Create a volume<br>  inspect     Display detailed information on one or more volumes<br>  ls          List volumes<br>  prune       Remove all unused local volumes<br>  rm          Remove one or more volumes</p>
+<p>Run ‘docker volume COMMAND –help’ for more information on a command.</p>
+<p>案例：删除没有被使用的数据卷<br>[root@ubuntu2204 1.16.1-alpine]#docker ps<br>CONTAINER ID   IMAGE                   COMMAND   CREATED          STATUS          PORTS                                        NAMES<br>f895a3ce97ac   nginx-alpine:1.16.1     “nginx”   6 minutes ago    Up 6 minutes    443&#x2F;tcp, 0.0.0.0:84-&gt;80&#x2F;tcp, :::84-&gt;80&#x2F;tcp   intelligent_matsumoto<br>d10e8dcb46a3   nginx-alpine:1.16.1     “nginx”   16 minutes ago   Up 16 minutes   443&#x2F;tcp, 0.0.0.0:83-&gt;80&#x2F;tcp, :::83-&gt;80&#x2F;tcp   anon-server<br>2374dfc04840   nginx-alpine:1.16.1-1   “nginx”   2 hours ago      Up 2 hours      443&#x2F;tcp, 0.0.0.0:90-&gt;80&#x2F;tcp, :::90-&gt;80&#x2F;tcp   data-server1<br>f345b2624792   nginx-alpine:1.16.1     “nginx”   2 hours ago      Up 2 hours      443&#x2F;tcp, 0.0.0.0:81-&gt;80&#x2F;tcp, :::81-&gt;80&#x2F;tcp   server1<br>5c7d31a7764a   nginx-alpine:1.16.1     “nginx”   2 hours ago      Up 2 hours      443&#x2F;tcp, 0.0.0.0:82-&gt;80&#x2F;tcp, :::82-&gt;80&#x2F;tcp   server2<br>176f11e9ee8c   nginx-alpine:1.16.1     “nginx”   3 hours ago      Up 3 hours      0.0.0.0:80-&gt;80&#x2F;tcp, :::80-&gt;80&#x2F;tcp, 443&#x2F;tcp   data-server<br>[root@ubuntu2204 1.16.1-alpine]#docker rm -f intelligent_matsumoto<br>intelligent_matsumoto<br>[root@ubuntu2204 1.16.1-alpine]#docker rm -f anon-server<br>anon-server<br>[root@ubuntu2204 1.16.1-alpine]#docker volume ls<br>DRIVER    VOLUME NAME<br>local     169341e0045107bbdea856220db8221082c950408918d7c58f03fffc09e73997<br>local     website<br>[root@ubuntu2204 1.16.1-alpine]#docker volume rm 169341e00451 website案例：引用同一个数据卷目录，开启多个容器，实现多个容器共享数据<br>[root@ubuntu2204 ~]#docker run -d -v &#x2F;data&#x2F;testdir:&#x2F;data&#x2F;nginx&#x2F;html&#x2F; -p<br>8001:80 nginx-alpine:1.16.1<br>56a5460f584bd2de56040c4a1dff86ad8a9723cfd6bf21ed8a538b9629b0874c<br>[root@ubuntu2204 ~]#docker run -d -v &#x2F;data&#x2F;testdir:&#x2F;data&#x2F;nginx&#x2F;html&#x2F; -p<br>8002:80 nginx-alpine:1.16.1<br>e7b5bff6ce56fa51ed6411175c9c9f1fb9bf8e7b1b9471080380b01692f89e58<br>[root@ubuntu2204 ~]#docker ps<br>CONTAINER ID IMAGE COMMAND CREATED<br>STATUS PORTS NAMES<br>e7b5bff6ce56 nginx-alpine:1.16.1 “nginx” 6 seconds ago<br>Up 5 seconds 443&#x2F;tcp, 0.0.0.0:8002-&gt;80&#x2F;tcp hungry_robinson<br>56a5460f584b nginx-alpine:1.16.1 “nginx” 33 seconds ago<br>Up 31 seconds 443&#x2F;tcp, 0.0.0.0:8001-&gt;80&#x2F;tcp stupefied_dubinsky<br>[root@ubuntu2204 ~]#curl 127.0.0.1:8001<br>Test page on host<br>[root@ubuntu2204 ~]#curl 127.0.0.1:8002<br>Test page on host<br>数据卷容器<br><img src="/../img/e4842c34310a283f7e85898754142e78a46b95.png"><br>数据卷容器最大的功能是可以让数据在多个docker容器之间共享<br>实现方式：<br>• 先要创建一个后台运行的容器作为 Server，用于提供数据卷，这个卷可以为其他容器提供数据存储服务，其他使用此卷的容器作为client端 ，但此方法并不常使用<br>• 缺点: 因为依赖一个 Server 的容器，所以此 Server 容器出了问题，其它 Client容器都会受影响<br>案例：<br>#–volumes-from &lt;数据卷容器&gt; Mount volumes from the specified container(s)</p>
+<p>#创建一个后台运行的容器作为 Server，用于提供数据卷<br>[root@ubuntu2204 ~]#docker run -d -p 80:80 -v &#x2F;opt&#x2F;nginx&#x2F;html&#x2F;:&#x2F;data&#x2F;nginx&#x2F;html&#x2F; -v &#x2F;opt&#x2F;dir1:&#x2F;dir1 –name data-server nginx-alpine:1.16.1<br>176f11e9ee8c1e8873bc05ed5820f2a80a3d330e250c22030d3bb2ff371233be<br>[root@ubuntu2204 ~]#docker ps<br>CONTAINER ID   IMAGE                 COMMAND   CREATED          STATUS          PORTS                                        NAMES<br>176f11e9ee8c   nginx-alpine:1.16.1   “nginx”   13 seconds ago   Up 12 seconds   0.0.0.0:80-&gt;80&#x2F;tcp, :::80-&gt;80&#x2F;tcp, 443&#x2F;tcp   data-server<br>[root@ubuntu2204 ~]#docker volume ls<br>DRIVER    VOLUME NAME<br>[root@ubuntu2204 ~]#curl 127.0.0.1<br>Hello Moore,Nice to meet you<br>[root@ubuntu2204 ~]#touch &#x2F;opt&#x2F;dir1&#x2F;abc.txt<br>[root@ubuntu2204 ~]#docker exec data-server ls &#x2F;dir1<br>abc.txt</p>
+<p>#其他使用此卷的容器作为client端<br>[root@ubuntu2204 ~]#docker run -d -p 82:80 –name server2 –volumes-from data-server  nginx-alpine:1.16.1<br>5c7d31a7764a0a3b561fd86107a1676f9d60db54fdb72ebfac67bed3c769ef9f<br>[root@ubuntu2204 ~]#docker run -d -p 81:80 –name server1 –volumes-from data-server  nginx-alpine:1.16.1<br>f345b26247924e27d89e2bdce21a78ae4faf162f01a49be8116460d8ab66f514<br>[root@ubuntu2204 ~]#docker ps<br>CONTAINER ID   IMAGE                 COMMAND   CREATED          STATUS          PORTS                                        NAMES<br>f345b2624792   nginx-alpine:1.16.1   “nginx”   4 seconds ago    Up 3 seconds    443&#x2F;tcp, 0.0.0.0:81-&gt;80&#x2F;tcp, :::81-&gt;80&#x2F;tcp   server1<br>5c7d31a7764a   nginx-alpine:1.16.1   “nginx”   30 seconds ago   Up 29 seconds   443&#x2F;tcp, 0.0.0.0:82-&gt;80&#x2F;tcp, :::82-&gt;80&#x2F;tcp   server2<br>176f11e9ee8c   nginx-alpine:1.16.1   “nginx”   8 minutes ago    Up 8 minutes    0.0.0.0:80-&gt;80&#x2F;tcp, :::80-&gt;80&#x2F;tcp, 443&#x2F;tcp   data-server<br>[root@ubuntu2204 ~]#curl 127.0.0.1:80<br>Hello Moore,Nice to meet you<br>[root@ubuntu2204 ~]#curl 127.0.0.1:81<br>Hello Moore,Nice to meet you<br>[root@ubuntu2204 ~]#curl 127.0.0.1:82<br>Hello Moore,Nice to meet you<br>[root@ubuntu2204 ~]#docker exec server2 ls &#x2F;dir1<br>abc.txt<br>[root@ubuntu2204 ~]#docker exec server1 ls &#x2F;dir1<br>abc.txt注意：<br>• 删除数据卷容器后，旧的client 容器仍能访问，但无法再创建新的client容器<br>• 删除数据卷容器后，旧的client 容器仍能访问，但无法再创建基于数据卷容器的新的client容器,但可以创建基于已创建的Client容器的Client容器<br>利用数据卷容器备份指定容器的数据卷实现<br>为了方便的备份匿名数据卷,可以利用数据卷容器实现数据卷的备份<br><img src="/../img/d782a5f73281fb53d9522192806f4139b2880c.png"><br>#使用语法<br>#在执行备份命令容器上执行备份方式<br>docker run -it –rm –volumes-from [container name] -v $(pwd):&#x2F;backup ubuntu<br>root@ca5bb2c1f877:&#x2F;#tar cvf &#x2F;backup&#x2F;backup.tar [container data volume]<br>#说明<br>[container name] #表示需要备份的容器<br>[container data volume] #表示容器内的需要备份的数据卷对应的目录<br>#还原方式<br>docker run -it –rm –volumes-from [container name] -V $(pwd):&#x2F;backup ubuntu<br>root@ca5bb2c1f877:&#x2F;#tar xvf &#x2F;backup&#x2F;backup.tar -C [container data volume]</p>
+<p>案例：<br>[root@ubuntu2204 ~]#vim &#x2F;data&#x2F;docker&#x2F;volumes&#x2F;169341e0045107bbdea856220db8221082c950408918d7c58f03fffc09e73997&#x2F;_data&#x2F;index.html<br>[root@ubuntu2204 ~]#curl 127.0.0.1:90<br>Test Page based nginx-alpine v2.0<br>[root@ubuntu2204 ~]#docker run -it –rm –volumes-from data-server1 -v $(pwd):&#x2F;backup nginx-alpine:1.16.1-1 tar cvf &#x2F;backup&#x2F;backup.tar &#x2F;data&#x2F;nginx&#x2F;html<br>tar: removing leading ‘&#x2F;‘ from member names<br>data&#x2F;nginx&#x2F;html&#x2F;<br>data&#x2F;nginx&#x2F;html&#x2F;index.html<br>[root@ubuntu2204 ~]#ls<br>backup.tar  install_docker.sh  nginx-1.16.1.tar.gz  nginx_install.sh  repositories  web02_status.txt<br>[root@ubuntu2204 ~]#tar tvf backup.tar<br>drwxr-xr-x nginx&#x2F;nginx       0 2023-01-10 16:49 data&#x2F;nginx&#x2F;html&#x2F;<br>-rw-r–r– nginx&#x2F;nginx      34 2023-01-10 16:49 data&#x2F;nginx&#x2F;html&#x2F;index.html<br>[root@ubuntu2204 ~]#docker volume ls<br>DRIVER    VOLUME NAME<br>local     169341e0045107bbdea856220db8221082c950408918d7c58f03fffc09e73997</p>
+<p>#故意破环容器内数据<br>[root@ubuntu2204 ~]#rm -f &#x2F;data&#x2F;docker&#x2F;volumes&#x2F;169341e0045107bbdea856220db8221082c950408918d7c58f03fffc09e73997&#x2F;_data&#x2F;index.html<br>[root@ubuntu2204 ~]#curl 127.0.0.1:90</p>
+<html>
+<head><title>403 Forbidden</title></head>
+<body>
+<center><h1>403 Forbidden</h1></center>
+<hr><center>nginx/1.16.1</center>
+</body>
+</html>
+
+<p>#还原数据<br>[root@ubuntu2204 ~]#docker run -it –rm –volumes-from data-server1 -v $(pwd):&#x2F;backup nginx-alpine:1.16.1-1 sh<br>&#x2F; # ls &#x2F;backup&#x2F;<br>backup.tar           install_docker.sh    nginx-1.16.1.tar.gz  nginx_install.sh     repositories         web02_status.txt<br>&#x2F; # tar xf &#x2F;backup&#x2F;backup.tar<br>&#x2F; # ls<br>apps    backup  bin     data    dev     etc     home    lib     media   mnt     opt     proc    root    run     sbin    srv     sys     tmp     usr     var<br>&#x2F; # ls &#x2F;data&#x2F;nginx&#x2F;html&#x2F;<br>index.html<br>&#x2F; # exit<br>[root@ubuntu2204 ~]#curl 127.0.0.1:90<br>Test Page based nginx-alpine v2.0数据卷容器总结 - 实现多个客户端容器共享相同的持久化宿主机的存储方案<br>• 将提供卷的容器Server 删除，已经运行的容器Client依然可以使用挂载的卷，因为容器是通过挂载访问数据的，但是无法创建新的卷容器客户端，但是再把卷容器Server创建后即可正常创建卷容器Client，此方式可以用于线上共享数据目录等环境，因为即使数据卷容器被删除了，其他已经运行的容器依然可以挂载使用。由此可知, 数据卷容器的功能只是将数据挂载信息传递给了其它使用数据卷容器的容器,而数据卷容器本身并不提供数据存储功能<br>• 数据卷容器可以作为共享的方式为其他容器提供文件共享，类似于NFS共享，可以在生产中启动一个实例挂载本地的目录，然后其他的容器分别挂载此容器的目录，即可保证各容器之间的数据一致性<br>• 当创建Client容器时,会复制Server容器的数据卷信息,后续Server容器状态和存在与否,都不会影响Client容器使用的数据卷<br>• 当Server容器删除后,不能再基于Server容器创建新的Client容器,但可以基于已存在的Client容器来创建新的Client容器</p>
+<p>我是moore,大家一起加油！</p>
+
+      
+       <hr><span style="font-style: italic;color: gray;"> 转载请注明来源，欢迎对文章中的引用来源进行考证，欢迎指出任何有错误或不够清晰的表达。可以在下面评论区评论，也可以邮件至 jaytp@qq.com </span>
+    </div>
+</article>
+
+
+<p>
+    <a  class="dashang" onclick="dashangToggle()">💰</a>
+</p>
+
+
+
+
+
+
+    
+
+
+
+
+    </div>
+    <div class="copyright">
+        <p class="footer-entry">
+    ©2016-2020 Yelog
+</p>
+<p class="footer-entry">Built with <a href="https://hexo.io/" target="_blank">Hexo</a> and <a href="https://github.com/yelog/hexo-theme-3-hexo" target="_blank">3-hexo</a> theme</p>
+
+    </div>
+    <div class="full-toc">
+        <button class="full" data-title="切换全屏 快捷键 s"><span class="min "></span></button>
+<a class="" id="rocket" ></a>
+
+    </div>
+</div>
+
+<div class="hide_box" onclick="dashangToggle()"></div>
+<div class="shang_box">
+    <a class="shang_close"  onclick="dashangToggle()">×</a>
+    <div class="shang_tit">
+        <p>Help us with donation</p>
+    </div>
+    <div class="shang_payimg">
+        <div class="pay_img">
+            <img src="/img/alipay.jpg" class="alipay" title="扫码支持">
+            <img src="/img/weixin.jpg" class="weixin" title="扫码支持">
+        </div>
+    </div>
+    <div class="shang_payselect">
+        <span><label><input type="radio" name="pay" checked value="alipay">alipay</label></span><span><label><input type="radio" name="pay" value="weixin">weixin</label></span>
+    </div>
+</div>
+
+
+</body>
+<script src="/js/jquery.pjax.js?v=1.1.0" ></script>
+
+<script src="/js/script.js?v=1.1.0" ></script>
+<script>
+    var img_resize = 'default';
+    function initArticle() {
+        /*渲染对应的表格样式*/
+        
+            $("#post .pjax table").addClass("green_title");
+        
+
+        /*渲染打赏样式*/
+        
+        $("input[name=pay]").on("click", function () {
+            if($("input[name=pay]:checked").val()=="weixin"){
+                $(".shang_box .shang_payimg .pay_img").addClass("weixin_img");
+            } else {
+                $(".shang_box .shang_payimg .pay_img").removeClass("weixin_img");
+            }
+        })
+        
+
+        /*高亮代码块行号*/
+        
+
+        /*访问数量*/
+        
+        $.getScript("//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js");
+        
+
+        /*代码高亮，行号对齐*/
+        $('.pre-numbering').css('line-height',$('.has-numbering').css('line-height'));
+
+        
+        
+    }
+
+    /*打赏页面隐藏与展示*/
+    
+    function dashangToggle() {
+        $(".shang_box").fadeToggle();
+        $(".hide_box").fadeToggle();
+    }
+    
+
+</script>
+
+<!--加入行号的高亮代码块样式-->
+
+<!--自定义样式设置-->
+<style>
+    
+    
+    .nav {
+        width: 542px;
+    }
+    .nav.fullscreen {
+        margin-left: -542px;
+    }
+    .nav-left {
+        width: 120px;
+    }
+    
+    
+    @media screen and (max-width: 1468px) {
+        .nav {
+            width: 492px;
+        }
+        .nav.fullscreen {
+            margin-left: -492px;
+        }
+        .nav-left {
+            width: 100px;
+        }
+    }
+    
+    
+    @media screen and (max-width: 1024px) {
+        .nav {
+            width: 492px;
+            margin-left: -492px
+        }
+        .nav.fullscreen {
+            margin-left: 0;
+        }
+    }
+    
+    @media screen and (max-width: 426px) {
+        .nav {
+            width: 100%;
+        }
+        .nav-left {
+            width: 100%;
+        }
+    }
+    
+    
+    .nav-right .title-list nav a .post-title, .nav-right .title-list #local-search-result a .post-title {
+        color: #383636;
+    }
+    
+    
+    .nav-right .title-list nav a .post-date, .nav-right .title-list #local-search-result a .post-date {
+        color: #5e5e5f;
+    }
+    
+    
+    .nav-right nav a.hover, #local-search-result a.hover{
+        background-color: #e2e0e0;
+    }
+    
+    
+
+    /*列表样式*/
+    
+
+    /* 背景图样式 */
+    
+    
+
+
+    /*引用块样式*/
+    
+
+    /*文章列表背景图*/
+    
+
+    
+</style>
+
+
+
+
+
+
+
+</html>

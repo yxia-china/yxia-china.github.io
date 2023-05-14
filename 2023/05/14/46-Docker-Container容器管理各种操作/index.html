@@ -1,0 +1,1126 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>46-Docker-Container容器管理各种操作 | Hexo</title>
+  <meta name="keywords" content="">
+  <meta name="description" content="46-Docker-Container容器管理各种操作 | Hexo">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="description" content="基于现有虚拟机磁盘为模版创建新的虚拟机使用 virt-install 创建虚拟机• 虽然使用virt-manager 可以方便的管理虚拟机,但如果需要批量进行虚拟机的创建管理,命令行工具virtinstall更加方便和适合案例：利用 qemu-img命令创建虚拟磁盘#注意: qemu-img create 一定要确认对应路径下没有此文件,如果存在将覆盖原文件  确认现有的虚拟磁盘文件[root@u">
+<meta property="og:type" content="article">
+<meta property="og:title" content="42-KVM虚拟化-基于现有虚拟机磁盘为模版创建新的虚拟机">
+<meta property="og:url" content="http://example.com/2023/05/14/42-KVM%E8%99%9A%E6%8B%9F%E5%8C%96-%E5%9F%BA%E4%BA%8E%E7%8E%B0%E6%9C%89%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%A3%81%E7%9B%98%E4%B8%BA%E6%A8%A1%E7%89%88%E5%88%9B%E5%BB%BA%E6%96%B0%E7%9A%84%E8%99%9A%E6%8B%9F%E6%9C%BA/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="基于现有虚拟机磁盘为模版创建新的虚拟机使用 virt-install 创建虚拟机• 虽然使用virt-manager 可以方便的管理虚拟机,但如果需要批量进行虚拟机的创建管理,命令行工具virtinstall更加方便和适合案例：利用 qemu-img命令创建虚拟磁盘#注意: qemu-img create 一定要确认对应路径下没有此文件,如果存在将覆盖原文件  确认现有的虚拟磁盘文件[root@u">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="http://example.com/img/092d6b54082e04ec1c20121058c692bc5844b5.png">
+<meta property="og:image" content="http://example.com/img/f8bada3025892d742fe1746c42ead86f562ddc.png">
+<meta property="article:published_time" content="2023-05-14T08:21:34.888Z">
+<meta property="article:modified_time" content="2023-05-14T08:23:40.552Z">
+<meta property="article:author" content="John Doe">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/img/092d6b54082e04ec1c20121058c692bc5844b5.png">
+
+
+<link rel="icon" href="/img/avatar.jpg">
+
+<link href="/css/style.css?v=1.1.0" rel="stylesheet">
+
+<link href="/css/hl_theme/atom-light.css?v=1.1.0" rel="stylesheet">
+
+<link href="//cdn.jsdelivr.net/npm/animate.css@4.1.0/animate.min.css" rel="stylesheet">
+
+<script src="//cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js"></script>
+<script src="/js/titleTip.js?v=1.1.0" ></script>
+
+<script src="//cdn.jsdelivr.net/npm/highlightjs@9.16.2/highlight.pack.min.js"></script>
+<script>
+    hljs.initHighlightingOnLoad();
+</script>
+
+<script src="//cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.min.js"></script>
+
+
+
+<script src="//cdn.jsdelivr.net/npm/jquery.cookie@1.4.1/jquery.cookie.min.js" ></script>
+
+<script src="/js/iconfont.js?v=1.1.0" ></script>
+
+<meta name="generator" content="Hexo 6.3.0"></head>
+<div style="display: none">
+  <input class="theme_disqus_on" value="false">
+  <input class="theme_preload_comment" value="">
+  <input class="theme_blog_path" value="">
+  <input id="theme_shortcut" value="true" />
+  <input id="theme_highlight_on" value="true" />
+  <input id="theme_code_copy" value="true" />
+</div>
+
+
+
+<body>
+<aside class="nav">
+    <div class="nav-left">
+        <a href="/"
+   class="avatar_target">
+    <img class="avatar"
+         src="/img/avatar.jpg"/>
+</a>
+<div class="author">
+    <span>John Doe</span>
+</div>
+
+<div class="icon">
+    
+        
+            <a title="rss"
+               href="/atom.xml"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-rss"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="github"
+               href="https://github.com/yelog"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-github"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="facebook"
+               href="https://www.facebook.com/faker.tops"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-facebook"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+    
+        
+    
+        
+            <a title="instagram"
+               href="https://www.facebook.com/faker.tops"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-instagram"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="reddit"
+               href="https://www.reddit.com/user/yelog/"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-reddit"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="weibo"
+               href="http://weibo.com/u/2307534817"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-weibo"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="jianshu"
+               href="https://www.jianshu.com/u/ff56736de7cf"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-jianshu"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="zhihu"
+               href="https://www.zhihu.com/people/jaytp/activities"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-zhihu"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+    
+        
+            <a title="oschina"
+               href="https://my.oschina.net/yelog"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-oschina"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+    
+        
+            <a title="email"
+               href="mailto:jaytp@qq.com"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-email"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="qq"
+               href="http://wpa.qq.com/msgrd?v=3&uin=872336115&site=qq&menu=yes"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-qq"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="kugou"
+               href="https://www.kugou.com/"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-kugou"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="neteasemusic"
+               href="https://music.163.com/#/user/home?id=88151013"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-neteasemusic"></use>
+                    </svg>
+                
+            </a>
+        
+    
+</div>
+
+
+
+
+<ul>
+    <li>
+        <div class="all active" data-rel="All">All
+            
+                <small>(36)</small>
+            
+        </div>
+    </li>
+    
+        
+            
+                <li>
+                    <div data-rel="SRE linux云计算">
+                        
+                        SRE linux云计算
+                        <small>(11)</small>
+                        
+                    </div>
+                    
+                </li>
+            
+        
+    
+        
+            
+                <li>
+                    <div data-rel="云原生">
+                        
+                        云原生
+                        <small>(10)</small>
+                        
+                    </div>
+                    
+                </li>
+            
+        
+    
+        
+            
+                <li>
+                    <div data-rel="PMP管理">
+                        
+                        PMP管理
+                        <small>(1)</small>
+                        
+                    </div>
+                    
+                </li>
+            
+        
+    
+        
+            
+                <li>
+                    <div data-rel="Python 爬虫">
+                        
+                        Python 爬虫
+                        <small>(14)</small>
+                        
+                    </div>
+                    
+                </li>
+            
+        
+    
+</ul>
+<div class="left-bottom">
+    <div class="menus">
+        
+            
+            
+            
+    </div>
+    <div>
+        
+            <a class="about  hasFriend  site_url"
+               
+               href="/about">About</a>
+        
+        <a style="width: 50%"
+                
+                                           class="friends">Friends</a>
+        
+    </div>
+</div>
+<input type="hidden" id="yelog_site_posts_number" value="36">
+
+<div style="display: none">
+    <span id="busuanzi_value_site_uv"></span>
+    <span id="busuanzi_value_site_pv"></span>
+</div>
+
+    </div>
+    <div class="nav-right">
+        <div class="friends-area">
+    <div class="friends-title">
+        Links
+        <i class="iconfont icon-left"></i>
+    </div>
+    <div class="friends-content">
+        <ul>
+            
+            <li><a target="_blank" href="http://yelog.org/">叶落阁</a></li>
+            
+        </ul>
+    </div>
+</div>
+        <div class="title-list">
+    <div class="right-top">
+        <div id="default-panel">
+            <i class="iconfont icon-search" data-title="搜索 快捷键 i"></i>
+            <div class="right-title">All</div>
+            <i class="iconfont icon-file-tree" data-title="切换到大纲视图 快捷键 w"></i>
+        </div>
+        <div id="search-panel">
+            <i class="iconfont icon-left" data-title="返回"></i>
+            <input id="local-search-input" autocomplete="off"/>
+            <label class="border-line" for="input"></label>
+            <i class="iconfont icon-case-sensitive" data-title="大小写敏感"></i>
+            <i class="iconfont icon-tag" data-title="标签"></i>
+        </div>
+        <div id="outline-panel" style="display: none">
+            <div class="right-title">大纲</div>
+            <i class="iconfont icon-list" data-title="切换到文章列表"></i>
+        </div>
+    </div>
+
+    <div class="tags-list">
+    <input id="tag-search" />
+    <div class="tag-wrapper">
+        
+    </div>
+
+</div>
+
+    
+    <nav id="title-list-nav">
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/14/42-KVM%E8%99%9A%E6%8B%9F%E5%8C%96-%E5%9F%BA%E4%BA%8E%E7%8E%B0%E6%9C%89%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%A3%81%E7%9B%98%E4%B8%BA%E6%A8%A1%E7%89%88%E5%88%9B%E5%BB%BA%E6%96%B0%E7%9A%84%E8%99%9A%E6%8B%9F%E6%9C%BA/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="42-KVM虚拟化-基于现有虚拟机磁盘为模版创建新的虚拟机">42-KVM虚拟化-基于现有虚拟机磁盘为模版创建新的虚拟机</span>
+            <span class="post-date" title="2023-05-14 16:21:34">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%B8%89%E7%AB%A0-2-requests%20%E8%BF%9B%E9%98%B6%E2%80%A2%20%E7%88%AC%E5%8F%96%E6%9F%90%E8%A7%86%E9%A2%91%E7%BD%91%E7%9B%B8%E5%85%B3%E8%A7%86%E9%A2%91/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第三章-2-requests 进阶• 爬取某视频网相关视频">Python爬虫-第三章-2-requests 进阶• 爬取某视频网相关视频</span>
+            <span class="post-date" title="2023-05-14 16:20:20">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/14/44-KVM%E8%99%9A%E6%8B%9F%E5%8C%96-%E5%AD%98%E5%82%A8%E7%AE%A1%E7%90%86%E5%92%8C%E7%A3%81%E7%9B%98%E6%89%A9%E5%AE%B9/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="44-KVM虚拟化-存储管理和磁盘扩容">44-KVM虚拟化-存储管理和磁盘扩容</span>
+            <span class="post-date" title="2023-05-14 16:18:30">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%B8%89%E7%AB%A0-3-%E5%88%A9%E7%94%A8re%E6%A8%A1%E5%9D%97%E7%88%AC%E5%8F%96%E6%9F%90%E7%BD%91%E7%94%B5%E5%BD%B1%E6%8E%92%E8%A1%8C%E6%A6%9C/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第三章-3-利用re模块爬取某网电影排行榜">Python爬虫-第三章-3-利用re模块爬取某网电影排行榜</span>
+            <span class="post-date" title="2023-05-14 16:16:51">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/14/46-Docker-Container%E5%AE%B9%E5%99%A8%E7%AE%A1%E7%90%86%E5%90%84%E7%A7%8D%E6%93%8D%E4%BD%9C/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="46-Docker-Container容器管理各种操作">46-Docker-Container容器管理各种操作</span>
+            <span class="post-date" title="2023-05-14 16:14:04">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/14/47-Docker-Dockerfile%E9%95%9C%E5%83%8F%E5%88%9B%E5%BB%BA%E8%87%AA%E5%8A%A8%E5%8C%96%E7%94%9F%E4%BA%A7%E6%A1%88%E4%BE%8B/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="47-Docker-Dockerfile镜像创建自动化生产案例">47-Docker-Dockerfile镜像创建自动化生产案例</span>
+            <span class="post-date" title="2023-05-14 16:09:19">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/14/48-Docker-%E5%A4%9A%E5%AE%B9%E5%99%A8%E6%95%B0%E6%8D%AE%E5%85%B1%E4%BA%AB%E5%8F%8A%E6%8C%81%E4%B9%85%E5%8C%96/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="48-Docker-多容器数据共享及持久化">48-Docker-多容器数据共享及持久化</span>
+            <span class="post-date" title="2023-05-14 16:06:48">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%B8%89%E7%AB%A0-4-%E5%88%A9%E7%94%A8BeautifulSoup%E6%A8%A1%E5%9D%97%E7%88%AC%E5%8F%96%E6%9F%90%E7%BD%91%E5%A3%81%E7%BA%B8%E5%9B%BE%E5%BA%93%E5%9B%BE%E7%89%87/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第三章-4-利用BeautifulSoup模块爬取某网壁纸图库图片">Python爬虫-第三章-4-利用BeautifulSoup模块爬取某网壁纸图库图片</span>
+            <span class="post-date" title="2023-05-14 16:05:34">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%B8%89%E7%AB%A0-5-%E5%88%A9%E7%94%A8xpath%E7%88%AC%E5%8F%96%E6%9F%90%E5%85%AB%E6%88%92%E7%BD%91%E7%9B%B8%E5%85%B3%E8%AF%8D%E8%AF%AD%E5%85%AC%E5%8F%B8%E7%9A%84%E4%BF%A1%E6%81%AF%E5%92%8C%E4%BB%B7%E6%A0%BC/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第三章-5-利用xpath爬取某八戒网相关词语公司的信息和价格">Python爬虫-第三章-5-利用xpath爬取某八戒网相关词语公司的信息和价格</span>
+            <span class="post-date" title="2023-05-14 16:04:16">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%B8%89%E7%AB%A0-6-%E6%8A%93%E5%8F%96%E6%9F%90%E4%BA%91%E9%9F%B3%E4%B9%90%E8%AF%84%E8%AE%BA%E6%95%B0%E6%8D%AE/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第三章-6-抓取某云音乐评论数据">Python爬虫-第三章-6-抓取某云音乐评论数据</span>
+            <span class="post-date" title="2023-05-14 16:03:15">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-1-%E5%A4%9A%E7%BA%BF%E7%A8%8B%E5%A4%9A%E8%BF%9B%E7%A8%8B%E5%B9%B6%E5%8F%91%E7%88%AC%E5%8F%96%E2%85%A0/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-1-多线程多进程并发爬取Ⅰ">Python爬虫-第四章-1-多线程多进程并发爬取Ⅰ</span>
+            <span class="post-date" title="2023-05-14 16:01:27">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-1-%E5%A4%9A%E7%BA%BF%E7%A8%8B%E5%A4%9A%E8%BF%9B%E7%A8%8B%E5%B9%B6%E5%8F%91%E7%88%AC%E5%8F%96%E2%85%A1/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-1-多线程多进程并发爬取Ⅱ">Python爬虫-第四章-1-多线程多进程并发爬取Ⅱ</span>
+            <span class="post-date" title="2023-05-14 16:00:37">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-1-%E5%A4%9A%E7%BA%BF%E7%A8%8B%E5%A4%9A%E8%BF%9B%E7%A8%8B%E5%B9%B6%E5%8F%91%E7%88%AC%E5%8F%96%E2%85%A2-%E7%88%AC%E5%8F%96%E6%9F%90%E8%8F%9C%E5%B8%82%E5%9C%BA%E6%89%B9%E5%8F%91%E4%BB%B7%E6%95%B0%E6%8D%AE/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-1-多线程多进程并发爬取Ⅲ-爬取某菜市场批发价数据">Python爬虫-第四章-1-多线程多进程并发爬取Ⅲ-爬取某菜市场批发价数据</span>
+            <span class="post-date" title="2023-05-14 15:59:35">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-2-%E5%8D%8F%E7%A8%8B%E4%B8%8E%E5%BC%82%E6%AD%A5/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-2-协程与异步">Python爬虫-第四章-2-协程与异步</span>
+            <span class="post-date" title="2023-05-14 15:58:20">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/14/52-HAProxy-10%E7%A7%8D%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E8%B0%83%E5%BA%A6%E7%AE%97%E6%B3%95/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="52-HAProxy-10种负载均衡调度算法">52-HAProxy-10种负载均衡调度算法</span>
+            <span class="post-date" title="2023-05-14 15:56:12">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/14/55-Redis-%E7%BC%96%E8%AF%91%E9%83%A8%E7%BD%B2%E5%8F%8A%E6%95%B0%E6%8D%AE%E6%8C%81%E4%B9%85%E5%8C%96/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="55-Redis-编译部署及数据持久化">55-Redis-编译部署及数据持久化</span>
+            <span class="post-date" title="2023-05-14 15:54:02">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/14/56-Redis%E9%9B%86%E7%BE%A4-%E5%93%A8%E5%85%B5Sentinel%E6%90%AD%E5%BB%BA%E5%AE%9E%E7%8E%B0%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E9%AB%98%E5%8F%AF%E7%94%A8/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="56-Redis集群-哨兵Sentinel搭建实现负载均衡高可用">56-Redis集群-哨兵Sentinel搭建实现负载均衡高可用</span>
+            <span class="post-date" title="2023-05-14 15:41:50">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/14/998-%E6%90%AD%E5%BB%BA%E4%B8%80%E5%8F%B0%E7%A7%81%E7%94%A8%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%A8%E8%BF%87%E7%A8%8B/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="998-搭建一台私用服务器全过程">998-搭建一台私用服务器全过程</span>
+            <span class="post-date" title="2023-05-14 15:36:20">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/%20Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-3-%E5%A4%9A%E7%BA%BF%E7%A8%8B%E5%A4%9A%E8%BF%9B%E7%A8%8B%E6%8F%90%E5%8D%87%E4%BB%BB%E5%8A%A1%E6%89%A7%E8%A1%8C%E6%95%88%E7%8E%87/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-3-多线程多进程提升任务执行效率">Python爬虫-第四章-3-多线程多进程提升任务执行效率</span>
+            <span class="post-date" title="2023-05-14 15:35:16">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/%20Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-4-%E5%88%A9%E7%94%A8%E7%BA%BF%E7%A8%8B%E6%B1%A0%E5%92%8C%E8%BF%9B%E7%A8%8B%E6%B1%A0%E9%AB%98%E6%95%88%E7%88%AC%E5%8F%96%E5%8C%97%E4%BA%AC%E6%9F%90%E5%8F%91%E8%8F%9C%E5%9C%B0%E6%95%B0%E6%8D%AE/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-4-利用线程池和进程池高效爬取北京某发菜地数据">Python爬虫-第四章-4-利用线程池和进程池高效爬取北京某发菜地数据</span>
+            <span class="post-date" title="2023-05-14 15:34:07">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/13/%20Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-5-%E9%AB%98%E6%95%88%E6%8A%93%E5%8F%96%E8%A7%86%E9%A2%91%E7%BD%91%E7%AB%99%E8%A7%86%E9%A2%91%E8%B5%84%E6%BA%90%E8%87%B3%E6%9C%AC%E5%9C%B0/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-5-高效抓取视频网站视频资源至本地">Python爬虫-第四章-5-高效抓取视频网站视频资源至本地</span>
+            <span class="post-date" title="2023-05-13 20:13:14">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/13/%20Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%BA%94%E7%AB%A0-1-%E8%B6%85%E7%BA%A7%E9%B9%B0%E6%8F%92%E4%BB%B6%E5%AE%9E%E7%8E%B0%E8%87%AA%E5%8A%A8%E5%A1%AB%E5%86%99%E8%AF%86%E5%88%AB%E7%A0%81%E5%B9%B6%E7%99%BB%E5%BD%9512306%E7%BD%91%E7%AB%99/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第五章-1-超级鹰插件实现自动填写识别码并登录12306网站">Python爬虫-第五章-1-超级鹰插件实现自动填写识别码并登录12306网站</span>
+            <span class="post-date" title="2023-05-13 19:54:30">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/13/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%BA%94%E7%AB%A0-2-%E7%88%AC%E5%8F%96%E6%9F%90%E7%BD%91%E7%AB%99%E5%9B%BE%E5%BA%93/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第五章-2-爬取某网站图库">Python爬虫-第五章-2-爬取某网站图库</span>
+            <span class="post-date" title="2023-05-13 19:52:47">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/66-CICD%E6%8C%81%E7%BB%AD%E9%9B%86%E6%88%90%E5%B7%A5%E5%85%B7-Jenkins%E5%A3%B0%E6%98%8E%E5%BC%8FPipeline%E9%83%A8%E7%BD%B2JAVA%E7%A8%8B%E5%BA%8F%E7%94%9F%E4%BA%A7%E6%A1%88%E4%BE%8B(%E5%8C%85%E5%90%ABDocker%E6%A1%88%E4%BE%8B)/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="66-CICD持续集成工具-Jenkins声明式Pipeline部署JAVA程序生产案例(包含Docker案例)">66-CICD持续集成工具-Jenkins声明式Pipeline部署JAVA程序生产案例(包含Docker案例)</span>
+            <span class="post-date" title="2023-05-13 19:49:20">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/997-%E6%89%A9%E5%B1%95KVM%E8%99%9A%E6%8B%9F%E6%9C%BA%E9%80%BB%E8%BE%91%E5%8D%B7/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="67-日志分析系统ELK-ELK架构简述">67-日志分析系统ELK-ELK架构简述</span>
+            <span class="post-date" title="2023-05-13 19:47:57">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/67-%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90%E7%B3%BB%E7%BB%9FELK-ELK%E6%9E%B6%E6%9E%84%E7%AE%80%E8%BF%B0/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="67-日志分析系统ELK-ELK架构简述">67-日志分析系统ELK-ELK架构简述</span>
+            <span class="post-date" title="2023-05-13 19:46:06">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/68-%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90%E7%B3%BB%E7%BB%9FELK-Elasticsearch%E5%8D%95%E7%82%B9%E9%83%A8%E7%BD%B2%E5%92%8C%E9%85%8D%E7%BD%AE%E4%BC%98%E5%8C%96%EF%BC%88%E5%90%AB%E5%9F%BA%E4%BA%8EDocker%E5%8D%95%E7%82%B9%E9%83%A8%E7%BD%B2%E6%A1%88%E4%BE%8B%EF%BC%89/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="68-日志分析系统ELK-Elasticsearch单点部署和配置优化（含基于Docker单点部署案例）">68-日志分析系统ELK-Elasticsearch单点部署和配置优化（含基于Docker单点部署案例）</span>
+            <span class="post-date" title="2023-05-13 19:44:06">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/13/78-%E4%BA%91%E5%8E%9F%E7%94%9F%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-Kubernetes%E9%9B%86%E7%BE%A4%E8%8A%82%E7%82%B9%E6%A8%AA%E5%90%91%E4%BC%B8%E7%BC%A9%E5%8F%8A%E6%A0%B8%E5%BF%83%E7%BB%84%E4%BB%B6%E7%89%88%E6%9C%AC%E5%8D%87%E7%BA%A7/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="78-云原生操作系统-Kubernetes集群节点横向伸缩及核心组件版本升级">78-云原生操作系统-Kubernetes集群节点横向伸缩及核心组件版本升级</span>
+            <span class="post-date" title="2023-05-13 17:37:37">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/13/79-%E4%BA%91%E5%8E%9F%E7%94%9F%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-Kubectl%E5%91%BD%E4%BB%A4%E4%BB%A5%E5%8F%8AEtcd%E5%9F%BA%E4%BA%8E%E5%BF%AB%E7%85%A7%E7%9A%84%E6%95%B0%E6%8D%AE%E5%A4%87%E4%BB%BD%E4%B8%8E%E6%81%A2%E5%A4%8D/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="79-云原生操作系统-Kubectl命令以及Etcd基于快照的数据备份与恢复">79-云原生操作系统-Kubectl命令以及Etcd基于快照的数据备份与恢复</span>
+            <span class="post-date" title="2023-05-13 17:34:14">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All PMP管理 "
+           href="/2023/05/13/%E9%A2%84%E6%B5%8B%E5%9E%8B%E9%A1%B9%E7%9B%AE%E7%AE%A1%E7%90%86-6-%E9%A1%B9%E7%9B%AE%E8%BF%9B%E5%BA%A6%E7%AE%A1%E7%90%86%E2%85%A1/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="预测型项目管理-6-项目进度管理Ⅱ">预测型项目管理-6-项目进度管理Ⅱ</span>
+            <span class="post-date" title="2023-05-13 17:32:31">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/13/84-%E4%BA%91%E5%8E%9F%E7%94%9F%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-%E5%9F%BA%E4%BA%8Enerdctl%20+%20buildkitd%E6%9E%84%E5%BB%BA%E5%AE%B9%E5%99%A8%E9%95%9C%E5%83%8F20230513/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="84-云原生操作系统-基于nerdctl + buildkitd构建容器镜像">84-云原生操作系统-基于nerdctl + buildkitd构建容器镜像</span>
+            <span class="post-date" title="2023-05-13 17:22:54">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/13/86-%E4%BA%91%E5%8E%9F%E7%94%9F%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-Zookeeper%E9%9B%86%E7%BE%A4%E5%8F%8A%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%8A%A8%E6%80%81%E6%B3%A8%E5%86%8C%E5%92%8C%E5%8F%91%E7%8E%B0%E4%B8%9A%E5%8A%A1%E5%AE%B9%E5%99%A8%E5%8C%96%E6%A1%88%E4%BE%8B/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="86-云原生操作系统-Zookeeper集群及微服务动态注册和发现业务容器化案例">86-云原生操作系统-Zookeeper集群及微服务动态注册和发现业务容器化案例</span>
+            <span class="post-date" title="2023-05-13 17:13:23">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/13/87-%E4%BA%91%E5%8E%9F%E7%94%9F%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-Redis%E5%8D%95%E6%9C%BA%E5%92%8C%E9%9B%86%E7%BE%A4%E4%B8%9A%E5%8A%A1%E5%AE%B9%E5%99%A8%E5%8C%96%E6%A1%88%E4%BE%8B/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="87-云原生操作系统-Redis单机和集群业务容器化案例">87-云原生操作系统-Redis单机和集群业务容器化案例</span>
+            <span class="post-date" title="2023-05-13 17:08:49">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/997-%E4%BD%BF%E7%94%A8ChatGPT%E5%81%9A%E8%BF%90%E7%BB%B4%E5%BA%94%E7%94%A8%E5%B7%A5%E5%85%B7%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E8%A7%A3%E7%AD%94/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="997-使用ChatGPT做运维应用工具常见问题解答">997-使用ChatGPT做运维应用工具常见问题解答</span>
+            <span class="post-date" title="2023-05-13 15:49:52">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/%E5%A4%A7%E5%9E%8B%E4%BA%92%E8%81%94%E7%BD%91%E5%BE%AE%E6%9C%8D%E5%8A%A1%E6%9E%B6%E6%9E%84%E5%9B%BE/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="大型互联网微服务架构图">大型互联网微服务架构图</span>
+            <span class="post-date" title="2023-05-13 15:47:16">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/%E4%BA%91%E8%AE%A1%E7%AE%97%E6%9E%B6%E6%9E%84%E5%9B%BE/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="云计算架构图">云计算架构图</span>
+            <span class="post-date" title="2023-05-13 15:24:25">2023/05/13</span>
+        </a>
+        
+        <div id="no-item-tips">
+
+        </div>
+    </nav>
+    <div id="outline-list">
+    </div>
+</div>
+
+    </div>
+    <div class="hide-list">
+        <div class="semicircle" data-title="切换全屏 快捷键 s">
+            <div class="brackets first"><</div>
+            <div class="brackets">&gt;</div>
+        </div>
+    </div>
+</aside>
+<div id="post">
+    <div class="pjax">
+        <article id="post-46-Docker-Container容器管理各种操作" class="article article-type-post" itemscope itemprop="blogPost">
+    
+        <h1 class="article-title">46-Docker-Container容器管理各种操作</h1>
+    
+    <div class="article-meta">
+        
+        
+        
+        <span class="book">
+            <i class="iconfont icon-category"></i>
+            
+            
+            <a  data-rel="云原生">云原生</a>
+            
+        </span>
+        
+        
+    </div>
+    <div class="article-meta">
+        
+            Created At : <time class="date" title='Updated At: 2023-05-14 16:16:43'>2023-05-14 16:14</time>
+        
+    </div>
+    <div class="article-meta">
+        
+        
+        <span id="busuanzi_container_page_pv">
+            Views 👀 :<span id="busuanzi_value_page_pv">
+                <span class="count-comment">
+                    <span class="spinner">
+                      <div class="cube1"></div>
+                      <div class="cube2"></div>
+                    </span>
+                </span>
+            </span>
+        </span>
+        
+        
+    </div>
+    
+    <div class="toc-ref">
+    
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-text">Welcome to nginx!</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-text">Welcome to nginx!</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#This-is-x2F-run-x2F-systemd-x2F-resolve-x2F-resolv-conf-managed-by-man-systemd-resolved-8"><span class="toc-text">This is &#x2F;run&#x2F;systemd&#x2F;resolve&#x2F;resolv.conf managed by man:systemd-resolved(8).</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Do-not-edit"><span class="toc-text">Do not edit.</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-text"></span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#This-file-might-be-symlinked-as-x2F-etc-x2F-resolv-conf-If-you%E2%80%99re-looking-at"><span class="toc-text">This file might be symlinked as &#x2F;etc&#x2F;resolv.conf. If you’re looking at</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#x2F-etc-x2F-resolv-conf-and-seeing-this-text-you-have-followed-the-symlink"><span class="toc-text">&#x2F;etc&#x2F;resolv.conf and seeing this text, you have followed the symlink.</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#-1"><span class="toc-text"></span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#This-is-a-dynamic-resolv-conf-file-for-connecting-local-clients-directly-to"><span class="toc-text">This is a dynamic resolv.conf file for connecting local clients directly to</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#all-known-uplink-DNS-servers-This-file-lists-all-configured-search-domains"><span class="toc-text">all known uplink DNS servers. This file lists all configured search domains.</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#-2"><span class="toc-text"></span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Third-party-programs-should-typically-not-access-this-file-directly-but-only"><span class="toc-text">Third party programs should typically not access this file directly, but only</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#through-the-symlink-at-x2F-etc-x2F-resolv-conf-To-manage-man-resolv-conf-5-in-a"><span class="toc-text">through the symlink at &#x2F;etc&#x2F;resolv.conf. To manage man:resolv.conf(5) in a</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#different-way-replace-this-symlink-by-a-static-file-or-a-different-symlink"><span class="toc-text">different way, replace this symlink by a static file or a different symlink.</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#-3"><span class="toc-text"></span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#See-man-systemd-resolved-service-8-for-details-about-the-supported-modes-of"><span class="toc-text">See man:systemd-resolved.service(8) for details about the supported modes of</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#operation-for-x2F-etc-x2F-resolv-conf"><span class="toc-text">operation for &#x2F;etc&#x2F;resolv.conf.</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#This-is-x2F-run-x2F-systemd-x2F-resolve-x2F-stub-resolv-conf-managed-by-man-systemd-resolved-8"><span class="toc-text">This is &#x2F;run&#x2F;systemd&#x2F;resolve&#x2F;stub-resolv.conf managed by man:systemd-resolved(8).</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Do-not-edit-1"><span class="toc-text">Do not edit.</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#-4"><span class="toc-text"></span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#This-file-might-be-symlinked-as-x2F-etc-x2F-resolv-conf-If-you%E2%80%99re-looking-at-1"><span class="toc-text">This file might be symlinked as &#x2F;etc&#x2F;resolv.conf. If you’re looking at</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#x2F-etc-x2F-resolv-conf-and-seeing-this-text-you-have-followed-the-symlink-1"><span class="toc-text">&#x2F;etc&#x2F;resolv.conf and seeing this text, you have followed the symlink.</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#-5"><span class="toc-text"></span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#This-is-a-dynamic-resolv-conf-file-for-connecting-local-clients-to-the"><span class="toc-text">This is a dynamic resolv.conf file for connecting local clients to the</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#internal-DNS-stub-resolver-of-systemd-resolved-This-file-lists-all"><span class="toc-text">internal DNS stub resolver of systemd-resolved. This file lists all</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#configured-search-domains"><span class="toc-text">configured search domains.</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#-6"><span class="toc-text"></span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Run-%E2%80%9Cresolvectl-status%E2%80%9D-to-see-details-about-the-uplink-DNS-servers"><span class="toc-text">Run “resolvectl status” to see details about the uplink DNS servers</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#currently-in-use"><span class="toc-text">currently in use.</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#-7"><span class="toc-text"></span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Third-party-programs-should-typically-not-access-this-file-directly-but-only-1"><span class="toc-text">Third party programs should typically not access this file directly, but only</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#through-the-symlink-at-x2F-etc-x2F-resolv-conf-To-manage-man-resolv-conf-5-in-a-1"><span class="toc-text">through the symlink at &#x2F;etc&#x2F;resolv.conf. To manage man:resolv.conf(5) in a</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#different-way-replace-this-symlink-by-a-static-file-or-a-different-symlink-1"><span class="toc-text">different way, replace this symlink by a static file or a different symlink.</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#-8"><span class="toc-text"></span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#See-man-systemd-resolved-service-8-for-details-about-the-supported-modes-of-1"><span class="toc-text">See man:systemd-resolved.service(8) for details about the supported modes of</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#operation-for-x2F-etc-x2F-resolv-conf-1"><span class="toc-text">operation for &#x2F;etc&#x2F;resolv.conf.</span></a></li></ol>
+    
+<style>
+    .left-col .switch-btn,
+    .left-col .switch-area {
+        display: none;
+    }
+    .toc-level-3 i,
+    .toc-level-3 ol {
+        display: none !important;
+    }
+</style>
+</div>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>容器相关命令<br>[root@ubuntu2204 ~]#docker container</p>
+<p>Usage:  docker container COMMAND</p>
+<p>Manage containers</p>
+<p>Commands:<br>  attach      Attach local standard input, output, and error streams to a running container<br>  commit      Create a new image from a container’s changes<br>  cp          Copy files&#x2F;folders between a container and the local filesystem<br>  create      Create a new container<br>  diff        Inspect changes to files or directories on a container’s filesystem<br>  exec        Run a command in a running container<br>  export      Export a container’s filesystem as a tar archive<br>  inspect     Display detailed information on one or more containers<br>  kill        Kill one or more running containers<br>  logs        Fetch the logs of a container<br>  ls          List containers<br>  pause       Pause all processes within one or more containers<br>  port        List port mappings or a specific mapping for the container<br>  prune       Remove all stopped containers<br>  rename      Rename a container<br>  restart     Restart one or more containers<br>  rm          Remove one or more containers<br>  run         Run a command in a new container<br>  start       Start one or more stopped containers<br>  stats       Display a live stream of container(s) resource usage statistics<br>  stop        Stop one or more running containers<br>  top         Display the running processes of a container<br>  unpause     Unpause all processes within one or more containers<br>  update      Update configuration of one or more containers<br>  wait        Block until one or more containers stop, then print their exit codes</p>
+<p>Run ‘docker container COMMAND –help’ for more information on a command.启动并创建容器<br>docker run &#x3D; docker create + docker start<br>• 复制镜像，生成容器，启动容器，进入容器，并随机生成容器ID和名称<br>案例：<br>[root@ubuntu2204 ~]#docker run hello-world</p>
+<p>Hello from Docker!<br>This message shows that your installation appears to be working correctly.</p>
+<p>To generate this message, Docker took the following steps:</p>
+<ol>
+<li>The Docker client contacted the Docker daemon.</li>
+<li>The Docker daemon pulled the “hello-world” image from the Docker Hub.<br>(amd64)</li>
+<li>The Docker daemon created a new container from that image which runs the<br>executable that produces the output you are currently reading.</li>
+<li>The Docker daemon streamed that output to the Docker client, which sent it<br>to your terminal.</li>
+</ol>
+<p>To try something more ambitious, you can run an Ubuntu container with:<br> $ docker run -it ubuntu bash</p>
+<p>Share images, automate workflows, and more with a free Docker ID:<br> <a target="_blank" rel="noopener" href="https://hub.docker.com/">https://hub.docker.com/</a></p>
+<p>For more examples and ideas, visit:<br> <a target="_blank" rel="noopener" href="https://docs.docker.com/get-started/">https://docs.docker.com/get-started/</a></p>
+<p>[root@ubuntu2204 ~]#docker images<br>REPOSITORY    TAG       IMAGE ID       CREATED         SIZE<br>nginx         latest    1403e55ab369   2 weeks ago     142MB<br>alpine        latest    49176f190c7e   6 weeks ago     7.05MB<br>hello-world   latest    feb5d9fea6a5   15 months ago   13.3kB<br>[root@ubuntu2204 ~]#docker ps -a<br>CONTAINER ID   IMAGE         COMMAND    CREATED         STATUS                     PORTS     NAMES<br>0cb0b10c2af5   hello-world   “&#x2F;hello”   2 minutes ago   Exited (0) 2 minutes ago             angry_wing案例：一次性运行容器中命令<br>[root@ubuntu2204 ~]#docker images<br>REPOSITORY    TAG       IMAGE ID       CREATED         SIZE<br>nginx         latest    1403e55ab369   2 weeks ago     142MB<br>alpine        latest    49176f190c7e   6 weeks ago     7.05MB<br>hello-world   latest    feb5d9fea6a5   15 months ago   13.3kB<br>[root@ubuntu2204 ~]#docker run alpine:latest echo “Hello moore”<br>Hello moore<br>[root@ubuntu2204 ~]#docker ps<br>CONTAINER ID   IMAGE     COMMAND   CREATED   STATUS    PORTS     NAMES<br>[root@ubuntu2204 ~]#docker ps -a<br>CONTAINER ID   IMAGE           COMMAND                CREATED          STATUS                      PORTS     NAMES<br>2a03b18ac322   alpine:latest   “echo ‘Hello moore’”   18 seconds ago   Exited (0) 17 seconds ago             condescending_cray<br>0cb0b10c2af5   hello-world     “&#x2F;hello”               12 minutes ago   Exited (0) 12 minutes ago             angry_wing案例：运行交互式容器并退出<br>[root@ubuntu2204 ~]#docker run -it alpine:latest sh<br>&#x2F; # echo ‘5+10’<br>5+10<br>&#x2F; # exit<br>[root@ubuntu2204 ~]#docker ps -l<br>CONTAINER ID   IMAGE           COMMAND   CREATED          STATUS                      PORTS     NAMES<br>ab636bf080db   alpine:latest   “sh”      50 seconds ago   Exited (0) 16 seconds ago             brave_lampor案例：创建容器后直接进入并退出<br>[root@ubuntu2204 ~]#docker images<br>REPOSITORY    TAG       IMAGE ID       CREATED         SIZE<br>nginx         latest    1403e55ab369   2 weeks ago     142MB<br>alpine        latest    49176f190c7e   6 weeks ago     7.05MB<br>hello-world   latest    feb5d9fea6a5   15 months ago   13.3kB</p>
+<p>[root@ubuntu2204 ~]#docker run -it  –name alpine01 49176f190c7e<br>&#x2F; # cat &#x2F;etc&#x2F;issue<br>Welcome to Alpine Linux 3.17<br>Kernel \r on an \m (\l)</p>
+<p>&#x2F; # hostname<br>5ff509ad4bee<br>&#x2F; # exit</p>
+<p>#退出容器,容器也停止运行<br>[root@ubuntu2204 ~]#docker ps -a<br>CONTAINER ID   IMAGE           COMMAND                CREATED          STATUS                          PORTS     NAMES<br>5ff509ad4bee   49176f190c7e    “&#x2F;bin&#x2F;sh”              2 minutes ago    Exited (0) About a minute ago             alpine01<br>b3b92cb5c280   49176f190c7e    “–name alpine01”      2 minutes ago    Created                                   loving_driscoll案例：启动后台守护式容器<br>[root@ubuntu2204 ~]#docker run -d  –name wbe01 nginx:latest<br>693a57848829cd69fa2f4e7badc6dfa3bffe314f1e840e13c61b23e361cd6310<br>[root@ubuntu2204 ~]#docker ps<br>CONTAINER ID   IMAGE          COMMAND                  CREATED         STATUS         PORTS     NAMES<br>693a57848829   nginx:latest   “&#x2F;docker-entrypoint.…”   6 seconds ago   Up 5 seconds   80&#x2F;tcp    wbe01<br>[root@ubuntu2204 ~]#docker inspect 693a57848829<br>…<br> “Networks”: {<br>                “bridge”: {<br>                    “IPAMConfig”: null,<br>                    “Links”: null,<br>                    “Aliases”: null,<br>                    “NetworkID”: “a8a51592423bd31babd55d1e0538a833d55f279d025178fad9a96352e8752bb5”,<br>                    “EndpointID”: “00819f54d38a220042272cd94e1ffb48efb8a6c7bae085d397219a700aa8be7d”,<br>                    “Gateway”: “172.17.0.1”,<br>                    “IPAddress”: “172.17.0.2”, –&gt; 容器ip<br>                    “IPPrefixLen”: 16,<br>                    “IPv6Gateway”: “”,<br>                    “GlobalIPv6Address”: “”,<br>                    “GlobalIPv6PrefixLen”: 0,<br>                    “MacAddress”: “02:42:ac:11:00:02”,<br>                    “DriverOpts”: null<br>                }</p>
+<p>[root@ubuntu2204 ~]#docker run –rm –name b1 busybox wget -qO - 172.17.0.2<br><!DOCTYPE html></p>
+<html>
+<head>
+<title>Welcome to nginx!</title>
+<style>
+html { color-scheme: light dark; }
+body { width: 35em; margin: 0 auto;
+font-family: Tahoma, Verdana, Arial, sans-serif; }
+</style>
+</head>
+<body>
+<h1>Welcome to nginx!</h1>
+<p>If you see this page, the nginx web server is successfully installed and
+working. Further configuration is required.</p>
+
+<p>For online documentation and support please refer to
+<a target="_blank" rel="noopener" href="http://nginx.org/">nginx.org</a>.<br/>
+Commercial support is available at
+<a target="_blank" rel="noopener" href="http://nginx.com/">nginx.com</a>.</p>
+
+<p><em>Thank you for using nginx.</em></p>
+</body>
+</html>案例：开机自动运行容器
+[root@ubuntu2204 ~]#docker run -d --name web02 --restart=always -p 80:80 nginx
+672a7868f06f91559d4564148e7cae5f910cf80af57b330da566ad105c106f42
+[root@ubuntu2204 ~]#docker ps -a
+CONTAINER ID   IMAGE          COMMAND                  CREATED         STATUS         PORTS                               NAMES
+672a7868f06f   nginx          "/docker-entrypoint.…"   7 seconds ago   Up 6 seconds   0.0.0.0:80->80/tcp, :::80->80/tcp   web02
+693a57848829   nginx:latest   "/docker-entrypoint.…"   8 minutes ago   Up 8 minutes   80/tcp                              wbe01
+[root@ubuntu2204 ~]#reboot
+[root@ubuntu2204 ~]#Connection closing...Socket close.
+...
+
+<p>[root@ubuntu2204 ~]#docker ps<br>CONTAINER ID   IMAGE     COMMAND                  CREATED         STATUS          PORTS                               NAMES<br>672a7868f06f   nginx     “&#x2F;docker-entrypoint.…”   3 minutes ago   Up 49 seconds   0.0.0.0:80-&gt;80&#x2F;tcp, :::80-&gt;80&#x2F;tcp   web02案例：启动容器并使其持续运行<br>[root@ubuntu2204 ~]#docker pull ubuntu<br>Using default tag: latest<br>latest: Pulling from library&#x2F;ubuntu<br>6e3729cf69e0: Pull complete<br>Digest: sha256:27cb6e6ccef575a4698b66f5de06c7ecd61589132d5a91d098f7f3f9285415a9<br>Status: Downloaded newer image for ubuntu:latest<br>docker.io&#x2F;library&#x2F;ubuntu:latest<br>[root@ubuntu2204 ~]#docker images<br>REPOSITORY    TAG       IMAGE ID       CREATED         SIZE<br>busybox       latest    827365c7baf1   13 days ago     4.86MB<br>nginx         latest    1403e55ab369   2 weeks ago     142MB<br>ubuntu        latest    6b7dfa7e8fdb   3 weeks ago     77.8MB<br>alpine        latest    49176f190c7e   6 weeks ago     7.05MB<br>hello-world   latest    feb5d9fea6a5   15 months ago   13.3kB<br>[root@ubuntu2204 ~]#docker run -it –name ubuntu01  ubuntu<br>root@9e8ec41bd92c:&#x2F;# pwd<br>&#x2F;<br>root@9e8ec41bd92c:&#x2F;# ls<br>bin  boot  dev  etc  home  lib  lib32  lib64  libx32  media  mnt  opt  proc  root  run  sbin  srv  sys  tmp  usr  var<br>#容器内部的文件存放实质上在宿主机<br>root@9e8ec41bd92c:&#x2F;# touch mooreyxia.txt<br>root@9e8ec41bd92c:&#x2F;# while true; do date +%T &gt;&gt; mooreyxia.txt ;sleep 1;done</p>
+<p>#宿主机查看容器内生成的文件<br>[root@ubuntu2204 ~]#docker ps<br>CONTAINER ID   IMAGE     COMMAND                  CREATED          STATUS          PORTS                               NAMES<br>9e8ec41bd92c   ubuntu    “bash”                   52 seconds ago   Up 50 seconds                                       ubuntu01<br>672a7868f06f   nginx     “&#x2F;docker-entrypoint.…”   13 minutes ago   Up 10 minutes   0.0.0.0:80-&gt;80&#x2F;tcp, :::80-&gt;80&#x2F;tcp   web02<br>[root@ubuntu2204 ~]#docker inspect ubuntu01|grep UpperDir<br>                “UpperDir”: “&#x2F;data&#x2F;docker&#x2F;overlay2&#x2F;bf3e849d2a130fc959cfb4dff4ece3271b994aa853d42772cc158e9d32758a6e&#x2F;diff”,<br>[root@ubuntu2204 ~]#ls &#x2F;data&#x2F;docker&#x2F;overlay2&#x2F;bf3e849d2a130fc959cfb4dff4ece3271b994aa853d42772cc158e9d32758a6e&#x2F;diff<br>mooreyxia.txt<br>[root@ubuntu2204 ~]#tail &#x2F;data&#x2F;docker&#x2F;overlay2&#x2F;bf3e849d2a130fc959cfb4dff4ece3271b994aa853d42772cc158e9d32758a6e&#x2F;diff&#x2F;mooreyxia.txt<br>07:47:57<br>07:47:58<br>07:47:59<br>07:48:00<br>07:48:01<br>07:48:03<br>07:48:04<br>07:48:05<br>07:48:06<br>07:48:07注意：容器启动后,如果容器内没有前台运行的进程,将自动退出停止<br>查看容器信息<br>案例：显示当前存在容器<br>[root@ubuntu2204 ~]#docker ps –help</p>
+<p>Usage:  docker ps [OPTIONS]</p>
+<p>List containers</p>
+<p>Options:<br>  -a, –all             Show all containers (default shows just running)<br>  -f, –filter filter   Filter output based on conditions provided<br>      –format string   Pretty-print containers using a Go template<br>  -n, –last int        Show n last created containers (includes all states) (default -1)<br>  -l, –latest          Show the latest created container (includes all states)<br>      –no-trunc        Don’t truncate output<br>  -q, –quiet           Only display container IDs<br>  -s, –size            Display total file sizes</p>
+<p>#显示全部容器<br>[root@ubuntu2204 ~]#docker ps -a<br>CONTAINER ID   IMAGE          COMMAND                  CREATED          STATUS                        PORTS                               NAMES<br>9e8ec41bd92c   ubuntu         “bash”                   18 minutes ago   Up 9 minutes                                                      ubuntu01<br>672a7868f06f   nginx          “&#x2F;docker-entrypoint.…”   31 minutes ago   Up 28 minutes                 0.0.0.0:80-&gt;80&#x2F;tcp, :::80-&gt;80&#x2F;tcp   web02<br>693a57848829   nginx:latest   “&#x2F;docker-entrypoint.…”   39 minutes ago   Exited (255) 28 minutes ago   80&#x2F;tcp                              wbe01</p>
+<p>#查看退出状态的容器<br>[root@ubuntu2204 ~]#docker ps -f ‘status&#x3D;exited’<br>CONTAINER ID   IMAGE          COMMAND                  CREATED          STATUS                        PORTS     NAMES<br>693a57848829   nginx:latest   “&#x2F;docker-entrypoint.…”   42 minutes ago   Exited (255) 30 minutes ago   80&#x2F;tcp    wbe01案例：查看容器内的进程<br>[root@ubuntu2204 ~]#docker ps<br>CONTAINER ID   IMAGE     COMMAND                  CREATED          STATUS          PORTS                               NAMES<br>9e8ec41bd92c   ubuntu    “bash”                   16 minutes ago   Up 6 minutes                                        ubuntu01<br>672a7868f06f   nginx     “&#x2F;docker-entrypoint.…”   28 minutes ago   Up 25 minutes   0.0.0.0:80-&gt;80&#x2F;tcp, :::80-&gt;80&#x2F;tcp   web02<br>[root@ubuntu2204 ~]#docker top web02<br>UID                 PID                 PPID                C                   STIME               TTY                 TIME                CMD<br>root                1140                1117                0                   15:34               ?                   00:00:00            nginx: master process nginx -g daemon off;<br>systemd+            1201                1140                0                   15:34               ?                   00:00:00            nginx: worker process<br>systemd+            1202                1140                0                   15:34               ?                   00:00:00            nginx: worker process案例：查看容器资源使用情况<br>[root@ubuntu2204 ~]#docker stats web02 &gt; web02_status.txt<br>^C<br>[root@ubuntu2204 ~]#cat web02_status.txt </p>
+<p>CONTAINER ID   NAME      CPU %     MEM USAGE &#x2F; LIMIT     MEM %     NET I&#x2F;O      BLOCK I&#x2F;O       PIDS<br>672a7868f06f   web02     0.01%     7.117MiB &#x2F; 1.896GiB   0.37%     1.6kB &#x2F; 0B   21MB &#x2F; 8.19kB   3</p>
+<p>CONTAINER ID   NAME      CPU %     MEM USAGE &#x2F; LIMIT     MEM %     NET I&#x2F;O      BLOCK I&#x2F;O       PIDS<br>672a7868f06f   web02     0.01%     7.117MiB &#x2F; 1.896GiB   0.37%     1.6kB &#x2F; 0B   21MB &#x2F; 8.19kB   3</p>
+<p>CONTAINER ID   NAME      CPU %     MEM USAGE &#x2F; LIMIT     MEM %     NET I&#x2F;O      BLOCK I&#x2F;O       PIDS<br>672a7868f06f   web02     0.00%     7.117MiB &#x2F; 1.896GiB   0.37%     1.6kB &#x2F; 0B   21MB &#x2F; 8.19kB   3</p>
+<p>CONTAINER ID   NAME      CPU %     MEM USAGE &#x2F; LIMIT     MEM %     NET I&#x2F;O      BLOCK I&#x2F;O       PIDS<br>672a7868f06f   web02     0.00%     7.117MiB &#x2F; 1.896GiB   0.37%     1.6kB &#x2F; 0B   21MB &#x2F; 8.19kB   3</p>
+<p>CONTAINER ID   NAME      CPU %     MEM USAGE &#x2F; LIMIT     MEM %     NET I&#x2F;O      BLOCK I&#x2F;O       PIDS<br>672a7868f06f   web02     0.00%     7.117MiB &#x2F; 1.896GiB   0.37%     1.6kB &#x2F; 0B   21MB &#x2F; 8.19kB   3</p>
+<p>CONTAINER ID   NAME      CPU %     MEM USAGE &#x2F; LIMIT     MEM %     NET I&#x2F;O      BLOCK I&#x2F;O       PIDS<br>672a7868f06f   web02     0.00%     7.117MiB &#x2F; 1.896GiB   0.37%     1.6kB &#x2F; 0B   21MB &#x2F; 8.19kB   3</p>
+<p>CONTAINER ID   NAME      CPU %     MEM USAGE &#x2F; LIMIT     MEM %     NET I&#x2F;O      BLOCK I&#x2F;O       PIDS<br>672a7868f06f   web02     0.00%     7.117MiB &#x2F; 1.896GiB   0.37%     1.6kB &#x2F; 0B   21MB &#x2F; 8.19kB   3</p>
+<p>CONTAINER ID   NAME      CPU %     MEM USAGE &#x2F; LIMIT     MEM %     NET I&#x2F;O      BLOCK I&#x2F;O       PIDS<br>672a7868f06f   web02     0.00%     7.117MiB &#x2F; 1.896GiB   0.37%     1.6kB &#x2F; 0B   21MB &#x2F; 8.19kB   3</p>
+<p>CONTAINER ID   NAME      CPU %     MEM USAGE &#x2F; LIMIT     MEM %     NET I&#x2F;O      BLOCK I&#x2F;O       PIDS<br>672a7868f06f   web02     0.00%     7.117MiB &#x2F; 1.896GiB   0.37%     1.6kB &#x2F; 0B   21MB &#x2F; 8.19kB   3</p>
+<p>CONTAINER ID   NAME      CPU %     MEM USAGE &#x2F; LIMIT     MEM %     NET I&#x2F;O      BLOCK I&#x2F;O       PIDS<br>672a7868f06f   web02     0.00%     7.117MiB &#x2F; 1.896GiB   0.37%     1.6kB &#x2F; 0B   21MB &#x2F; 8.19kB   3</p>
+<p>CONTAINER ID   NAME      CPU %     MEM USAGE &#x2F; LIMIT     MEM %     NET I&#x2F;O      BLOCK I&#x2F;O       PIDS<br>672a7868f06f   web02     0.00%     7.117MiB &#x2F; 1.896GiB   0.37%     1.6kB &#x2F; 0B   21MB &#x2F; 8.19kB   3</p>
+<p>CONTAINER ID   NAME      CPU %     MEM USAGE &#x2F; LIMIT     MEM %     NET I&#x2F;O      BLOCK I&#x2F;O       PIDS<br>672a7868f06f   web02     0.00%     7.117MiB &#x2F; 1.896GiB   0.37%     1.6kB &#x2F; 0B   21MB &#x2F; 8.19kB   3案例：查看容器的详细信息<br>[root@ubuntu2204 <del>]#docker ps -a<br>CONTAINER ID   IMAGE          COMMAND                  CREATED          STATUS                        PORTS                               NAMES<br>9e8ec41bd92c   ubuntu         “bash”                   26 minutes ago   Up 17 minutes                                                     ubuntu01<br>672a7868f06f   nginx          “&#x2F;docker-entrypoint.…”   39 minutes ago   Up 36 minutes                 0.0.0.0:80-&gt;80&#x2F;tcp, :::80-&gt;80&#x2F;tcp   web02<br>693a57848829   nginx:latest   “&#x2F;docker-entrypoint.…”   48 minutes ago   Exited (255) 36 minutes ago   80&#x2F;tcp                              wbe01<br>[root@ubuntu2204 ~]#docker inspect 672<br>[<br>    {<br>        “Id”: “672a7868f06f91559d4564148e7cae5f910cf80af57b330da566ad105c106f42”,<br>        “Created”: “2023-01-05T07:32:10.723015257Z”,<br>        “Path”: “&#x2F;docker-entrypoint.sh”,<br>        “Args”: [<br>            “nginx”,<br>            “-g”,<br>            “daemon off;”<br>        ],<br>        “State”: {<br>            “Status”: “running”,<br>            “Running”: true,<br>            “Paused”: false,<br>            “Restarting”: false,<br>            “OOMKilled”: false,<br>            “Dead”: false,<br>            “Pid”: 1140,<br>            “ExitCode”: 0,<br>            “Error”: “”,<br>            “StartedAt”: “2023-01-05T07:34:44.297847995Z”,<br>            “FinishedAt”: “2023-01-05T15:34:42.627871814+08:00”<br>        },<br>        “Image”: “sha256:1403e55ab369cd1c8039c34e6b4d47ca40bbde39c371254c7cba14756f472f52”,<br>        “ResolvConfPath”: “&#x2F;data&#x2F;docker&#x2F;containers&#x2F;672a7868f06f91559d4564148e7cae5f910cf80af57b330da566ad105c106f42&#x2F;resolv.conf”,<br>        “HostnamePath”: “&#x2F;data&#x2F;docker&#x2F;containers&#x2F;672a7868f06f91559d4564148e7cae5f910cf80af57b330da566ad105c106f42&#x2F;hostname”,<br>        “HostsPath”: “&#x2F;data&#x2F;docker&#x2F;containers&#x2F;672a7868f06f91559d4564148e7cae5f910cf80af57b330da566ad105c106f42&#x2F;hosts”,<br>        “LogPath”: “&#x2F;data&#x2F;docker&#x2F;containers&#x2F;672a7868f06f91559d4564148e7cae5f910cf80af57b330da566ad105c106f42&#x2F;672a7868f06f91559d4564148e7cae5f910cf80af57b330da566ad105c106f42-json.log”,<br>        “Name”: “&#x2F;web02”,<br>        “RestartCount”: 0,<br>        “Driver”: “overlay2”,<br>        “Platform”: “linux”,<br>        “MountLabel”: “”,<br>        “ProcessLabel”: “”,<br>        “AppArmorProfile”: “docker-default”,<br>        “ExecIDs”: null,<br>        “HostConfig”: {<br>            “Binds”: null,<br>            “ContainerIDFile”: “”,<br>            “LogConfig”: {<br>                “Type”: “json-file”,<br>                “Config”: {<br>                    “max-file”: “2”,<br>                    “max-size”: “300m”<br>                }<br>            },<br>            “NetworkMode”: “default”,<br>            “PortBindings”: {<br>                “80&#x2F;tcp”: [<br>                    {<br>                        “HostIp”: “”,<br>                        “HostPort”: “80”<br>                    }<br>                ]<br>            },<br>            “RestartPolicy”: {<br>                “Name”: “always”,<br>                “MaximumRetryCount”: 0<br>            },<br>            “AutoRemove”: false,<br>            “VolumeDriver”: “”,<br>            “VolumesFrom”: null,<br>            “CapAdd”: null,<br>            “CapDrop”: null,<br>            “CgroupnsMode”: “private”,<br>            “Dns”: [],<br>            “DnsOptions”: [],<br>            “DnsSearch”: [],<br>            “ExtraHosts”: null,<br>            “GroupAdd”: null,<br>            “IpcMode”: “private”,<br>            “Cgroup”: “”,<br>            “Links”: null,<br>            “OomScoreAdj”: 0,<br>            “PidMode”: “”,<br>            “Privileged”: false,<br>            “PublishAllPorts”: false,<br>            “ReadonlyRootfs”: false,<br>            “SecurityOpt”: null,<br>            “UTSMode”: “”,<br>            “UsernsMode”: “”,<br>            “ShmSize”: 67108864,<br>            “Runtime”: “runc”,<br>            “ConsoleSize”: [<br>                0,<br>                0<br>            ],<br>            “Isolation”: “”,<br>            “CpuShares”: 0,<br>            “Memory”: 0,<br>            “NanoCpus”: 0,<br>            “CgroupParent”: “”,<br>            “BlkioWeight”: 0,<br>            “BlkioWeightDevice”: [],<br>            “BlkioDeviceReadBps”: null,<br>            “BlkioDeviceWriteBps”: null,<br>            “BlkioDeviceReadIOps”: null,<br>            “BlkioDeviceWriteIOps”: null,<br>            “CpuPeriod”: 0,<br>            “CpuQuota”: 0,<br>            “CpuRealtimePeriod”: 0,<br>            “CpuRealtimeRuntime”: 0,<br>            “CpusetCpus”: “”,<br>            “CpusetMems”: “”,<br>            “Devices”: [],<br>            “DeviceCgroupRules”: null,<br>            “DeviceRequests”: null,<br>            “KernelMemory”: 0,<br>            “KernelMemoryTCP”: 0,<br>            “MemoryReservation”: 0,<br>            “MemorySwap”: 0,<br>            “MemorySwappiness”: null,<br>            “OomKillDisable”: null,<br>            “PidsLimit”: null,<br>            “Ulimits”: null,<br>            “CpuCount”: 0,<br>            “CpuPercent”: 0,<br>            “IOMaximumIOps”: 0,<br>            “IOMaximumBandwidth”: 0,<br>            “MaskedPaths”: [<br>                “&#x2F;proc&#x2F;asound”,<br>                “&#x2F;proc&#x2F;acpi”,<br>                “&#x2F;proc&#x2F;kcore”,<br>                “&#x2F;proc&#x2F;keys”,<br>                “&#x2F;proc&#x2F;latency_stats”,<br>                “&#x2F;proc&#x2F;timer_list”,<br>                “&#x2F;proc&#x2F;timer_stats”,<br>                “&#x2F;proc&#x2F;sched_debug”,<br>                “&#x2F;proc&#x2F;scsi”,<br>                “&#x2F;sys&#x2F;firmware”<br>            ],<br>            “ReadonlyPaths”: [<br>                “&#x2F;proc&#x2F;bus”,<br>                “&#x2F;proc&#x2F;fs”,<br>                “&#x2F;proc&#x2F;irq”,<br>                “&#x2F;proc&#x2F;sys”,<br>                “&#x2F;proc&#x2F;sysrq-trigger”<br>            ]<br>        },<br>        “GraphDriver”: {<br>            “Data”: {<br>                “LowerDir”: “&#x2F;data&#x2F;docker&#x2F;overlay2&#x2F;e4aa5141a37f74d4a25a6fc62b976a9cb3b4cae226b563e6d2763672be57a9e2-init&#x2F;diff:&#x2F;data&#x2F;docker&#x2F;overlay2&#x2F;25ebf3757e65a5d01803e27214304288689844af5d247da930eda9314f73e4af&#x2F;diff:&#x2F;data&#x2F;docker&#x2F;overlay2&#x2F;d1bfc2060ff074bfc29d071897f5f0fbd53d08eb65aa4ebc0254c605d1d8e7e1&#x2F;diff:&#x2F;data&#x2F;docker&#x2F;overlay2&#x2F;aded9ef9c146c1aa21183dd21f8949125b489dc31b1b943ec278b4f5986e5319&#x2F;diff:&#x2F;data&#x2F;docker&#x2F;overlay2&#x2F;e894eaf5b71767c6956f09c20768ea81a65e9c1477d5a08821d634fe58a888c8&#x2F;diff:&#x2F;data&#x2F;docker&#x2F;overlay2&#x2F;f7ad75e3645a7d6b9c77c35a547c6bf421170d206d006674873427eab92c392e&#x2F;diff:&#x2F;data&#x2F;docker&#x2F;overlay2&#x2F;0812214ceaaa259893a78e3df52e3e787594d92d676ef3c1c3ce9a4f9453b705&#x2F;diff”,<br>                “MergedDir”: “&#x2F;data&#x2F;docker&#x2F;overlay2&#x2F;e4aa5141a37f74d4a25a6fc62b976a9cb3b4cae226b563e6d2763672be57a9e2&#x2F;merged”,<br>                “UpperDir”: “&#x2F;data&#x2F;docker&#x2F;overlay2&#x2F;e4aa5141a37f74d4a25a6fc62b976a9cb3b4cae226b563e6d2763672be57a9e2&#x2F;diff”,<br>                “WorkDir”: “&#x2F;data&#x2F;docker&#x2F;overlay2&#x2F;e4aa5141a37f74d4a25a6fc62b976a9cb3b4cae226b563e6d2763672be57a9e2&#x2F;work”<br>            },<br>            “Name”: “overlay2”<br>        },<br>        “Mounts”: [],<br>        “Config”: {<br>            “Hostname”: “672a7868f06f”,<br>            “Domainname”: “”,<br>            “User”: “”,<br>            “AttachStdin”: false,<br>            “AttachStdout”: false,<br>            “AttachStderr”: false,<br>            “ExposedPorts”: {<br>                “80&#x2F;tcp”: {}<br>            },<br>            “Tty”: false,<br>            “OpenStdin”: false,<br>            “StdinOnce”: false,<br>            “Env”: [<br>                “PATH&#x3D;&#x2F;usr&#x2F;local&#x2F;sbin:&#x2F;usr&#x2F;local&#x2F;bin:&#x2F;usr&#x2F;sbin:&#x2F;usr&#x2F;bin:&#x2F;sbin:&#x2F;bin”,<br>                “NGINX_VERSION&#x3D;1.23.3”,<br>                “NJS_VERSION&#x3D;0.7.9”,<br>                “PKG_RELEASE&#x3D;1</del>bullseye”<br>            ],<br>            “Cmd”: [<br>                “nginx”,<br>                “-g”,<br>                “daemon off;”<br>            ],<br>            “Image”: “nginx”,<br>            “Volumes”: null,<br>            “WorkingDir”: “”,<br>            “Entrypoint”: [<br>                “&#x2F;docker-entrypoint.sh”<br>            ],<br>            “OnBuild”: null,<br>            “Labels”: {<br>                “maintainer”: “NGINX Docker Maintainers <a href="mailto:&#100;&#x6f;&#x63;&#x6b;&#x65;&#x72;&#45;&#109;&#x61;&#105;&#110;&#x74;&#64;&#110;&#x67;&#x69;&#x6e;&#x78;&#46;&#x63;&#x6f;&#109;">&#100;&#x6f;&#x63;&#x6b;&#x65;&#x72;&#45;&#109;&#x61;&#105;&#110;&#x74;&#64;&#110;&#x67;&#x69;&#x6e;&#x78;&#46;&#x63;&#x6f;&#109;</a>“<br>            },<br>            “StopSignal”: “SIGQUIT”<br>        },<br>        “NetworkSettings”: {<br>            “Bridge”: “”,<br>            “SandboxID”: “fa69dc2f2e74ad7dc54a270aa808403835ab02be2f7b58cd97154a3d0127c179”,<br>            “HairpinMode”: false,<br>            “LinkLocalIPv6Address”: “”,<br>            “LinkLocalIPv6PrefixLen”: 0,<br>            “Ports”: {<br>                “80&#x2F;tcp”: [<br>                    {<br>                        “HostIp”: “0.0.0.0”,<br>                        “HostPort”: “80”<br>                    },<br>                    {<br>                        “HostIp”: “::”,<br>                        “HostPort”: “80”<br>                    }<br>                ]<br>            },<br>            “SandboxKey”: “&#x2F;var&#x2F;run&#x2F;docker&#x2F;netns&#x2F;fa69dc2f2e74”,<br>            “SecondaryIPAddresses”: null,<br>            “SecondaryIPv6Addresses”: null,<br>            “EndpointID”: “21e23a3a7028a7f588563e4b13eb98424b0f475f5608ea1df1781c83acdca658”,<br>            “Gateway”: “172.17.0.1”,<br>            “GlobalIPv6Address”: “”,<br>            “GlobalIPv6PrefixLen”: 0,<br>            “IPAddress”: “172.17.0.2”,<br>            “IPPrefixLen”: 16,<br>            “IPv6Gateway”: “”,<br>            “MacAddress”: “02:42:ac:11:00:02”,<br>            “Networks”: {<br>                “bridge”: {<br>                    “IPAMConfig”: null,<br>                    “Links”: null,<br>                    “Aliases”: null,<br>                    “NetworkID”: “0e25eb364b81a8636738882ca0bab228d3d98d44fd59c49914752543594dfedf”,<br>                    “EndpointID”: “21e23a3a7028a7f588563e4b13eb98424b0f475f5608ea1df1781c83acdca658”,<br>                    “Gateway”: “172.17.0.1”,<br>                    “IPAddress”: “172.17.0.2”,<br>                    “IPPrefixLen”: 16,<br>                    “IPv6Gateway”: “”,<br>                    “GlobalIPv6Address”: “”,<br>                    “GlobalIPv6PrefixLen”: 0,<br>                    “MacAddress”: “02:42:ac:11:00:02”,<br>                    “DriverOpts”: null<br>                }<br>            }<br>        }<br>    }<br>]删除容器<br>案例：删除指定状态的容器<br>[root@ubuntu2204 ~]#docker ps -a<br>CONTAINER ID   IMAGE          COMMAND                  CREATED          STATUS                        PORTS                               NAMES<br>9e8ec41bd92c   ubuntu         “bash”                   30 minutes ago   Up 20 minutes                                                     ubuntu01<br>672a7868f06f   nginx          “&#x2F;docker-entrypoint.…”   42 minutes ago   Up 40 minutes                 0.0.0.0:80-&gt;80&#x2F;tcp, :::80-&gt;80&#x2F;tcp   web02<br>693a57848829   nginx:latest   “&#x2F;docker-entrypoint.…”   51 minutes ago   Exited (255) 40 minutes ago   80&#x2F;tcp                              wbe01<br>[root@ubuntu2204 ~]#docker rm <code>docker ps -qf status=exited</code><br>693a57848829<br>[root@ubuntu2204 ~]#docker ps -a<br>CONTAINER ID   IMAGE     COMMAND                  CREATED          STATUS          PORTS                               NAMES<br>9e8ec41bd92c   ubuntu    “bash”                   31 minutes ago   Up 21 minutes                                       ubuntu01<br>672a7868f06f   nginx     “&#x2F;docker-entrypoint.…”   43 minutes ago   Up 40 minutes   0.0.0.0:80-&gt;80&#x2F;tcp, :::80-&gt;80&#x2F;tcp   web02案例：清理全部容器 - 慎用<br>[root@ubuntu2204 ~]#docker rm -f <code>docker ps -qa</code><br>653687662f0f<br>045dd528e93b<br>5ff509ad4bee<br>b3b92cb5c280<br>0da8a6de10ca<br>ab636bf080db<br>2a03b18ac322<br>0cb0b10c2af5<br>[root@ubuntu2204 ~]#docker ps -a<br>CONTAINER ID   IMAGE     COMMAND   CREATED   STATUS    PORTS     NAMES进入正在运行的容器<br>案例：<br>[root@ubuntu2204 ~]#docker exec -it web02 bash<br>root@672a7868f06f:&#x2F;# pwd<br>&#x2F;<br>root@672a7868f06f:&#x2F;# ls<br>bin  boot  dev  docker-entrypoint.d  docker-entrypoint.sh  etc  home  lib  lib64  media  mnt  opt  proc  root  run  sbin  srv  sys  tmp  usr  var<br>root@672a7868f06f:&#x2F;# cat &#x2F;etc&#x2F;nginx&#x2F;nginx.conf </p>
+<p>user  nginx;<br>worker_processes  auto;</p>
+<p>error_log  &#x2F;var&#x2F;log&#x2F;nginx&#x2F;error.log notice;<br>pid        &#x2F;var&#x2F;run&#x2F;nginx.pid;</p>
+<p>events {<br>    worker_connections  1024;<br>}</p>
+<p>http {<br>    include       &#x2F;etc&#x2F;nginx&#x2F;mime.types;<br>    default_type  application&#x2F;octet-stream;</p>
+<pre><code>log_format  main  &#39;$remote_addr - $remote_user [$time_local] &quot;$request&quot; &#39;
+                  &#39;$status $body_bytes_sent &quot;$http_referer&quot; &#39;
+                  &#39;&quot;$http_user_agent&quot; &quot;$http_x_forwarded_for&quot;&#39;;
+
+access_log  /var/log/nginx/access.log  main;
+
+sendfile        on;
+#tcp_nopush     on;
+
+keepalive_timeout  65;
+
+#gzip  on;
+
+include /etc/nginx/conf.d/*.conf;
+</code></pre>
+<p>}<br>#exec的方式 exit退出容器也不会停止<br>root@672a7868f06f:&#x2F;# exit<br>exit<br>[root@ubuntu2204 ~]#docker ps<br>CONTAINER ID   IMAGE     COMMAND                  CREATED          STATUS          PORTS                               NAMES<br>9e8ec41bd92c   ubuntu    “bash”                   39 minutes ago   Up 30 minutes                                       ubuntu01<br>672a7868f06f   nginx     “&#x2F;docker-entrypoint.…”   52 minutes ago   Up 49 minutes   0.0.0.0:80-&gt;80&#x2F;tcp, :::80-&gt;80&#x2F;tcp   web02Docker端口暴露实现跨宿主机访问<br>容器启动后,默认处于预定义的NAT网络中,所以外部网络的主机无法直接访问容器中网络服务docker run -P 可以将事先容器预定义的所有端口映射宿主机的网卡的随机端口，默认从32768开始使用随机端口 时,当停止容器后再启动可能会导致端口发生变化<br>案例：容器跨宿主机访问<br>#创建nginx容器并运行<br>[root@ubuntu2204 ~]#docker run -d -p 8080:80  –name web01 nginx<br>99b824abe4cb4779a16058401600b3e1676a18d74070742b3220019f7b14ffaf<br>[root@ubuntu2204 ~]#docker ps<br>CONTAINER ID   IMAGE     COMMAND                  CREATED             STATUS             PORTS                                   NAMES<br>99b824abe4cb   nginx     “&#x2F;docker-entrypoint.…”   8 seconds ago       Up 7 seconds       0.0.0.0:8080-&gt;80&#x2F;tcp, :::8080-&gt;80&#x2F;tcp   web01<br>9e8ec41bd92c   ubuntu    “bash”                   About an hour ago   Up 55 minutes                                              ubuntu01<br>672a7868f06f   nginx     “&#x2F;docker-entrypoint.…”   About an hour ago   Up About an hour   0.0.0.0:80-&gt;80&#x2F;tcp, :::80-&gt;80&#x2F;tcp       web02</p>
+<p>#观察宿主机，发现生成新的网卡<br>[root@ubuntu2204 ~]#ip a<br>1: lo: &lt;LOOPBACK,UP,LOWER_UP&gt; mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000<br>    link&#x2F;loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00<br>    inet 127.0.0.1&#x2F;8 scope host lo<br>       valid_lft forever preferred_lft forever<br>    inet6 ::1&#x2F;128 scope host<br>       valid_lft forever preferred_lft forever<br>2: eth0: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1500 qdisc fq_codel state UP group default qlen 1000<br>    link&#x2F;ether 00:0c:29:df:99:92 brd ff:ff:ff:ff:ff:ff<br>    altname enp2s1<br>    altname ens33<br>    inet 10.0.0.200&#x2F;24 brd 10.0.0.255 scope global eth0<br>       valid_lft forever preferred_lft forever<br>    inet6 fe80::20c:29ff:fedf:9992&#x2F;64 scope link<br>       valid_lft forever preferred_lft forever<br>3: docker0: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1500 qdisc noqueue state UP group default<br>    link&#x2F;ether 02:42:06:86:b5:d5 brd ff:ff:ff:ff:ff:ff<br>    inet 172.17.0.1&#x2F;16 brd 172.17.255.255 scope global docker0<br>       valid_lft forever preferred_lft forever<br>    inet6 fe80::42:6ff:fe86:b5d5&#x2F;64 scope link<br>       valid_lft forever preferred_lft forever<br>5: veth4fb03da@if4: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1500 qdisc noqueue master docker0 state UP group default<br>    link&#x2F;ether d6:c3:aa:57:7b:50 brd ff:ff:ff:ff:ff:ff link-netnsid 0<br>    inet6 fe80::d4c3:aaff:fe57:7b50&#x2F;64 scope link<br>       valid_lft forever preferred_lft forever<br>9: veth64ce510@if8: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1500 qdisc noqueue master docker0 state UP group default<br>    link&#x2F;ether 0a:7a:11:2b:d1:ee brd ff:ff:ff:ff:ff:ff link-netnsid 1<br>    inet6 fe80::87a:11ff:fe2b:d1ee&#x2F;64 scope link<br>       valid_lft forever preferred_lft forever<br>11: veth1f9e256@if10: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1500 qdisc noqueue master docker0 state UP group default  –&gt; 新出现的网卡<br>    link&#x2F;ether d6:27:ba:37:a3:0a brd ff:ff:ff:ff:ff:ff link-netnsid 2<br>    inet6 fe80::d427:baff:fe37:a30a&#x2F;64 scope link<br>       valid_lft forever preferred_lft forever<br>#实验中途观察结果就是只要多一个正在运行的容器就多一张网卡，配合容器的IP成对使用，配置如下<br><img src="/../img/560156951dbd15eb11473252dba536f5fb5b3d.png"><br>w说明默认容器网络只支持宿主机内部网络通讯【宿主机或其他容器】，而不支持跨宿主机。<br>#宿主机内部容器互相访问<br>#web02<br>[root@ubuntu2204 ~]#docker exec -it web02 bash<br>root@672a7868f06f:&#x2F;# hostname -I<br>172.17.0.2<br>root@672a7868f06f:&#x2F;# cat &#x2F;usr&#x2F;share&#x2F;nginx&#x2F;html&#x2F;index.html<br><!DOCTYPE html></p>
+<html>
+<head>
+<title>Welcome to nginx!</title>
+<style>
+html { color-scheme: light dark; }
+body { width: 35em; margin: 0 auto;
+font-family: Tahoma, Verdana, Arial, sans-serif; }
+</style>
+</head>
+<body>
+<h1>Welcome to nginx!</h1>
+<p>If you see this page, the nginx web server is successfully installed and
+working. Further configuration is required.</p>
+
+<p>For online documentation and support please refer to
+<a target="_blank" rel="noopener" href="http://nginx.org/">nginx.org</a>.<br/>
+Commercial support is available at
+<a target="_blank" rel="noopener" href="http://nginx.com/">nginx.com</a>.</p>
+
+<p><em>Thank you for using nginx.</em></p>
+</body>
+</html>
+root@672a7868f06f:/# echo docker-nginx-web02 > /usr/share/nginx/html/index.html 
+root@672a7868f06f:/# exit
+exit
+
+<p>#web01<br>[root@ubuntu2204 ~]#docker exec -it web01 bash<br>root@99b824abe4cb:&#x2F;# hostname -I<br>172.17.0.4<br>root@99b824abe4cb:&#x2F;# apt update;apt install curl<br>Get:1 <a target="_blank" rel="noopener" href="http://deb.debian.org/debian">http://deb.debian.org/debian</a> bullseye InRelease [116 kB]<br>Get:2 <a target="_blank" rel="noopener" href="http://deb.debian.org/debian-security">http://deb.debian.org/debian-security</a> bullseye-security InRelease [48.4 kB]<br>Get:3 <a target="_blank" rel="noopener" href="http://deb.debian.org/debian">http://deb.debian.org/debian</a> bullseye-updates InRelease [44.1 kB]<br>Get:4 <a target="_blank" rel="noopener" href="http://deb.debian.org/debian">http://deb.debian.org/debian</a> bullseye&#x2F;main amd64 Packages [8183 kB]<br>Get:5 <a target="_blank" rel="noopener" href="http://deb.debian.org/debian-security">http://deb.debian.org/debian-security</a> bullseye-security&#x2F;main amd64 Packages [210 kB]<br>Get:6 <a target="_blank" rel="noopener" href="http://deb.debian.org/debian">http://deb.debian.org/debian</a> bullseye-updates&#x2F;main amd64 Packages [14.6 kB]<br>Fetched 8616 kB in 2min 57s (48.6 kB&#x2F;s)<br>Reading package lists… Done<br>Building dependency tree… Done<br>Reading state information… Done<br>All packages are up to date.<br>Reading package lists… Done<br>Building dependency tree… Done<br>Reading state information… Done<br>curl is already the newest version (7.74.0-1.3+deb11u3).<br>0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded.<br>root@99b824abe4cb:&#x2F;# curl 172.17.0.2<br>docker-nginx-web02</p>
+<p>#也可以访问外部网络<br>root@99b824abe4cb:&#x2F;# curl <a target="_blank" rel="noopener" href="http://www.xxx.com/">www.xxx.com</a><br><!DOCTYPE html><br>xxx由于是宿主机内部网络通信，可以看作一个局域网，使外网能访问内网docker就需要做DNAT端口映射<br>• DNAT docker_IP:端口 —&gt;  宿主机_IP:端口<br>*注意: 多个容器映射到宿主机的端口不能冲突，但容器内使用的端口可以相同<br>#默认的容器网络规则<br>[root@ubuntu2204 ~]#iptables -S<br>…<br>-A DOCKER -d 172.17.0.2&#x2F;32 ! -i docker0 -o docker0 -p tcp -m tcp –dport 80 -j ACCEPT<br>-A DOCKER -d 172.17.0.4&#x2F;32 ! -i docker0 -o docker0 -p tcp -m tcp –dport 80 -j ACCEPT<br>…<br>#使用docker自带的映射选项可以省去iptables的操作,添加DNAT端口映射,使用P会绑定到宿主机的随机端口，这里我们p指定端口<br>*注意: 多个容器映射到宿主机的端口不能冲突，但容器内使用的端口可以相同<br>#web01 映射到宿主机8080端口<br>[root@ubuntu2204 ~]#docker run -d -p 8080:80  –name web01 nginx<br>#web02 映射到宿主机80端口<br>[root@ubuntu2204 ~]#docker run -d -p 80:80  –name web02 nginx<br>#端口转换规则<br>[root@ubuntu2204 ~]#docker ps<br>CONTAINER ID   IMAGE     COMMAND                  CREATED          STATUS          PORTS                                   NAMES<br>99b824abe4cb   nginx     “&#x2F;docker-entrypoint.…”   41 minutes ago   Up 41 minutes   0.0.0.0:8080-&gt;80&#x2F;tcp, :::8080-&gt;80&#x2F;tcp   web01<br>9e8ec41bd92c   ubuntu    “bash”                   2 hours ago      Up 2 hours                                              ubuntu01<br>672a7868f06f   nginx     “&#x2F;docker-entrypoint.…”   2 hours ago      Up 2 hours      0.0.0.0:80-&gt;80&#x2F;tcp, :::80-&gt;80&#x2F;tcp       web02<br>[root@ubuntu2204 ~]#docker port web01<br>80&#x2F;tcp -&gt; 0.0.0.0:8080<br>80&#x2F;tcp -&gt; :::8080<br>[root@ubuntu2204 ~]#docker port web02<br>80&#x2F;tcp -&gt; 0.0.0.0:80<br>80&#x2F;tcp -&gt; :::80<br>[root@ubuntu2204 ~]#iptables -vnL -t nat<br>Chain PREROUTING (policy ACCEPT 0 packets, 0 bytes)<br> pkts bytes target     prot opt in     out     source               destination<br>    4   224 DOCKER     all  –  *      *       0.0.0.0&#x2F;0            0.0.0.0&#x2F;0            ADDRTYPE match dst-type LOCAL</p>
+<p>Chain INPUT (policy ACCEPT 0 packets, 0 bytes)<br> pkts bytes target     prot opt in     out     source               destination         </p>
+<p>Chain OUTPUT (policy ACCEPT 0 packets, 0 bytes)<br> pkts bytes target     prot opt in     out     source               destination<br>    0     0 DOCKER     all  –  *      *       0.0.0.0&#x2F;0           !127.0.0.0&#x2F;8          ADDRTYPE match dst-type LOCAL</p>
+<p>Chain POSTROUTING (policy ACCEPT 0 packets, 0 bytes)<br> pkts bytes target     prot opt in     out     source               destination<br>    6   358 MASQUERADE  all  –  *      !docker0  172.17.0.0&#x2F;16        0.0.0.0&#x2F;0<br>    0     0 MASQUERADE  tcp  –  *      *       172.17.0.2           172.17.0.2           tcp dpt:80<br>    0     0 MASQUERADE  tcp  –  *      *       172.17.0.4           172.17.0.4           tcp dpt:80</p>
+<p>Chain DOCKER (2 references)<br> pkts bytes target     prot opt in     out     source               destination<br>    0     0 RETURN     all  –  docker0 *       0.0.0.0&#x2F;0            0.0.0.0&#x2F;0<br>    1    60 DNAT       tcp  –  !docker0 *       0.0.0.0&#x2F;0            0.0.0.0&#x2F;0            tcp dpt:80 to:172.17.0.2:80<br>    1    60 DNAT       tcp  –  !docker0 *       0.0.0.0&#x2F;0            0.0.0.0&#x2F;0            tcp dpt:8080 to:172.17.0.4:80<br>[root@ubuntu2204 ~]#ss -nltp<br>State           Recv-Q           Send-Q                     Local Address:Port                      Peer Address:Port          Process<br>…<br>LISTEN          0                4096                                [::]:8080                              [::]:*              users:((“docker-proxy”,pid&#x3D;2409,fd&#x3D;4))<br>LISTEN          0                4096                                [::]:80                                [::]:*              users:((“docker-proxy”,pid&#x3D;1100,fd&#x3D;4)) </p>
+<p>#测试跨宿主机访问内部docker服务<br>[root@ubuntu2204 ~]#curl 10.0.0.200:8080<br>docker-nginx-web01<br>[root@ubuntu2204 ~]#curl 10.0.0.200:80<br>docker-nginx-web02案例：修改已经创建的容器的端口映射关系<br>[root@ubuntu2204 ~]#docker ps<br>CONTAINER ID   IMAGE     COMMAND                  CREATED       STATUS       PORTS                                   NAMES<br>99b824abe4cb   nginx     “&#x2F;docker-entrypoint.…”   2 hours ago   Up 2 hours   0.0.0.0:8080-&gt;80&#x2F;tcp, :::8080-&gt;80&#x2F;tcp   web01<br>9e8ec41bd92c   ubuntu    “bash”                   3 hours ago   Up 3 hours                                           ubuntu01<br>672a7868f06f   nginx     “&#x2F;docker-entrypoint.…”   4 hours ago   Up 4 hours   0.0.0.0:80-&gt;80&#x2F;tcp, :::80-&gt;80&#x2F;tcp       web02</p>
+<p>[root@ubuntu2204 ~]#docker port web01<br>80&#x2F;tcp -&gt; 0.0.0.0:8080<br>80&#x2F;tcp -&gt; :::8080</p>
+<p>[root@ubuntu2204 ~]#ll &#x2F;data&#x2F;docker&#x2F;containers&#x2F;99b824abe4cb4779a16058401600b3e1676a18d74070742b3220019f7b14ffaf&#x2F;<br>总用量 44<br>drwx–x— 4 root root 4096  1月  5 16:49 .&#x2F;<br>drwx–x— 5 root root 4096  1月  5 16:49 ..&#x2F;<br>-rw-r—– 1 root root 2470  1月  5 17:32 99b824abe4cb4779a16058401600b3e1676a18d74070742b3220019f7b14ffaf-json.log<br>drwx—— 2 root root 4096  1月  5 16:49 checkpoints&#x2F;<br>-rw——- 1 root root 2906  1月  5 16:49 config.v2.json<br>-rw-r–r– 1 root root 1548  1月  5 16:49 hostconfig.json<br>-rw-r–r– 1 root root   13  1月  5 16:49 hostname<br>-rw-r–r– 1 root root  174  1月  5 16:49 hosts<br>drwx–x— 2 root root 4096  1月  5 16:49 mounts&#x2F;<br>-rw-r–r– 1 root root  824  1月  5 16:49 resolv.conf<br>-rw-r–r– 1 root root   71  1月  5 16:49 resolv.conf.hash</p>
+<p>[root@ubuntu2204 ~]#systemctl stop docker<br>Warning: Stopping docker.service, but it can still be activated by:<br>  docker.socket<br>[root@ubuntu2204 ~]#cd &#x2F;data&#x2F;docker&#x2F;containers&#x2F;99b824abe4cb4779a16058401600b3e1676a18d74070742b3220019f7b14ffaf&#x2F;<br>[root@ubuntu2204 99b824abe4cb4779a16058401600b3e1676a18d74070742b3220019f7b14ffaf]#vim hostconfig.json<br>#PortBindings后80&#x2F;tcp对应的是容器内部的80端口，HostPort对应的是映射到宿主机的端口8080 修改此处为8090<br>[root@ubuntu2204 99b824abe4cb4779a16058401600b3e1676a18d74070742b3220019f7b14ffaf]#cat hostconfig.json<br>“PortBindings”:{“80&#x2F;tcp”:[{“HostIp”:””,”HostPort”:”8090”}]}</p>
+<p>[root@ubuntu2204 ~]#systemctl restart docker.service<br>[root@ubuntu2204 ~]#docker restart web01<br>web01<br>[root@ubuntu2204 ~]#docker port web01<br>80&#x2F;tcp -&gt; 0.0.0.0:8090<br>80&#x2F;tcp -&gt; :::8090</p>
+<p>#测试<br>[root@ubuntu2204 ~]#curl 10.0.0.200:8090<br>docker-nginx-web01查看容器的日志<br>案例：查看nginx服务访问日志 - 记录的是容器内部信息<br>[root@ubuntu2204 ~]#docker logs –help</p>
+<p>Usage:  docker logs [OPTIONS] CONTAINER</p>
+<p>Fetch the logs of a container</p>
+<p>Options:<br>      –details        Show extra details provided to logs<br>  -f, –follow         Follow log output<br>      –since string   Show logs since timestamp (e.g. 2013-01-02T13:23:37Z) or relative (e.g. 42m for 42 minutes)<br>  -n, –tail string    Number of lines to show from the end of the logs (default “all”)<br>  -t, –timestamps     Show timestamps<br>      –until string   Show logs before a timestamp (e.g. 2013-01-02T13:23:37Z) or relative (e.g. 42m for 42 minutes)<br>[root@ubuntu2204 ~]#docker logs web01<br>&#x2F;docker-entrypoint.sh: &#x2F;docker-entrypoint.d&#x2F; is not empty, will attempt to perform configuration<br>….</p>
+<p>#跟踪实时变化<br>[root@ubuntu2204 ~]#curl 10.0.0.200:8090<br>docker-nginx-web01<br>[root@ubuntu2204 ~]#docker logs -f  web01<br>10.0.0.202 - - [05&#x2F;Jan&#x2F;2023:11:24:32 +0000] “GET &#x2F; HTTP&#x2F;1.1” 200 19 “-“ “curl&#x2F;7.81.0” “-“</p>
+<p>#容器的日志实际上利用的是宿主机的标准输出重定向<br>[root@ubuntu2204 ~]#docker inspect web01|grep MergedDir<br>                “MergedDir”: “&#x2F;data&#x2F;docker&#x2F;overlay2&#x2F;240e12aaba372423a74dff3eb30f9f0fb9570add8620bb8557390c9423b847ff&#x2F;merged”,<br>[root@ubuntu2204 ~]#ls &#x2F;data&#x2F;docker&#x2F;overlay2&#x2F;240e12aaba372423a74dff3eb30f9f0fb9570add8620bb8557390c9423b847ff&#x2F;merged&#x2F;<br>[root@ubuntu2204 ~]#ll &#x2F;data&#x2F;docker&#x2F;overlay2&#x2F;240e12aaba372423a74dff3eb30f9f0fb9570add8620bb8557390c9423b847ff&#x2F;merged&#x2F;var&#x2F;log&#x2F;nginx&#x2F;<br>总用量 8<br>drwxr-xr-x 2 root root 4096 12月 21 19:28 .&#x2F;<br>drwxr-xr-x 1 root root 4096 12月 21 19:28 ..&#x2F;<br>lrwxrwxrwx 1 root root   11 12月 21 19:28 access.log -&gt; &#x2F;dev&#x2F;stdout<br>lrwxrwxrwx 1 root root   11 12月 21 19:28 error.log -&gt; &#x2F;dev&#x2F;stderr注意：<br>当log中没有记录docker运行错误，比如设置错误导致docker跑不起来，日志服务跑不起来，就用inspect去查看<br>• 搭配使用 logs 和 inspect<br>容器内部的hosts文件<br>容器会自动将容器的ID加入自已的&#x2F;etc&#x2F;hosts文件中，并解析成容器的IP<br>[root@ubuntu2204 ~]#docker ps<br>CONTAINER ID   IMAGE     COMMAND                  CREATED       STATUS          PORTS                                   NAMES<br>99b824abe4cb   nginx     “&#x2F;docker-entrypoint.…”   3 hours ago   Up 15 minutes   0.0.0.0:8090-&gt;80&#x2F;tcp, :::8090-&gt;80&#x2F;tcp   web01</p>
+<p>[root@ubuntu2204 ~]#docker exec -it web01 bash<br>root@99b824abe4cb:&#x2F;# hostname -I<br>172.17.0.4<br>root@99b824abe4cb:&#x2F;# cat &#x2F;etc&#x2F;hosts<br>127.0.0.1 localhost<br>::1 localhost ip6-localhost ip6-loopback<br>fe00::0 ip6-localnet<br>ff00::0 ip6-mcastprefix<br>ff02::1 ip6-allnodes<br>ff02::2 ip6-allrouters<br>172.17.0.4  99b824abe4cb<br>root@99b824abe4cb:&#x2F;# hostname<br>99b824abe4cb –&gt; container ID案例：在宿主机修改容器的域名<br>[root@ubuntu2204 ~]#docker run -d –add-host web03:172.17.0.10 –name alpine01 alpine tail -f &#x2F;etc&#x2F;hosts<br>a599c84e3641d1b2a3da716fc7d5aa5192ca39fe506017bb668115683adb28d1<br>[root@ubuntu2204 ~]#docker ps<br>CONTAINER ID   IMAGE     COMMAND                  CREATED         STATUS          PORTS                                   NAMES<br>a599c84e3641   alpine    “tail -f &#x2F;etc&#x2F;hosts”     6 seconds ago   Up 5 seconds                                            alpine01<br>99b824abe4cb   nginx     “&#x2F;docker-entrypoint.…”   3 hours ago     Up 23 minutes   0.0.0.0:8090-&gt;80&#x2F;tcp, :::8090-&gt;80&#x2F;tcp   web01<br>9e8ec41bd92c   ubuntu    “bash”                   4 hours ago     Up 4 hours                                              ubuntu01<br>672a7868f06f   nginx     “&#x2F;docker-entrypoint.…”   4 hours ago     Up 4 hours      0.0.0.0:80-&gt;80&#x2F;tcp, :::80-&gt;80&#x2F;tcp       web02<br>[root@ubuntu2204 ~]#docker exec -it alpine01 sh<br>&#x2F; # cat &#x2F;etc&#x2F;hosts<br>127.0.0.1 localhost<br>::1 localhost ip6-localhost ip6-loopback<br>fe00::0 ip6-localnet<br>ff00::0 ip6-mcastprefix<br>ff02::1 ip6-allnodes<br>ff02::2 ip6-allrouters<br>172.17.0.10 web03<br>172.17.0.5  a599c84e3641<br>&#x2F; #指定容器DNS<br>容器的dns服务器，默认采用宿主机的dns 地址，可以用下面方式指定其它的DNS地址<br>• 将dns地址配置在宿主机<br>• 在容器启动时加选项 –dns&#x3D;x.x.x.x<br>• 在&#x2F;etc&#x2F;docker&#x2F;daemon.json 文件中指定<br>容器的DNS默认从宿主机的DNS获取<br>#容器默认DNS<br>[root@ubuntu2204 ~]#docker exec -it web01 bash<br>root@99b824abe4cb:&#x2F;# cat &#x2F;etc&#x2F;resolv.conf </p>
+<h1 id="This-is-x2F-run-x2F-systemd-x2F-resolve-x2F-resolv-conf-managed-by-man-systemd-resolved-8"><a href="#This-is-x2F-run-x2F-systemd-x2F-resolve-x2F-resolv-conf-managed-by-man-systemd-resolved-8" class="headerlink" title="This is &#x2F;run&#x2F;systemd&#x2F;resolve&#x2F;resolv.conf managed by man:systemd-resolved(8)."></a>This is &#x2F;run&#x2F;systemd&#x2F;resolve&#x2F;resolv.conf managed by man:systemd-resolved(8).</h1><h1 id="Do-not-edit"><a href="#Do-not-edit" class="headerlink" title="Do not edit."></a>Do not edit.</h1><h1 id=""><a href="#" class="headerlink" title=""></a></h1><h1 id="This-file-might-be-symlinked-as-x2F-etc-x2F-resolv-conf-If-you’re-looking-at"><a href="#This-file-might-be-symlinked-as-x2F-etc-x2F-resolv-conf-If-you’re-looking-at" class="headerlink" title="This file might be symlinked as &#x2F;etc&#x2F;resolv.conf. If you’re looking at"></a>This file might be symlinked as &#x2F;etc&#x2F;resolv.conf. If you’re looking at</h1><h1 id="x2F-etc-x2F-resolv-conf-and-seeing-this-text-you-have-followed-the-symlink"><a href="#x2F-etc-x2F-resolv-conf-and-seeing-this-text-you-have-followed-the-symlink" class="headerlink" title="&#x2F;etc&#x2F;resolv.conf and seeing this text, you have followed the symlink."></a>&#x2F;etc&#x2F;resolv.conf and seeing this text, you have followed the symlink.</h1><h1 id="-1"><a href="#-1" class="headerlink" title=""></a></h1><h1 id="This-is-a-dynamic-resolv-conf-file-for-connecting-local-clients-directly-to"><a href="#This-is-a-dynamic-resolv-conf-file-for-connecting-local-clients-directly-to" class="headerlink" title="This is a dynamic resolv.conf file for connecting local clients directly to"></a>This is a dynamic resolv.conf file for connecting local clients directly to</h1><h1 id="all-known-uplink-DNS-servers-This-file-lists-all-configured-search-domains"><a href="#all-known-uplink-DNS-servers-This-file-lists-all-configured-search-domains" class="headerlink" title="all known uplink DNS servers. This file lists all configured search domains."></a>all known uplink DNS servers. This file lists all configured search domains.</h1><h1 id="-2"><a href="#-2" class="headerlink" title=""></a></h1><h1 id="Third-party-programs-should-typically-not-access-this-file-directly-but-only"><a href="#Third-party-programs-should-typically-not-access-this-file-directly-but-only" class="headerlink" title="Third party programs should typically not access this file directly, but only"></a>Third party programs should typically not access this file directly, but only</h1><h1 id="through-the-symlink-at-x2F-etc-x2F-resolv-conf-To-manage-man-resolv-conf-5-in-a"><a href="#through-the-symlink-at-x2F-etc-x2F-resolv-conf-To-manage-man-resolv-conf-5-in-a" class="headerlink" title="through the symlink at &#x2F;etc&#x2F;resolv.conf. To manage man:resolv.conf(5) in a"></a>through the symlink at &#x2F;etc&#x2F;resolv.conf. To manage man:resolv.conf(5) in a</h1><h1 id="different-way-replace-this-symlink-by-a-static-file-or-a-different-symlink"><a href="#different-way-replace-this-symlink-by-a-static-file-or-a-different-symlink" class="headerlink" title="different way, replace this symlink by a static file or a different symlink."></a>different way, replace this symlink by a static file or a different symlink.</h1><h1 id="-3"><a href="#-3" class="headerlink" title=""></a></h1><h1 id="See-man-systemd-resolved-service-8-for-details-about-the-supported-modes-of"><a href="#See-man-systemd-resolved-service-8-for-details-about-the-supported-modes-of" class="headerlink" title="See man:systemd-resolved.service(8) for details about the supported modes of"></a>See man:systemd-resolved.service(8) for details about the supported modes of</h1><h1 id="operation-for-x2F-etc-x2F-resolv-conf"><a href="#operation-for-x2F-etc-x2F-resolv-conf" class="headerlink" title="operation for &#x2F;etc&#x2F;resolv.conf."></a>operation for &#x2F;etc&#x2F;resolv.conf.</h1><p>nameserver 180.76.76.76<br>nameserver 223.6.6.6<br>search mooreyxia.org mooreyxia.com</p>
+<p>#查看宿主机DNS<br>[root@ubuntu2204 ~]#cat &#x2F;etc&#x2F;resolv.conf </p>
+<h1 id="This-is-x2F-run-x2F-systemd-x2F-resolve-x2F-stub-resolv-conf-managed-by-man-systemd-resolved-8"><a href="#This-is-x2F-run-x2F-systemd-x2F-resolve-x2F-stub-resolv-conf-managed-by-man-systemd-resolved-8" class="headerlink" title="This is &#x2F;run&#x2F;systemd&#x2F;resolve&#x2F;stub-resolv.conf managed by man:systemd-resolved(8)."></a>This is &#x2F;run&#x2F;systemd&#x2F;resolve&#x2F;stub-resolv.conf managed by man:systemd-resolved(8).</h1><h1 id="Do-not-edit-1"><a href="#Do-not-edit-1" class="headerlink" title="Do not edit."></a>Do not edit.</h1><h1 id="-4"><a href="#-4" class="headerlink" title=""></a></h1><h1 id="This-file-might-be-symlinked-as-x2F-etc-x2F-resolv-conf-If-you’re-looking-at-1"><a href="#This-file-might-be-symlinked-as-x2F-etc-x2F-resolv-conf-If-you’re-looking-at-1" class="headerlink" title="This file might be symlinked as &#x2F;etc&#x2F;resolv.conf. If you’re looking at"></a>This file might be symlinked as &#x2F;etc&#x2F;resolv.conf. If you’re looking at</h1><h1 id="x2F-etc-x2F-resolv-conf-and-seeing-this-text-you-have-followed-the-symlink-1"><a href="#x2F-etc-x2F-resolv-conf-and-seeing-this-text-you-have-followed-the-symlink-1" class="headerlink" title="&#x2F;etc&#x2F;resolv.conf and seeing this text, you have followed the symlink."></a>&#x2F;etc&#x2F;resolv.conf and seeing this text, you have followed the symlink.</h1><h1 id="-5"><a href="#-5" class="headerlink" title=""></a></h1><h1 id="This-is-a-dynamic-resolv-conf-file-for-connecting-local-clients-to-the"><a href="#This-is-a-dynamic-resolv-conf-file-for-connecting-local-clients-to-the" class="headerlink" title="This is a dynamic resolv.conf file for connecting local clients to the"></a>This is a dynamic resolv.conf file for connecting local clients to the</h1><h1 id="internal-DNS-stub-resolver-of-systemd-resolved-This-file-lists-all"><a href="#internal-DNS-stub-resolver-of-systemd-resolved-This-file-lists-all" class="headerlink" title="internal DNS stub resolver of systemd-resolved. This file lists all"></a>internal DNS stub resolver of systemd-resolved. This file lists all</h1><h1 id="configured-search-domains"><a href="#configured-search-domains" class="headerlink" title="configured search domains."></a>configured search domains.</h1><h1 id="-6"><a href="#-6" class="headerlink" title=""></a></h1><h1 id="Run-“resolvectl-status”-to-see-details-about-the-uplink-DNS-servers"><a href="#Run-“resolvectl-status”-to-see-details-about-the-uplink-DNS-servers" class="headerlink" title="Run “resolvectl status” to see details about the uplink DNS servers"></a>Run “resolvectl status” to see details about the uplink DNS servers</h1><h1 id="currently-in-use"><a href="#currently-in-use" class="headerlink" title="currently in use."></a>currently in use.</h1><h1 id="-7"><a href="#-7" class="headerlink" title=""></a></h1><h1 id="Third-party-programs-should-typically-not-access-this-file-directly-but-only-1"><a href="#Third-party-programs-should-typically-not-access-this-file-directly-but-only-1" class="headerlink" title="Third party programs should typically not access this file directly, but only"></a>Third party programs should typically not access this file directly, but only</h1><h1 id="through-the-symlink-at-x2F-etc-x2F-resolv-conf-To-manage-man-resolv-conf-5-in-a-1"><a href="#through-the-symlink-at-x2F-etc-x2F-resolv-conf-To-manage-man-resolv-conf-5-in-a-1" class="headerlink" title="through the symlink at &#x2F;etc&#x2F;resolv.conf. To manage man:resolv.conf(5) in a"></a>through the symlink at &#x2F;etc&#x2F;resolv.conf. To manage man:resolv.conf(5) in a</h1><h1 id="different-way-replace-this-symlink-by-a-static-file-or-a-different-symlink-1"><a href="#different-way-replace-this-symlink-by-a-static-file-or-a-different-symlink-1" class="headerlink" title="different way, replace this symlink by a static file or a different symlink."></a>different way, replace this symlink by a static file or a different symlink.</h1><h1 id="-8"><a href="#-8" class="headerlink" title=""></a></h1><h1 id="See-man-systemd-resolved-service-8-for-details-about-the-supported-modes-of-1"><a href="#See-man-systemd-resolved-service-8-for-details-about-the-supported-modes-of-1" class="headerlink" title="See man:systemd-resolved.service(8) for details about the supported modes of"></a>See man:systemd-resolved.service(8) for details about the supported modes of</h1><h1 id="operation-for-x2F-etc-x2F-resolv-conf-1"><a href="#operation-for-x2F-etc-x2F-resolv-conf-1" class="headerlink" title="operation for &#x2F;etc&#x2F;resolv.conf."></a>operation for &#x2F;etc&#x2F;resolv.conf.</h1><p>nameserver 127.0.0.53<br>options edns0 trust-ad<br>search mooreyxia.org mooreyxia.com</p>
+<p>[root@ubuntu2204 ~]#resolvectl status<br>Global<br>       Protocols: -LLMNR -mDNS -DNSOverTLS DNSSEC&#x3D;no&#x2F;unsupported<br>resolv.conf mode: stub</p>
+<p>Link 2 (eth0)<br>    Current Scopes: DNS<br>         Protocols: +DefaultRoute +LLMNR -mDNS -DNSOverTLS DNSSEC&#x3D;no&#x2F;unsupported<br>Current DNS Server: 180.76.76.76<br>       DNS Servers: 180.76.76.76 223.6.6.6<br>        DNS Domain: mooreyxia.com mooreyxia.org</p>
+<p>Link 3 (docker0)<br>Current Scopes: none<br>     Protocols: -DefaultRoute +LLMNR -mDNS -DNSOverTLS DNSSEC&#x3D;no&#x2F;unsupported案例：指定容器DNS地址<br>[root@ubuntu2204 &#x2F;]#docker run -it –rm –name a1  –dns 1.1.1.1 –dns 8.8.8.8 alpine sh<br>&#x2F; # cat &#x2F;etc&#x2F;resolv.conf<br>search mooreyxia.org mooreyxia.com<br>nameserver 1.1.1.1<br>nameserver 8.8.8.8案例：指定domain名<br>[root@ubuntu2204 &#x2F;]#docker run -it –rm –dns 1.1.1.1 –dns 8.8.8.8 –dns-search a.com –dns-search b.com busybox sh<br>&#x2F; # cat &#x2F;etc&#x2F;resolv.conf<br>search a.com b.com<br>nameserver 1.1.1.1<br>nameserver 8.8.8.8案例：配置文件指定DNS和搜索domain名<br>[root@ubuntu2204 &#x2F;]#vim &#x2F;etc&#x2F;docker&#x2F;daemon.json<br>[root@ubuntu2204 &#x2F;]#cat &#x2F;etc&#x2F;docker&#x2F;daemon.json<br>{<br>“registry-mirrors”: [<br>“<a target="_blank" rel="noopener" href="https://registry.docker-cn.com/">https://registry.docker-cn.com</a>“,<br>“<a target="_blank" rel="noopener" href="http://hub-mirror.c.163.com/">http://hub-mirror.c.163.com</a>“,<br>“<a target="_blank" rel="noopener" href="https://docker.mirrors.ustc.edu.cn/">https://docker.mirrors.ustc.edu.cn</a>“<br>],<br>“graph”: “&#x2F;data&#x2F;docker”,<br>“graph”: “&#x2F;data&#x2F;docker”,<br>“max-concurrent-downloads”: 10,<br>“max-concurrent-uploads”: 5,<br>“log-opts”: {<br>“max-size”: “300m”,<br>“max-file”: “2”<br>},<br>“live-restore”: true,<br>“dns” : [ “114.114.114.114”, “119.29.29.29”], –&gt; 在这里指定<br>“dns-search”: [ “mooreyxia.com”, “mooreyxia.org”] –&gt; 在这里指定<br>}<br>[root@ubuntu2204 &#x2F;]#systemctl restart docker<br>[root@ubuntu2204 &#x2F;]#docker run -it –rm busybox sh<br>&#x2F; # cat &#x2F;etc&#x2F;resolv.conf<br>search mooreyxia.com mooreyxia.org<br>nameserver 114.114.114.114<br>nameserver 119.29.29.29<br>&#x2F; #容器内和宿主机之间复制文件<br>案例：<br>[root@ubuntu2204 &#x2F;]#docker ps<br>CONTAINER ID   IMAGE     COMMAND                  CREATED       STATUS       PORTS                                   NAMES<br>99b824abe4cb   nginx     “&#x2F;docker-entrypoint.…”   5 hours ago   Up 3 hours   0.0.0.0:8090-&gt;80&#x2F;tcp, :::8090-&gt;80&#x2F;tcp   web01<br>9e8ec41bd92c   ubuntu    “bash”                   6 hours ago   Up 6 hours                                           ubuntu01<br>672a7868f06f   nginx     “&#x2F;docker-entrypoint.…”   6 hours ago   Up 6 hours   0.0.0.0:80-&gt;80&#x2F;tcp, :::80-&gt;80&#x2F;tcp       web02</p>
+<p>#将容器内文件复制到宿主机<br>[root@ubuntu2204 &#x2F;]#docker cp -a 9e8ec41bd92c:&#x2F;etc&#x2F;os-release .<br>[root@ubuntu2204 &#x2F;]#cat os-release<br>PRETTY_NAME&#x3D;”Ubuntu 22.04.1 LTS”<br>NAME&#x3D;”Ubuntu”<br>VERSION_ID&#x3D;”22.04”<br>VERSION&#x3D;”22.04.1 LTS (Jammy Jellyfish)”<br>VERSION_CODENAME&#x3D;jammy<br>ID&#x3D;ubuntu<br>ID_LIKE&#x3D;debian<br>HOME_URL&#x3D;”<a target="_blank" rel="noopener" href="https://www.ubuntu.com/">https://www.ubuntu.com/</a>“<br>SUPPORT_URL&#x3D;”<a target="_blank" rel="noopener" href="https://help.ubuntu.com/">https://help.ubuntu.com/</a>“<br>BUG_REPORT_URL&#x3D;”<a target="_blank" rel="noopener" href="https://bugs.launchpad.net/ubuntu/">https://bugs.launchpad.net/ubuntu/</a>“<br>PRIVACY_POLICY_URL&#x3D;”<a target="_blank" rel="noopener" href="https://www.ubuntu.com/legal/terms-and-policies/privacy-policy">https://www.ubuntu.com/legal/terms-and-policies/privacy-policy</a>“<br>UBUNTU_CODENAME&#x3D;jammy</p>
+<p>#将宿主机文件复制到容器内<br>[root@ubuntu2204 &#x2F;]#docker cp &#x2F;root&#x2F;install_docker.sh 9e8ec41bd92c:&#x2F;root&#x2F;<br>root@9e8ec41bd92c:&#x2F;# cd &#x2F;root&#x2F;<br>root@9e8ec41bd92c:~# ll<br>total 28<br>drwx—— 1 root root 4096 Jan  5 14:03 .&#x2F;<br>drwxr-xr-x 1 root root 4096 Jan  5 14:03 ..&#x2F;<br>-rw——- 1 root root  108 Jan  5 07:57 .bash_history<br>-rw-r–r– 1 root root 3106 Oct 15  2021 .bashrc<br>-rw-r–r– 1 root root  161 Jul  9  2019 .profile<br>-rw-r–r– 1 root root 4445 Dec 29 15:08 install_docker.sh使用 systemd 控制容器运行<br>[root@ubuntu2204 ~]#vim &#x2F;lib&#x2F;systemd&#x2F;system&#x2F;hello.service<br>[root@ubuntu2204 ~]#cat &#x2F;lib&#x2F;systemd&#x2F;system&#x2F;hello.service<br>[Unit]<br>Descriptinotallow&#x3D;Hello World<br>After&#x3D;docker.service<br>Requires&#x3D;docker.service<br>[Service]<br>TimeoutStartSec&#x3D;0<br>ExecStartPre&#x3D;-&#x2F;usr&#x2F;bin&#x2F;docker kill busybox-hello<br>ExecStartPre&#x3D;-&#x2F;usr&#x2F;bin&#x2F;docker rm busybox-hello<br>ExecStartPre&#x3D;&#x2F;usr&#x2F;bin&#x2F;docker pull busybox<br>ExecStart&#x3D;&#x2F;usr&#x2F;bin&#x2F;docker run –name busybox-hello busybox &#x2F;bin&#x2F;sh -c “while true; do echo Hello World; sleep 1; done”<br>ExecStop&#x3D;&#x2F;usr&#x2F;bin&#x2F;docker kill busybox-hello<br>[Install]<br>WantedBy&#x3D;multi-user.target<br>[root@ubuntu2204 ~]#systemctl daemon-reload<br>[root@ubuntu2204 ~]#systemctl enable –now hello.service<br>[root@ubuntu2204 ~]#systemctl status hello.service<br>● hello.service - Hello World<br>     Loaded: loaded (&#x2F;lib&#x2F;systemd&#x2F;system&#x2F;hello.service; enabled; vendor preset: enabled)<br>     Active: active (running) since Thu 2023-01-05 22:11:18 CST; 26s ago<br>    Process: 29145 ExecStartPre&#x3D;&#x2F;usr&#x2F;bin&#x2F;docker kill busybox-hello (code&#x3D;exited, status&#x3D;1&#x2F;FAILURE)<br>    Process: 29152 ExecStartPre&#x3D;&#x2F;usr&#x2F;bin&#x2F;docker rm busybox-hello (code&#x3D;exited, status&#x3D;1&#x2F;FAILURE)<br>    Process: 29158 ExecStartPre&#x3D;&#x2F;usr&#x2F;bin&#x2F;docker pull busybox (code&#x3D;exited, status&#x3D;0&#x2F;SUCCESS)<br>   Main PID: 29182 (docker)<br>      Tasks: 7 (limit: 2196)<br>     Memory: 17.5M<br>        CPU: 223ms<br>     CGroup: &#x2F;system.slice&#x2F;hello.service<br>             └─29182 &#x2F;usr&#x2F;bin&#x2F;docker run –name busybox-hello busybox &#x2F;bin&#x2F;sh -c “while true; do echo Hello World; sleep 1; done”</p>
+<p>1月 05 22:11:35 ubuntu2204.wang.org docker[29182]: Hello World<br>1月 05 22:11:36 ubuntu2204.wang.org docker[29182]: Hello World<br>1月 05 22:11:37 ubuntu2204.wang.org docker[29182]: Hello World<br>1月 05 22:11:38 ubuntu2204.wang.org docker[29182]: Hello World<br>1月 05 22:11:39 ubuntu2204.wang.org docker[29182]: Hello World<br>1月 05 22:11:40 ubuntu2204.wang.org docker[29182]: Hello World<br>1月 05 22:11:41 ubuntu2204.wang.org docker[29182]: Hello World<br>1月 05 22:11:42 ubuntu2204.wang.org docker[29182]: Hello World<br>1月 05 22:11:43 ubuntu2204.wang.org docker[29182]: Hello World<br>1月 05 22:11:44 ubuntu2204.wang.org docker[29182]: Hello World</p>
+<p>[root@ubuntu2204 ~]#docker ps<br>CONTAINER ID   IMAGE     COMMAND                  CREATED          STATUS          PORTS     NAMES<br>854f520cdf92   busybox   “&#x2F;bin&#x2F;sh -c ‘while t…”   54 seconds ago   Up 53 seconds             busybox-hello</p>
+<p>[root@ubuntu2204 ~]#systemctl stop hello.service<br>[root@ubuntu2204 ~]#systemctl status hello.service<br>× hello.service - Hello World<br>     Loaded: loaded (&#x2F;lib&#x2F;systemd&#x2F;system&#x2F;hello.service; enabled; vendor preset: enabled)<br>     Active: failed (Result: exit-code) since Thu 2023-01-05 22:13:01 CST; 3s ago<br>    Process: 29145 ExecStartPre&#x3D;&#x2F;usr&#x2F;bin&#x2F;docker kill busybox-hello (code&#x3D;exited, status&#x3D;1&#x2F;FAILURE)<br>    Process: 29152 ExecStartPre&#x3D;&#x2F;usr&#x2F;bin&#x2F;docker rm busybox-hello (code&#x3D;exited, status&#x3D;1&#x2F;FAILURE)<br>    Process: 29158 ExecStartPre&#x3D;&#x2F;usr&#x2F;bin&#x2F;docker pull busybox (code&#x3D;exited, status&#x3D;0&#x2F;SUCCESS)<br>    Process: 29182 ExecStart&#x3D;&#x2F;usr&#x2F;bin&#x2F;docker run –name busybox-hello busybox &#x2F;bin&#x2F;sh -c while true; do echo Hello World; sleep 1; done (code&#x3D;exited, status&#x3D;137)<br>    Process: 29386 ExecStop&#x3D;&#x2F;usr&#x2F;bin&#x2F;docker kill busybox-hello (code&#x3D;exited, status&#x3D;0&#x2F;SUCCESS)<br>   Main PID: 29182 (code&#x3D;exited, status&#x3D;137)<br>        CPU: 294ms</p>
+<p>1月 05 22:12:56 ubuntu2204.wang.org docker[29182]: Hello World<br>1月 05 22:12:57 ubuntu2204.wang.org docker[29182]: Hello World<br>1月 05 22:12:58 ubuntu2204.wang.org docker[29182]: Hello World<br>1月 05 22:12:59 ubuntu2204.wang.org docker[29182]: Hello World<br>1月 05 22:13:00 ubuntu2204.wang.org docker[29182]: Hello World<br>1月 05 22:13:00 ubuntu2204.wang.org systemd[1]: Stopping Hello World…<br>1月 05 22:13:01 ubuntu2204.wang.org docker[29386]: busybox-hello<br>1月 05 22:13:01 ubuntu2204.wang.org systemd[1]: hello.service: Main process exited, code&#x3D;exited, status&#x3D;137&#x2F;n&#x2F;a<br>1月 05 22:13:01 ubuntu2204.wang.org systemd[1]: hello.service: Failed with result ‘exit-code’.<br>1月 05 22:13:01 ubuntu2204.wang.org systemd[1]: Stopped Hello World.传递环境变量<br>案例：<br>[root@ubuntu2204 ~]#docker run -e ‘P1&#x3D;moore’ -e ‘PDATE&#x3D;2023-01-05’ –name b1 busybox env<br>PATH&#x3D;&#x2F;usr&#x2F;local&#x2F;sbin:&#x2F;usr&#x2F;local&#x2F;bin:&#x2F;usr&#x2F;sbin:&#x2F;usr&#x2F;bin:&#x2F;sbin:&#x2F;bin<br>HOSTNAME&#x3D;ca41f601d231<br>P1&#x3D;moore<br>PDATE&#x3D;2023-01-05<br>HOME&#x3D;&#x2F;root</p>
+<p>#数据路创建<br>[root@ubuntu2204 ~]#docker run –restart always -d  –name mysql01 mysql:5.7.32<br>Unable to find image ‘mysql:5.7.32’ locally<br>5.7.32: Pulling from library&#x2F;mysql<br>a076a628af6f: Downloading<br>f6c208f3f991: Download complete<br>88a9455a9165: Download complete<br>406c9b8427c6: Download complete<br>7c88599c0b25: Download complete<br>25b5c6debdaf: Download complete<br>43a5816f1617: Download complete<br>7065aaa2655f: Download complete<br>b4bc531db40f: Download complete<br>8c3e9d7c9815: Download complete<br>fadfb9734ed2: Download complete<br>5.7.32: Pulling from library&#x2F;mysql<br>a076a628af6f: Pull complete<br>f6c208f3f991: Pull complete<br>88a9455a9165: Pull complete<br>406c9b8427c6: Pull complete<br>7c88599c0b25: Pull complete<br>25b5c6debdaf: Pull complete<br>43a5816f1617: Pull complete<br>7065aaa2655f: Pull complete<br>b4bc531db40f: Pull complete<br>8c3e9d7c9815: Pull complete<br>fadfb9734ed2: Pull complete<br>Digest: sha256:e08834258fcc0efd01df358222333919df53d4a0d9b2a54da05b204b822e3b7b<br>Status: Downloaded newer image for mysql:5.7.32<br>cc666443d2d1c8d3ec355f4e3205e827eed43c6bff009dccb59c1d71f777c8bc</p>
+<p>[root@ubuntu2204 ~]#docker run –name mysql-test1 -v &#x2F;data&#x2F;mysql:&#x2F;var&#x2F;lib&#x2F;mysql -e MYSQL_ROOT_PASSWORD&#x3D;123456 -e MYSQL_DATABASE&#x3D;wordpress -e MYSQL_USER&#x3D;wpuser -e MYSQL_PASSWORD&#x3D;123456 -d -p 3306:3306 mysql:5.7.32<br>991ffb59f755834d3be70709b625f0c4763ed420ee5e72e7ee8f47797de1cc97</p>
+<p>[root@ubuntu2204 ~]#docker ps<br>CONTAINER ID   IMAGE          COMMAND                  CREATED          STATUS                          PORTS                                                  NAMES<br>991ffb59f755   mysql:5.7.32   “docker-entrypoint.s…”   7 minutes ago    Up 7 minutes                    0.0.0.0:3306-&gt;3306&#x2F;tcp, :::3306-&gt;3306&#x2F;tcp, 33060&#x2F;tcp   mysql-test1<br>cc666443d2d1   mysql:5.7.32   “docker-entrypoint.s…”   11 minutes ago   Restarting (1) 51 seconds ago                                                          mysql01<br>99b824abe4cb   nginx          “&#x2F;docker-entrypoint.…”   7 hours ago      Up 4 hours                      0.0.0.0:8090-&gt;80&#x2F;tcp, :::8090-&gt;80&#x2F;tcp                  web01<br>9e8ec41bd92c   ubuntu         “bash”                   8 hours ago      Up 7 hours                                                                             ubuntu01<br>672a7868f06f   nginx          “&#x2F;docker-entrypoint.…”   8 hours ago      Up 8 hours                      0.0.0.0:80-&gt;80&#x2F;tcp, :::80-&gt;80&#x2F;tcp                      web02</p>
+<p>#变量也可以加入文件，批量创建<br>用这个参数 –env-file&#x3D;xxxx我是moore,大家一起加油！！！</p>
+
+      
+       <hr><span style="font-style: italic;color: gray;"> 转载请注明来源，欢迎对文章中的引用来源进行考证，欢迎指出任何有错误或不够清晰的表达。可以在下面评论区评论，也可以邮件至 jaytp@qq.com </span>
+    </div>
+</article>
+
+
+<p>
+    <a  class="dashang" onclick="dashangToggle()">💰</a>
+</p>
+
+
+
+
+
+
+    
+
+
+
+
+    </div>
+    <div class="copyright">
+        <p class="footer-entry">
+    ©2016-2020 Yelog
+</p>
+<p class="footer-entry">Built with <a href="https://hexo.io/" target="_blank">Hexo</a> and <a href="https://github.com/yelog/hexo-theme-3-hexo" target="_blank">3-hexo</a> theme</p>
+
+    </div>
+    <div class="full-toc">
+        <button class="full" data-title="切换全屏 快捷键 s"><span class="min "></span></button>
+<a class="" id="rocket" ></a>
+
+    </div>
+</div>
+
+<div class="hide_box" onclick="dashangToggle()"></div>
+<div class="shang_box">
+    <a class="shang_close"  onclick="dashangToggle()">×</a>
+    <div class="shang_tit">
+        <p>Help us with donation</p>
+    </div>
+    <div class="shang_payimg">
+        <div class="pay_img">
+            <img src="/img/alipay.jpg" class="alipay" title="扫码支持">
+            <img src="/img/weixin.jpg" class="weixin" title="扫码支持">
+        </div>
+    </div>
+    <div class="shang_payselect">
+        <span><label><input type="radio" name="pay" checked value="alipay">alipay</label></span><span><label><input type="radio" name="pay" value="weixin">weixin</label></span>
+    </div>
+</div>
+
+
+</body>
+<script src="/js/jquery.pjax.js?v=1.1.0" ></script>
+
+<script src="/js/script.js?v=1.1.0" ></script>
+<script>
+    var img_resize = 'default';
+    function initArticle() {
+        /*渲染对应的表格样式*/
+        
+            $("#post .pjax table").addClass("green_title");
+        
+
+        /*渲染打赏样式*/
+        
+        $("input[name=pay]").on("click", function () {
+            if($("input[name=pay]:checked").val()=="weixin"){
+                $(".shang_box .shang_payimg .pay_img").addClass("weixin_img");
+            } else {
+                $(".shang_box .shang_payimg .pay_img").removeClass("weixin_img");
+            }
+        })
+        
+
+        /*高亮代码块行号*/
+        
+
+        /*访问数量*/
+        
+        $.getScript("//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js");
+        
+
+        /*代码高亮，行号对齐*/
+        $('.pre-numbering').css('line-height',$('.has-numbering').css('line-height'));
+
+        
+        
+    }
+
+    /*打赏页面隐藏与展示*/
+    
+    function dashangToggle() {
+        $(".shang_box").fadeToggle();
+        $(".hide_box").fadeToggle();
+    }
+    
+
+</script>
+
+<!--加入行号的高亮代码块样式-->
+
+<!--自定义样式设置-->
+<style>
+    
+    
+    .nav {
+        width: 542px;
+    }
+    .nav.fullscreen {
+        margin-left: -542px;
+    }
+    .nav-left {
+        width: 120px;
+    }
+    
+    
+    @media screen and (max-width: 1468px) {
+        .nav {
+            width: 492px;
+        }
+        .nav.fullscreen {
+            margin-left: -492px;
+        }
+        .nav-left {
+            width: 100px;
+        }
+    }
+    
+    
+    @media screen and (max-width: 1024px) {
+        .nav {
+            width: 492px;
+            margin-left: -492px
+        }
+        .nav.fullscreen {
+            margin-left: 0;
+        }
+    }
+    
+    @media screen and (max-width: 426px) {
+        .nav {
+            width: 100%;
+        }
+        .nav-left {
+            width: 100%;
+        }
+    }
+    
+    
+    .nav-right .title-list nav a .post-title, .nav-right .title-list #local-search-result a .post-title {
+        color: #383636;
+    }
+    
+    
+    .nav-right .title-list nav a .post-date, .nav-right .title-list #local-search-result a .post-date {
+        color: #5e5e5f;
+    }
+    
+    
+    .nav-right nav a.hover, #local-search-result a.hover{
+        background-color: #e2e0e0;
+    }
+    
+    
+
+    /*列表样式*/
+    
+
+    /* 背景图样式 */
+    
+    
+
+
+    /*引用块样式*/
+    
+
+    /*文章列表背景图*/
+    
+
+    
+</style>
+
+
+
+
+
+
+
+</html>

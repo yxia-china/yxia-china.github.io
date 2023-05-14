@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>56-Redis集群-哨兵Sentinel搭建实现负载均衡高可用 | Hexo</title>
+  <meta name="keywords" content="">
+  <meta name="description" content="56-Redis集群-哨兵Sentinel搭建实现负载均衡高可用 | Hexo">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="description" content="基于现有虚拟机磁盘为模版创建新的虚拟机使用 virt-install 创建虚拟机• 虽然使用virt-manager 可以方便的管理虚拟机,但如果需要批量进行虚拟机的创建管理,命令行工具virtinstall更加方便和适合案例：利用 qemu-img命令创建虚拟磁盘#注意: qemu-img create 一定要确认对应路径下没有此文件,如果存在将覆盖原文件  确认现有的虚拟磁盘文件[root@u">
+<meta property="og:type" content="article">
+<meta property="og:title" content="42-KVM虚拟化-基于现有虚拟机磁盘为模版创建新的虚拟机">
+<meta property="og:url" content="http://example.com/2023/05/14/42-KVM%E8%99%9A%E6%8B%9F%E5%8C%96-%E5%9F%BA%E4%BA%8E%E7%8E%B0%E6%9C%89%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%A3%81%E7%9B%98%E4%B8%BA%E6%A8%A1%E7%89%88%E5%88%9B%E5%BB%BA%E6%96%B0%E7%9A%84%E8%99%9A%E6%8B%9F%E6%9C%BA/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="基于现有虚拟机磁盘为模版创建新的虚拟机使用 virt-install 创建虚拟机• 虽然使用virt-manager 可以方便的管理虚拟机,但如果需要批量进行虚拟机的创建管理,命令行工具virtinstall更加方便和适合案例：利用 qemu-img命令创建虚拟磁盘#注意: qemu-img create 一定要确认对应路径下没有此文件,如果存在将覆盖原文件  确认现有的虚拟磁盘文件[root@u">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="http://example.com/img/092d6b54082e04ec1c20121058c692bc5844b5.png">
+<meta property="og:image" content="http://example.com/img/f8bada3025892d742fe1746c42ead86f562ddc.png">
+<meta property="article:published_time" content="2023-05-14T08:21:34.888Z">
+<meta property="article:modified_time" content="2023-05-14T08:23:40.552Z">
+<meta property="article:author" content="John Doe">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/img/092d6b54082e04ec1c20121058c692bc5844b5.png">
+
+
+<link rel="icon" href="/img/avatar.jpg">
+
+<link href="/css/style.css?v=1.1.0" rel="stylesheet">
+
+<link href="/css/hl_theme/atom-light.css?v=1.1.0" rel="stylesheet">
+
+<link href="//cdn.jsdelivr.net/npm/animate.css@4.1.0/animate.min.css" rel="stylesheet">
+
+<script src="//cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js"></script>
+<script src="/js/titleTip.js?v=1.1.0" ></script>
+
+<script src="//cdn.jsdelivr.net/npm/highlightjs@9.16.2/highlight.pack.min.js"></script>
+<script>
+    hljs.initHighlightingOnLoad();
+</script>
+
+<script src="//cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.min.js"></script>
+
+
+
+<script src="//cdn.jsdelivr.net/npm/jquery.cookie@1.4.1/jquery.cookie.min.js" ></script>
+
+<script src="/js/iconfont.js?v=1.1.0" ></script>
+
+<meta name="generator" content="Hexo 6.3.0"></head>
+<div style="display: none">
+  <input class="theme_disqus_on" value="false">
+  <input class="theme_preload_comment" value="">
+  <input class="theme_blog_path" value="">
+  <input id="theme_shortcut" value="true" />
+  <input id="theme_highlight_on" value="true" />
+  <input id="theme_code_copy" value="true" />
+</div>
+
+
+
+<body>
+<aside class="nav">
+    <div class="nav-left">
+        <a href="/"
+   class="avatar_target">
+    <img class="avatar"
+         src="/img/avatar.jpg"/>
+</a>
+<div class="author">
+    <span>John Doe</span>
+</div>
+
+<div class="icon">
+    
+        
+            <a title="rss"
+               href="/atom.xml"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-rss"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="github"
+               href="https://github.com/yelog"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-github"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="facebook"
+               href="https://www.facebook.com/faker.tops"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-facebook"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+    
+        
+    
+        
+            <a title="instagram"
+               href="https://www.facebook.com/faker.tops"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-instagram"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="reddit"
+               href="https://www.reddit.com/user/yelog/"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-reddit"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="weibo"
+               href="http://weibo.com/u/2307534817"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-weibo"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="jianshu"
+               href="https://www.jianshu.com/u/ff56736de7cf"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-jianshu"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="zhihu"
+               href="https://www.zhihu.com/people/jaytp/activities"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-zhihu"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+    
+        
+            <a title="oschina"
+               href="https://my.oschina.net/yelog"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-oschina"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+    
+        
+            <a title="email"
+               href="mailto:jaytp@qq.com"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-email"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="qq"
+               href="http://wpa.qq.com/msgrd?v=3&uin=872336115&site=qq&menu=yes"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-qq"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="kugou"
+               href="https://www.kugou.com/"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-kugou"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="neteasemusic"
+               href="https://music.163.com/#/user/home?id=88151013"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-neteasemusic"></use>
+                    </svg>
+                
+            </a>
+        
+    
+</div>
+
+
+
+
+<ul>
+    <li>
+        <div class="all active" data-rel="All">All
+            
+                <small>(36)</small>
+            
+        </div>
+    </li>
+    
+        
+            
+                <li>
+                    <div data-rel="SRE linux云计算">
+                        
+                        SRE linux云计算
+                        <small>(11)</small>
+                        
+                    </div>
+                    
+                </li>
+            
+        
+    
+        
+            
+                <li>
+                    <div data-rel="云原生">
+                        
+                        云原生
+                        <small>(10)</small>
+                        
+                    </div>
+                    
+                </li>
+            
+        
+    
+        
+            
+                <li>
+                    <div data-rel="PMP管理">
+                        
+                        PMP管理
+                        <small>(1)</small>
+                        
+                    </div>
+                    
+                </li>
+            
+        
+    
+        
+            
+                <li>
+                    <div data-rel="Python 爬虫">
+                        
+                        Python 爬虫
+                        <small>(14)</small>
+                        
+                    </div>
+                    
+                </li>
+            
+        
+    
+</ul>
+<div class="left-bottom">
+    <div class="menus">
+        
+            
+            
+            
+    </div>
+    <div>
+        
+            <a class="about  hasFriend  site_url"
+               
+               href="/about">About</a>
+        
+        <a style="width: 50%"
+                
+                                           class="friends">Friends</a>
+        
+    </div>
+</div>
+<input type="hidden" id="yelog_site_posts_number" value="36">
+
+<div style="display: none">
+    <span id="busuanzi_value_site_uv"></span>
+    <span id="busuanzi_value_site_pv"></span>
+</div>
+
+    </div>
+    <div class="nav-right">
+        <div class="friends-area">
+    <div class="friends-title">
+        Links
+        <i class="iconfont icon-left"></i>
+    </div>
+    <div class="friends-content">
+        <ul>
+            
+            <li><a target="_blank" href="http://yelog.org/">叶落阁</a></li>
+            
+        </ul>
+    </div>
+</div>
+        <div class="title-list">
+    <div class="right-top">
+        <div id="default-panel">
+            <i class="iconfont icon-search" data-title="搜索 快捷键 i"></i>
+            <div class="right-title">All</div>
+            <i class="iconfont icon-file-tree" data-title="切换到大纲视图 快捷键 w"></i>
+        </div>
+        <div id="search-panel">
+            <i class="iconfont icon-left" data-title="返回"></i>
+            <input id="local-search-input" autocomplete="off"/>
+            <label class="border-line" for="input"></label>
+            <i class="iconfont icon-case-sensitive" data-title="大小写敏感"></i>
+            <i class="iconfont icon-tag" data-title="标签"></i>
+        </div>
+        <div id="outline-panel" style="display: none">
+            <div class="right-title">大纲</div>
+            <i class="iconfont icon-list" data-title="切换到文章列表"></i>
+        </div>
+    </div>
+
+    <div class="tags-list">
+    <input id="tag-search" />
+    <div class="tag-wrapper">
+        
+    </div>
+
+</div>
+
+    
+    <nav id="title-list-nav">
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/14/42-KVM%E8%99%9A%E6%8B%9F%E5%8C%96-%E5%9F%BA%E4%BA%8E%E7%8E%B0%E6%9C%89%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%A3%81%E7%9B%98%E4%B8%BA%E6%A8%A1%E7%89%88%E5%88%9B%E5%BB%BA%E6%96%B0%E7%9A%84%E8%99%9A%E6%8B%9F%E6%9C%BA/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="42-KVM虚拟化-基于现有虚拟机磁盘为模版创建新的虚拟机">42-KVM虚拟化-基于现有虚拟机磁盘为模版创建新的虚拟机</span>
+            <span class="post-date" title="2023-05-14 16:21:34">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%B8%89%E7%AB%A0-2-requests%20%E8%BF%9B%E9%98%B6%E2%80%A2%20%E7%88%AC%E5%8F%96%E6%9F%90%E8%A7%86%E9%A2%91%E7%BD%91%E7%9B%B8%E5%85%B3%E8%A7%86%E9%A2%91/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第三章-2-requests 进阶• 爬取某视频网相关视频">Python爬虫-第三章-2-requests 进阶• 爬取某视频网相关视频</span>
+            <span class="post-date" title="2023-05-14 16:20:20">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/14/44-KVM%E8%99%9A%E6%8B%9F%E5%8C%96-%E5%AD%98%E5%82%A8%E7%AE%A1%E7%90%86%E5%92%8C%E7%A3%81%E7%9B%98%E6%89%A9%E5%AE%B9/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="44-KVM虚拟化-存储管理和磁盘扩容">44-KVM虚拟化-存储管理和磁盘扩容</span>
+            <span class="post-date" title="2023-05-14 16:18:30">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%B8%89%E7%AB%A0-3-%E5%88%A9%E7%94%A8re%E6%A8%A1%E5%9D%97%E7%88%AC%E5%8F%96%E6%9F%90%E7%BD%91%E7%94%B5%E5%BD%B1%E6%8E%92%E8%A1%8C%E6%A6%9C/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第三章-3-利用re模块爬取某网电影排行榜">Python爬虫-第三章-3-利用re模块爬取某网电影排行榜</span>
+            <span class="post-date" title="2023-05-14 16:16:51">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/14/46-Docker-Container%E5%AE%B9%E5%99%A8%E7%AE%A1%E7%90%86%E5%90%84%E7%A7%8D%E6%93%8D%E4%BD%9C/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="46-Docker-Container容器管理各种操作">46-Docker-Container容器管理各种操作</span>
+            <span class="post-date" title="2023-05-14 16:14:04">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/14/47-Docker-Dockerfile%E9%95%9C%E5%83%8F%E5%88%9B%E5%BB%BA%E8%87%AA%E5%8A%A8%E5%8C%96%E7%94%9F%E4%BA%A7%E6%A1%88%E4%BE%8B/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="47-Docker-Dockerfile镜像创建自动化生产案例">47-Docker-Dockerfile镜像创建自动化生产案例</span>
+            <span class="post-date" title="2023-05-14 16:09:19">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/14/48-Docker-%E5%A4%9A%E5%AE%B9%E5%99%A8%E6%95%B0%E6%8D%AE%E5%85%B1%E4%BA%AB%E5%8F%8A%E6%8C%81%E4%B9%85%E5%8C%96/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="48-Docker-多容器数据共享及持久化">48-Docker-多容器数据共享及持久化</span>
+            <span class="post-date" title="2023-05-14 16:06:48">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%B8%89%E7%AB%A0-4-%E5%88%A9%E7%94%A8BeautifulSoup%E6%A8%A1%E5%9D%97%E7%88%AC%E5%8F%96%E6%9F%90%E7%BD%91%E5%A3%81%E7%BA%B8%E5%9B%BE%E5%BA%93%E5%9B%BE%E7%89%87/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第三章-4-利用BeautifulSoup模块爬取某网壁纸图库图片">Python爬虫-第三章-4-利用BeautifulSoup模块爬取某网壁纸图库图片</span>
+            <span class="post-date" title="2023-05-14 16:05:34">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%B8%89%E7%AB%A0-5-%E5%88%A9%E7%94%A8xpath%E7%88%AC%E5%8F%96%E6%9F%90%E5%85%AB%E6%88%92%E7%BD%91%E7%9B%B8%E5%85%B3%E8%AF%8D%E8%AF%AD%E5%85%AC%E5%8F%B8%E7%9A%84%E4%BF%A1%E6%81%AF%E5%92%8C%E4%BB%B7%E6%A0%BC/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第三章-5-利用xpath爬取某八戒网相关词语公司的信息和价格">Python爬虫-第三章-5-利用xpath爬取某八戒网相关词语公司的信息和价格</span>
+            <span class="post-date" title="2023-05-14 16:04:16">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%B8%89%E7%AB%A0-6-%E6%8A%93%E5%8F%96%E6%9F%90%E4%BA%91%E9%9F%B3%E4%B9%90%E8%AF%84%E8%AE%BA%E6%95%B0%E6%8D%AE/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第三章-6-抓取某云音乐评论数据">Python爬虫-第三章-6-抓取某云音乐评论数据</span>
+            <span class="post-date" title="2023-05-14 16:03:15">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-1-%E5%A4%9A%E7%BA%BF%E7%A8%8B%E5%A4%9A%E8%BF%9B%E7%A8%8B%E5%B9%B6%E5%8F%91%E7%88%AC%E5%8F%96%E2%85%A0/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-1-多线程多进程并发爬取Ⅰ">Python爬虫-第四章-1-多线程多进程并发爬取Ⅰ</span>
+            <span class="post-date" title="2023-05-14 16:01:27">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-1-%E5%A4%9A%E7%BA%BF%E7%A8%8B%E5%A4%9A%E8%BF%9B%E7%A8%8B%E5%B9%B6%E5%8F%91%E7%88%AC%E5%8F%96%E2%85%A1/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-1-多线程多进程并发爬取Ⅱ">Python爬虫-第四章-1-多线程多进程并发爬取Ⅱ</span>
+            <span class="post-date" title="2023-05-14 16:00:37">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-1-%E5%A4%9A%E7%BA%BF%E7%A8%8B%E5%A4%9A%E8%BF%9B%E7%A8%8B%E5%B9%B6%E5%8F%91%E7%88%AC%E5%8F%96%E2%85%A2-%E7%88%AC%E5%8F%96%E6%9F%90%E8%8F%9C%E5%B8%82%E5%9C%BA%E6%89%B9%E5%8F%91%E4%BB%B7%E6%95%B0%E6%8D%AE/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-1-多线程多进程并发爬取Ⅲ-爬取某菜市场批发价数据">Python爬虫-第四章-1-多线程多进程并发爬取Ⅲ-爬取某菜市场批发价数据</span>
+            <span class="post-date" title="2023-05-14 15:59:35">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-2-%E5%8D%8F%E7%A8%8B%E4%B8%8E%E5%BC%82%E6%AD%A5/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-2-协程与异步">Python爬虫-第四章-2-协程与异步</span>
+            <span class="post-date" title="2023-05-14 15:58:20">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/14/52-HAProxy-10%E7%A7%8D%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E8%B0%83%E5%BA%A6%E7%AE%97%E6%B3%95/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="52-HAProxy-10种负载均衡调度算法">52-HAProxy-10种负载均衡调度算法</span>
+            <span class="post-date" title="2023-05-14 15:56:12">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/14/55-Redis-%E7%BC%96%E8%AF%91%E9%83%A8%E7%BD%B2%E5%8F%8A%E6%95%B0%E6%8D%AE%E6%8C%81%E4%B9%85%E5%8C%96/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="55-Redis-编译部署及数据持久化">55-Redis-编译部署及数据持久化</span>
+            <span class="post-date" title="2023-05-14 15:54:02">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/14/56-Redis%E9%9B%86%E7%BE%A4-%E5%93%A8%E5%85%B5Sentinel%E6%90%AD%E5%BB%BA%E5%AE%9E%E7%8E%B0%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E9%AB%98%E5%8F%AF%E7%94%A8/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="56-Redis集群-哨兵Sentinel搭建实现负载均衡高可用">56-Redis集群-哨兵Sentinel搭建实现负载均衡高可用</span>
+            <span class="post-date" title="2023-05-14 15:41:50">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/14/998-%E6%90%AD%E5%BB%BA%E4%B8%80%E5%8F%B0%E7%A7%81%E7%94%A8%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%A8%E8%BF%87%E7%A8%8B/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="998-搭建一台私用服务器全过程">998-搭建一台私用服务器全过程</span>
+            <span class="post-date" title="2023-05-14 15:36:20">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/%20Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-3-%E5%A4%9A%E7%BA%BF%E7%A8%8B%E5%A4%9A%E8%BF%9B%E7%A8%8B%E6%8F%90%E5%8D%87%E4%BB%BB%E5%8A%A1%E6%89%A7%E8%A1%8C%E6%95%88%E7%8E%87/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-3-多线程多进程提升任务执行效率">Python爬虫-第四章-3-多线程多进程提升任务执行效率</span>
+            <span class="post-date" title="2023-05-14 15:35:16">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/%20Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-4-%E5%88%A9%E7%94%A8%E7%BA%BF%E7%A8%8B%E6%B1%A0%E5%92%8C%E8%BF%9B%E7%A8%8B%E6%B1%A0%E9%AB%98%E6%95%88%E7%88%AC%E5%8F%96%E5%8C%97%E4%BA%AC%E6%9F%90%E5%8F%91%E8%8F%9C%E5%9C%B0%E6%95%B0%E6%8D%AE/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-4-利用线程池和进程池高效爬取北京某发菜地数据">Python爬虫-第四章-4-利用线程池和进程池高效爬取北京某发菜地数据</span>
+            <span class="post-date" title="2023-05-14 15:34:07">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/13/%20Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-5-%E9%AB%98%E6%95%88%E6%8A%93%E5%8F%96%E8%A7%86%E9%A2%91%E7%BD%91%E7%AB%99%E8%A7%86%E9%A2%91%E8%B5%84%E6%BA%90%E8%87%B3%E6%9C%AC%E5%9C%B0/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-5-高效抓取视频网站视频资源至本地">Python爬虫-第四章-5-高效抓取视频网站视频资源至本地</span>
+            <span class="post-date" title="2023-05-13 20:13:14">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/13/%20Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%BA%94%E7%AB%A0-1-%E8%B6%85%E7%BA%A7%E9%B9%B0%E6%8F%92%E4%BB%B6%E5%AE%9E%E7%8E%B0%E8%87%AA%E5%8A%A8%E5%A1%AB%E5%86%99%E8%AF%86%E5%88%AB%E7%A0%81%E5%B9%B6%E7%99%BB%E5%BD%9512306%E7%BD%91%E7%AB%99/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第五章-1-超级鹰插件实现自动填写识别码并登录12306网站">Python爬虫-第五章-1-超级鹰插件实现自动填写识别码并登录12306网站</span>
+            <span class="post-date" title="2023-05-13 19:54:30">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/13/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%BA%94%E7%AB%A0-2-%E7%88%AC%E5%8F%96%E6%9F%90%E7%BD%91%E7%AB%99%E5%9B%BE%E5%BA%93/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第五章-2-爬取某网站图库">Python爬虫-第五章-2-爬取某网站图库</span>
+            <span class="post-date" title="2023-05-13 19:52:47">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/66-CICD%E6%8C%81%E7%BB%AD%E9%9B%86%E6%88%90%E5%B7%A5%E5%85%B7-Jenkins%E5%A3%B0%E6%98%8E%E5%BC%8FPipeline%E9%83%A8%E7%BD%B2JAVA%E7%A8%8B%E5%BA%8F%E7%94%9F%E4%BA%A7%E6%A1%88%E4%BE%8B(%E5%8C%85%E5%90%ABDocker%E6%A1%88%E4%BE%8B)/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="66-CICD持续集成工具-Jenkins声明式Pipeline部署JAVA程序生产案例(包含Docker案例)">66-CICD持续集成工具-Jenkins声明式Pipeline部署JAVA程序生产案例(包含Docker案例)</span>
+            <span class="post-date" title="2023-05-13 19:49:20">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/997-%E6%89%A9%E5%B1%95KVM%E8%99%9A%E6%8B%9F%E6%9C%BA%E9%80%BB%E8%BE%91%E5%8D%B7/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="67-日志分析系统ELK-ELK架构简述">67-日志分析系统ELK-ELK架构简述</span>
+            <span class="post-date" title="2023-05-13 19:47:57">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/67-%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90%E7%B3%BB%E7%BB%9FELK-ELK%E6%9E%B6%E6%9E%84%E7%AE%80%E8%BF%B0/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="67-日志分析系统ELK-ELK架构简述">67-日志分析系统ELK-ELK架构简述</span>
+            <span class="post-date" title="2023-05-13 19:46:06">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/68-%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90%E7%B3%BB%E7%BB%9FELK-Elasticsearch%E5%8D%95%E7%82%B9%E9%83%A8%E7%BD%B2%E5%92%8C%E9%85%8D%E7%BD%AE%E4%BC%98%E5%8C%96%EF%BC%88%E5%90%AB%E5%9F%BA%E4%BA%8EDocker%E5%8D%95%E7%82%B9%E9%83%A8%E7%BD%B2%E6%A1%88%E4%BE%8B%EF%BC%89/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="68-日志分析系统ELK-Elasticsearch单点部署和配置优化（含基于Docker单点部署案例）">68-日志分析系统ELK-Elasticsearch单点部署和配置优化（含基于Docker单点部署案例）</span>
+            <span class="post-date" title="2023-05-13 19:44:06">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/13/78-%E4%BA%91%E5%8E%9F%E7%94%9F%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-Kubernetes%E9%9B%86%E7%BE%A4%E8%8A%82%E7%82%B9%E6%A8%AA%E5%90%91%E4%BC%B8%E7%BC%A9%E5%8F%8A%E6%A0%B8%E5%BF%83%E7%BB%84%E4%BB%B6%E7%89%88%E6%9C%AC%E5%8D%87%E7%BA%A7/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="78-云原生操作系统-Kubernetes集群节点横向伸缩及核心组件版本升级">78-云原生操作系统-Kubernetes集群节点横向伸缩及核心组件版本升级</span>
+            <span class="post-date" title="2023-05-13 17:37:37">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/13/79-%E4%BA%91%E5%8E%9F%E7%94%9F%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-Kubectl%E5%91%BD%E4%BB%A4%E4%BB%A5%E5%8F%8AEtcd%E5%9F%BA%E4%BA%8E%E5%BF%AB%E7%85%A7%E7%9A%84%E6%95%B0%E6%8D%AE%E5%A4%87%E4%BB%BD%E4%B8%8E%E6%81%A2%E5%A4%8D/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="79-云原生操作系统-Kubectl命令以及Etcd基于快照的数据备份与恢复">79-云原生操作系统-Kubectl命令以及Etcd基于快照的数据备份与恢复</span>
+            <span class="post-date" title="2023-05-13 17:34:14">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All PMP管理 "
+           href="/2023/05/13/%E9%A2%84%E6%B5%8B%E5%9E%8B%E9%A1%B9%E7%9B%AE%E7%AE%A1%E7%90%86-6-%E9%A1%B9%E7%9B%AE%E8%BF%9B%E5%BA%A6%E7%AE%A1%E7%90%86%E2%85%A1/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="预测型项目管理-6-项目进度管理Ⅱ">预测型项目管理-6-项目进度管理Ⅱ</span>
+            <span class="post-date" title="2023-05-13 17:32:31">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/13/84-%E4%BA%91%E5%8E%9F%E7%94%9F%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-%E5%9F%BA%E4%BA%8Enerdctl%20+%20buildkitd%E6%9E%84%E5%BB%BA%E5%AE%B9%E5%99%A8%E9%95%9C%E5%83%8F20230513/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="84-云原生操作系统-基于nerdctl + buildkitd构建容器镜像">84-云原生操作系统-基于nerdctl + buildkitd构建容器镜像</span>
+            <span class="post-date" title="2023-05-13 17:22:54">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/13/86-%E4%BA%91%E5%8E%9F%E7%94%9F%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-Zookeeper%E9%9B%86%E7%BE%A4%E5%8F%8A%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%8A%A8%E6%80%81%E6%B3%A8%E5%86%8C%E5%92%8C%E5%8F%91%E7%8E%B0%E4%B8%9A%E5%8A%A1%E5%AE%B9%E5%99%A8%E5%8C%96%E6%A1%88%E4%BE%8B/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="86-云原生操作系统-Zookeeper集群及微服务动态注册和发现业务容器化案例">86-云原生操作系统-Zookeeper集群及微服务动态注册和发现业务容器化案例</span>
+            <span class="post-date" title="2023-05-13 17:13:23">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/13/87-%E4%BA%91%E5%8E%9F%E7%94%9F%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-Redis%E5%8D%95%E6%9C%BA%E5%92%8C%E9%9B%86%E7%BE%A4%E4%B8%9A%E5%8A%A1%E5%AE%B9%E5%99%A8%E5%8C%96%E6%A1%88%E4%BE%8B/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="87-云原生操作系统-Redis单机和集群业务容器化案例">87-云原生操作系统-Redis单机和集群业务容器化案例</span>
+            <span class="post-date" title="2023-05-13 17:08:49">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/997-%E4%BD%BF%E7%94%A8ChatGPT%E5%81%9A%E8%BF%90%E7%BB%B4%E5%BA%94%E7%94%A8%E5%B7%A5%E5%85%B7%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E8%A7%A3%E7%AD%94/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="997-使用ChatGPT做运维应用工具常见问题解答">997-使用ChatGPT做运维应用工具常见问题解答</span>
+            <span class="post-date" title="2023-05-13 15:49:52">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/%E5%A4%A7%E5%9E%8B%E4%BA%92%E8%81%94%E7%BD%91%E5%BE%AE%E6%9C%8D%E5%8A%A1%E6%9E%B6%E6%9E%84%E5%9B%BE/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="大型互联网微服务架构图">大型互联网微服务架构图</span>
+            <span class="post-date" title="2023-05-13 15:47:16">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/%E4%BA%91%E8%AE%A1%E7%AE%97%E6%9E%B6%E6%9E%84%E5%9B%BE/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="云计算架构图">云计算架构图</span>
+            <span class="post-date" title="2023-05-13 15:24:25">2023/05/13</span>
+        </a>
+        
+        <div id="no-item-tips">
+
+        </div>
+    </nav>
+    <div id="outline-list">
+    </div>
+</div>
+
+    </div>
+    <div class="hide-list">
+        <div class="semicircle" data-title="切换全屏 快捷键 s">
+            <div class="brackets first"><</div>
+            <div class="brackets">&gt;</div>
+        </div>
+    </div>
+</aside>
+<div id="post">
+    <div class="pjax">
+        <article id="post-56-Redis集群-哨兵Sentinel搭建实现负载均衡高可用" class="article article-type-post" itemscope itemprop="blogPost">
+    
+        <h1 class="article-title">56-Redis集群-哨兵Sentinel搭建实现负载均衡高可用</h1>
+    
+    <div class="article-meta">
+        
+        
+        
+        <span class="book">
+            <i class="iconfont icon-category"></i>
+            
+            
+            <a  data-rel="SRE linux云计算">SRE linux云计算</a>
+            
+        </span>
+        
+        
+    </div>
+    <div class="article-meta">
+        
+            Created At : <time class="date" title='Updated At: 2023-05-14 15:42:28'>2023-05-14 15:41</time>
+        
+    </div>
+    <div class="article-meta">
+        
+        
+        <span id="busuanzi_container_page_pv">
+            Views 👀 :<span id="busuanzi_value_page_pv">
+                <span class="count-comment">
+                    <span class="spinner">
+                      <div class="cube1"></div>
+                      <div class="cube2"></div>
+                    </span>
+                </span>
+            </span>
+        </span>
+        
+        
+    </div>
+    
+    <div class="toc-ref">
+    
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Replication"><span class="toc-text">Replication</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Master-Replica-replication-Use-replicaof-to-make-a-Redis-instance-a-copy-of"><span class="toc-text">Master-Replica replication. Use replicaof to make a Redis instance a copy of</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#replicaof-%E6%8C%87%E5%AE%9Amaster%E7%9A%84IP%E5%92%8C%E7%AB%AF%E5%8F%A3%E5%8F%B7"><span class="toc-text">replicaof   #指定master的IP和端口号</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#masterauth-%E5%A6%82%E6%9E%9C%E5%AF%86%E7%A0%81%E9%9C%80%E8%A6%81%E8%AE%BE%E7%BD%AE"><span class="toc-text">masterauth  #如果密码需要设置</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#If-the-master-is-password-protected-using-the-%E2%80%9Crequirepass%E2%80%9D-configuration"><span class="toc-text">If the master is password protected (using the “requirepass” configuration</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#IMPORTANT-NOTE-starting-with-Redis-6-%E2%80%9Crequirepass%E2%80%9D-is-just-a-compatibility"><span class="toc-text">IMPORTANT NOTE: starting with Redis 6 “requirepass” is just a compatibility</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#The-requirepass-is-not-compatible-with-aclfile-option-and-the-ACL-LOAD"><span class="toc-text">The requirepass is not compatible with aclfile option and the ACL LOAD</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#command-these-will-cause-requirepass-to-be-ignored"><span class="toc-text">command, these will cause requirepass to be ignored.</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#requirepass-foobared-%E5%92%8Cmasterauth%E4%BF%9D%E6%8C%81%E4%B8%80%E8%87%B4%EF%BC%8C%E7%94%A8%E4%BA%8E%E5%B0%86%E6%9D%A5%E4%BB%8E%E8%8A%82%E7%82%B9%E6%8F%90%E5%8D%87%E4%B8%BB%E5%90%8E%E4%BD%BF%E7%94%A8"><span class="toc-text">requirepass foobared #和masterauth保持一致，用于将来从节点提升主后使用</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Replication-1"><span class="toc-text">Replication</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Replication-2"><span class="toc-text">Replication</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Master-Replica-replication-Use-replicaof-to-make-a-Redis-instance-a-copy-of-1"><span class="toc-text">Master-Replica replication. Use replicaof to make a Redis instance a copy of</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#replicaof"><span class="toc-text">replicaof  </span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#masterauth"><span class="toc-text">masterauth </span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#If-the-master-is-password-protected-using-the-%E2%80%9Crequirepass%E2%80%9D-configuration-1"><span class="toc-text">If the master is password protected (using the “requirepass” configuration</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#IMPORTANT-NOTE-starting-with-Redis-6-%E2%80%9Crequirepass%E2%80%9D-is-just-a-compatibility-1"><span class="toc-text">IMPORTANT NOTE: starting with Redis 6 “requirepass” is just a compatibility</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#The-requirepass-is-not-compatible-with-aclfile-option-and-the-ACL-LOAD-1"><span class="toc-text">The requirepass is not compatible with aclfile option and the ACL LOAD</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#command-these-will-cause-requirepass-to-be-ignored-1"><span class="toc-text">command, these will cause requirepass to be ignored.</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#requirepass-foobared"><span class="toc-text">requirepass foobared</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Master-Replica-replication-Use-replicaof-to-make-a-Redis-instance-a-copy-of-2"><span class="toc-text">Master-Replica replication. Use replicaof to make a Redis instance a copy of</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#replicaof-1"><span class="toc-text">replicaof  </span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#masterauth-1"><span class="toc-text">masterauth </span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#If-the-master-is-password-protected-using-the-%E2%80%9Crequirepass%E2%80%9D-configuration-2"><span class="toc-text">If the master is password protected (using the “requirepass” configuration</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#IMPORTANT-NOTE-starting-with-Redis-6-%E2%80%9Crequirepass%E2%80%9D-is-just-a-compatibility-2"><span class="toc-text">IMPORTANT NOTE: starting with Redis 6 “requirepass” is just a compatibility</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#The-requirepass-is-not-compatible-with-aclfile-option-and-the-ACL-LOAD-2"><span class="toc-text">The requirepass is not compatible with aclfile option and the ACL LOAD</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#command-these-will-cause-requirepass-to-be-ignored-2"><span class="toc-text">command, these will cause requirepass to be ignored.</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#requirepass-foobared-1"><span class="toc-text">requirepass foobared</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Master-Replica-replication-Use-replicaof-to-make-a-Redis-instance-a-copy-of-3"><span class="toc-text">Master-Replica replication. Use replicaof to make a Redis instance a copy of</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#replicaof-2"><span class="toc-text">replicaof  </span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#masterauth-2"><span class="toc-text">masterauth </span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#If-the-master-is-password-protected-using-the-%E2%80%9Crequirepass%E2%80%9D-configuration-3"><span class="toc-text">If the master is password protected (using the “requirepass” configuration</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#IMPORTANT-NOTE-starting-with-Redis-6-%E2%80%9Crequirepass%E2%80%9D-is-just-a-compatibility-3"><span class="toc-text">IMPORTANT NOTE: starting with Redis 6 “requirepass” is just a compatibility</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#The-requirepass-is-not-compatible-with-aclfile-option-and-the-ACL-LOAD-3"><span class="toc-text">The requirepass is not compatible with aclfile option and the ACL LOAD</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#command-these-will-cause-requirepass-to-be-ignored-3"><span class="toc-text">command, these will cause requirepass to be ignored.</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#requirepass-foobared-2"><span class="toc-text">requirepass foobared</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E6%9B%B4%E6%94%B9sentinel%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6-root-master-etc-vim-sentinel-conf-root-master-etc-grep-Ev-%E2%80%9C-%E2%80%9D-x2F-apps-x2F-redis-x2F-etc-x2F-sentinel-confprotected-mode-noport-26379daemonize-nopidfile-x2F-var-x2F-run-x2F-redis-sentinel-pidlogfile-%E2%80%9C-x2F-apps-x2F-redis-x2F-log-x2F-sentinel-log%E2%80%9D-%E7%94%9F%E6%88%90%E6%97%A5%E5%BF%97%E6%96%87%E4%BB%B6dir-x2F-tmp"><span class="toc-text">#2. 更改sentinel配置文件[root@master etc]#vim sentinel.conf[root@master etc]#grep -Ev “#|^$” &#x2F;apps&#x2F;redis&#x2F;etc&#x2F;sentinel.confprotected-mode noport 26379daemonize nopidfile &#x2F;var&#x2F;run&#x2F;redis-sentinel.pidlogfile “&#x2F;apps&#x2F;redis&#x2F;log&#x2F;sentinel.log” #生成日志文件dir &#x2F;tmp</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2%E4%B8%BA%E6%B3%95%E5%AE%9A%E4%BA%BA%E6%95%B0%E9%99%90%E5%88%B6-quorum-%EF%BC%8C%E5%8D%B3%E6%9C%89%E5%87%A0%E4%B8%AAsentinel%E8%AE%A4%E4%B8%BAmaster-down%E4%BA%86%E5%B0%B1%E8%BF%9B%E8%A1%8C%E6%95%85%E9%9A%9C%E8%BD%AC%E7%A7%BB%EF%BC%8C%E4%B8%80%E8%88%AC%E6%AD%A4%E5%80%BC%E6%98%AF%E6%89%80%E6%9C%89sentinel%E8%8A%82%E7%82%B9-%E4%B8%80%E8%88%AC%E6%80%BB%E6%95%B0%E6%98%AF-gt-x3D-3%E7%9A%84-%E5%A5%87%E6%95%B0-%E5%A6%82-3-5-7%E7%AD%89-%E7%9A%84%E4%B8%80%E5%8D%8A%E4%BB%A5%E4%B8%8A%E7%9A%84%E6%95%B4%E6%95%B0%E5%80%BC%EF%BC%8C%E6%AF%94%E5%A6%82%EF%BC%8C%E6%80%BB%E6%95%B0%E6%98%AF3%EF%BC%8C%E5%8D%B33-x2F-2-x3D-1-5%EF%BC%8C%E5%8F%96%E6%95%B4%E4%B8%BA2-%E6%98%AFmaster%E7%9A%84ODOWN%E5%AE%A2%E8%A7%82%E4%B8%8B%E7%BA%BF%E7%9A%84%E4%BE%9D%E6%8D%AE"><span class="toc-text">#2为法定人数限制(quorum)，即有几个sentinel认为master down了就进行故障转移，一般此值是所有sentinel节点(一般总数是&gt;&#x3D;3的 奇数,如:3,5,7等)的一半以上的整数值，比如，总数是3，即3&#x2F;2&#x3D;1.5，取整为2,是master的ODOWN客观下线的依据</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Generated-by-CONFIG-REWRITE"><span class="toc-text">Generated by CONFIG REWRITE</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Generated-by-CONFIG-REWRITE-1"><span class="toc-text">Generated by CONFIG REWRITE</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Generated-by-CONFIG-REWRITE-2"><span class="toc-text">Generated by CONFIG REWRITE</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Sentinel"><span class="toc-text">Sentinel</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Sentinel-1"><span class="toc-text">Sentinel</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Sentinel-2"><span class="toc-text">Sentinel</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Master-Replica-replication-Use-replicaof-to-make-a-Redis-instance-a-copy-of-4"><span class="toc-text">Master-Replica replication. Use replicaof to make a Redis instance a copy of</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#replicaof-%E2%80%A2-%E5%93%A8%E5%85%B5%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6%E7%9A%84sentinel-monitor-IP-%E5%90%8C%E6%A0%B7%E4%B9%9F%E4%BC%9A%E8%A2%AB%E4%BF%AE%E6%94%B9"><span class="toc-text">replicaof  • 哨兵配置文件的sentinel monitor IP 同样也会被修改</span></a></li></ol>
+    
+<style>
+    .left-col .switch-btn,
+    .left-col .switch-area {
+        display: none;
+    }
+    .toc-level-3 i,
+    .toc-level-3 ol {
+        display: none !important;
+    }
+</style>
+</div>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>主从复制实现<br>• 当master出现故障后,可以自动提升一个slave节点变成新的Mster,因此Redis Slave 需要设置和master相同的连接密码，此外当一个Slave提升为新的master 通过持久化实现数据的恢复<br>• 当配置Redis复制功能时，强烈建议打开主服务器的持久化功能。否则的话，由于延迟等问题，部署的主节点Redis服务应该要避免自动启动。<br>• 特性<br>• 一个master可以有多个slave<br>• 一个slave只能有一个master<br>• 数据流向是从master到slave单向的<br>• master 可读可写<br>• slave 只读<br>• 首次全量复制,之后的复制基本增量复制实现<br>• Redis 的主从同步是非阻塞的，即同步过程不会影响主服务器的正常访问.<br>案例：一主两从实现Redis主从复制<br>#主节点安装redis并且准备了测试数据<br>#注意：配置从节点前保证从节点数据库干净，或者转移数据，配置主从同步生效后从节点数据被清空<br>[root@master ~]#redis-cli<br>127.0.0.1:6379&gt; dbsize<br>(error) NOAUTH Authentication required.<br>127.0.0.1:6379&gt; auth 123456<br>OK<br>127.0.0.1:6379&gt; dbsize<br>(integer) 1000<br>127.0.0.1:6379&gt; role</p>
+<ol>
+<li>“master”</li>
+<li>(integer) 1022</li>
+<li><ol>
+<li><ol>
+<li>“192.168.122.3”</li>
+<li>“6379”</li>
+<li>“1022”<br>127.0.0.1:6379&gt; info<br>…</li>
+</ol>
+</li>
+</ol>
+</li>
+</ol>
+<h1 id="Replication"><a href="#Replication" class="headerlink" title="Replication"></a>Replication</h1><p>role:master<br>connected_slaves:1<br>slave0:ip&#x3D;192.168.122.3,port&#x3D;6379,state&#x3D;online,offset&#x3D;1092,lag&#x3D;1<br>master_failover_state:no-failover<br>master_replid:8fe17fd654c200e38dc6cf58edd86f660348186d<br>master_replid2:0000000000000000000000000000000000000000<br>master_repl_offset:1092<br>second_repl_offset:-1<br>repl_backlog_active:1<br>repl_backlog_size:1048576<br>repl_backlog_first_byte_offset:1<br>repl_backlog_histlen:1092</p>
+<p>…<br>127.0.0.1:6379&gt; exit<br>[root@master ~]#ls<br>install_redis.sh  redis-7.0.7.tar.gz  redis_test.sh</p>
+<p>#配置从节点<br>[root@slave1 ~]#vim &#x2F;apps&#x2F;redis&#x2F;etc&#x2F;redis.conf<br>[root@slave1 ~]#cat &#x2F;apps&#x2F;redis&#x2F;etc&#x2F;redis.conf |grep replicaof</p>
+<h1 id="Master-Replica-replication-Use-replicaof-to-make-a-Redis-instance-a-copy-of"><a href="#Master-Replica-replication-Use-replicaof-to-make-a-Redis-instance-a-copy-of" class="headerlink" title="Master-Replica replication. Use replicaof to make a Redis instance a copy of"></a>Master-Replica replication. Use replicaof to make a Redis instance a copy of</h1><h1 id="replicaof-指定master的IP和端口号"><a href="#replicaof-指定master的IP和端口号" class="headerlink" title="replicaof   #指定master的IP和端口号"></a>replicaof <masterip> <masterport> #指定master的IP和端口号</h1><p>replicaof 192.168.122.2 6379<br>[root@slave1 ~]#cat &#x2F;apps&#x2F;redis&#x2F;etc&#x2F;redis.conf |grep masterauth</p>
+<h1 id="masterauth-如果密码需要设置"><a href="#masterauth-如果密码需要设置" class="headerlink" title="masterauth  #如果密码需要设置"></a>masterauth <master-password> #如果密码需要设置</h1><p>masterauth 123456<br>[root@slave1 ~]#cat &#x2F;apps&#x2F;redis&#x2F;etc&#x2F;redis.conf |grep requirepass</p>
+<h1 id="If-the-master-is-password-protected-using-the-“requirepass”-configuration"><a href="#If-the-master-is-password-protected-using-the-“requirepass”-configuration" class="headerlink" title="If the master is password protected (using the “requirepass” configuration"></a>If the master is password protected (using the “requirepass” configuration</h1><h1 id="IMPORTANT-NOTE-starting-with-Redis-6-“requirepass”-is-just-a-compatibility"><a href="#IMPORTANT-NOTE-starting-with-Redis-6-“requirepass”-is-just-a-compatibility" class="headerlink" title="IMPORTANT NOTE: starting with Redis 6 “requirepass” is just a compatibility"></a>IMPORTANT NOTE: starting with Redis 6 “requirepass” is just a compatibility</h1><h1 id="The-requirepass-is-not-compatible-with-aclfile-option-and-the-ACL-LOAD"><a href="#The-requirepass-is-not-compatible-with-aclfile-option-and-the-ACL-LOAD" class="headerlink" title="The requirepass is not compatible with aclfile option and the ACL LOAD"></a>The requirepass is not compatible with aclfile option and the ACL LOAD</h1><h1 id="command-these-will-cause-requirepass-to-be-ignored"><a href="#command-these-will-cause-requirepass-to-be-ignored" class="headerlink" title="command, these will cause requirepass to be ignored."></a>command, these will cause requirepass to be ignored.</h1><h1 id="requirepass-foobared-和masterauth保持一致，用于将来从节点提升主后使用"><a href="#requirepass-foobared-和masterauth保持一致，用于将来从节点提升主后使用" class="headerlink" title="requirepass foobared #和masterauth保持一致，用于将来从节点提升主后使用"></a>requirepass foobared #和masterauth保持一致，用于将来从节点提升主后使用</h1><p>requirepass 123456</p>
+<p>#重启从节点redis服务后，实现主从同步<br>[root@slave1 ~]#redis-cli -a 123456<br>Warning: Using a password with ‘-a’ or ‘-u’ option on the command line interface may not be safe.<br>127.0.0.1:6379&gt; dbsize<br>(integer) 0<br>127.0.0.1:6379&gt; exit<br>[root@slave1 ~]#systemctl restart redis<br>[root@slave1 ~]#redis-cli -a 123456<br>Warning: Using a password with ‘-a’ or ‘-u’ option on the command line interface may not be safe.<br>127.0.0.1:6379&gt; dbsize<br>(integer) 1000<br>127.0.0.1:6379&gt; role</p>
+<ol>
+<li>“slave”</li>
+<li>“192.168.122.2”</li>
+<li>(integer) 6379</li>
+<li>“connected”</li>
+<li>(integer) 966<br>127.0.0.1:6379&gt; info<br>…</li>
+</ol>
+<h1 id="Replication-1"><a href="#Replication-1" class="headerlink" title="Replication"></a>Replication</h1><p>role:slave<br>master_host:192.168.122.2<br>master_port:6379<br>master_link_status:up<br>master_last_io_seconds_ago:4<br>master_sync_in_progress:0<br>slave_read_repl_offset:1246<br>slave_repl_offset:1246<br>slave_priority:100<br>slave_read_only:1<br>replica_announced:1<br>connected_slaves:0<br>master_failover_state:no-failover<br>master_replid:8fe17fd654c200e38dc6cf58edd86f660348186d<br>master_replid2:0000000000000000000000000000000000000000<br>master_repl_offset:1246<br>second_repl_offset:-1<br>repl_backlog_active:1<br>repl_backlog_size:1048576<br>repl_backlog_first_byte_offset:1<br>repl_backlog_histlen:1246</p>
+<p>127.0.0.1:6379&gt; exit</p>
+<p>#尝试断开主节点通信<br>[root@slave1 ~]#iptables -A INPUT -s 192.168.122.2 -j REJECT<br>[root@slave1 ~]#redis-cli -a 123456<br>Warning: Using a password with ‘-a’ or ‘-u’ option on the command line interface may not be safe.<br>127.0.0.1:6379&gt; info<br>…</p>
+<h1 id="Replication-2"><a href="#Replication-2" class="headerlink" title="Replication"></a>Replication</h1><p>role:slave<br>master_host:192.168.122.2<br>master_port:6379<br>master_link_status:down  –&gt;状态<br>master_last_io_seconds_ago:-1<br>master_sync_in_progress:0<br>slave_read_repl_offset:2030<br>slave_repl_offset:2030<br>master_link_down_since_seconds:1<br>slave_priority:100<br>slave_read_only:1<br>replica_announced:1<br>connected_slaves:0<br>master_failover_state:no-failover<br>master_replid:8fe17fd654c200e38dc6cf58edd86f660348186d<br>master_replid2:0000000000000000000000000000000000000000<br>master_repl_offset:2030<br>second_repl_offset:-1<br>repl_backlog_active:1<br>repl_backlog_size:1048576<br>repl_backlog_first_byte_offset:1<br>repl_backlog_histlen:2030总结：主从同步完整过程<br>• slave发起连接master，验证通过后,发送PSYNC命令<br>• master接收到PSYNC命令后，执行BGSAVE命令将全部数据保存至RDB文件中,并将后续发生的写操作记录至buffer中<br>• master向所有slave发送RDB文件<br>• master向所有slave发送后续记录在buffer中写操作<br>• slave收到快照文件后丢弃所有旧数据<br>• slave加载收到的RDB到内存<br>• slave 执行来自master接收到的buffer写操作<br>• 当slave完成全量复制后,后续master只会先发送slave_repl_offset信息，以后slave比较自身和master的差异,只会进行增量复制的数据即可<br>常见主从复制故障<br>• 主从硬件和软件配置不一致</p>
+<p>• 主从节点的maxmemory不一致,主节点内存大于从节点内存,主从复制可能丢失数据<br>• rename-command 命令不一致,如在主节点启用flushdb,从节点禁用此命令,结果在master节点执行flushdb后,导致slave节点不同步<br>• master密码错误</p>
+<p>• 如果slave节点配置的master密码错误，导致验证不通过,自然将无法建立主从同步关系<br>• Redis版本不一致</p>
+<p>• 不同的redis 版本之间尤其是大版本间可能会存在兼容性问题，如：Redis 3,4,5,6之间，因此主从复制的所有节点应该使用相同的版本<br>• 安全模式下无法远程连接</p>
+<p>• 如果开启了安全模式，并且没有设置bind地址和密码,会导致无法远程连接<br>集群搭建-哨兵Sentinel-实现主从复制结构的故障转移<br>工作模式：在客户端和服务器之间加Sentinel作为配置中心<br>原理：<br>• 专门的Sentinel 服务进程是用于监控redis集群中Master工作的状态，当Master主服务器发生故障的时候，可以实现Master和Slave的角色的自动切换，从而实现系统的高可用性<br>• Sentinel是一个分布式系统,即需要在多个节点上各自同时运行一个sentinel进程，Sentienl 进程通过流言协议(gossip protocols)来接收关于Master是否下线状态，并使用投票协议(Agreement Protocols)来决定是否执行自动故障转移,并选择合适的Slave作为新的Master<br>• 每个Sentinel进程会向其它Sentinel、Master、Slave定时发送消息，来确认对方是否存活，如果发现某个节点在指定配置时间内未得到响应，则会认为此节点已离线，即为主观宕机Subjective Down，简称为 SDOWN<br>• 如果哨兵集群中的多数Sentinel进程认为Master存在SDOWN，共同利用 is-master-down-by-addr 命令互相通知后，则认为客观宕机Objectively Down， 简称 ODOWN<br>• 接下来利用投票算法，从所有slave节点中，选一台合适的slave将之提升为新Master节点，然后自动修改其它slave相关配置，指向新的master节点,最终实现故障转移failover<br>• Redis Sentinel中的Sentinel节点个数应该为大于等于3且最好为奇数<br>• 客户端初始化时连接的是Sentinel节点集合，不再是具体的Redis节点，即 Sentinel只是配置中心不是代理。<br>• Redis Sentinel 节点与普通 Redis 没有区别,要实现读写分离依赖于客户端程序<br>• Sentinel 机制类似于MySQL中的MHA功能,只解决master和slave角色的自动故障转移问题，但单个Master 的性能瓶颈问题并没有解决<br>• Redis 3.0 之前版本中,生产环境一般使用哨兵模式较多,Redis 3.0后推出Redis cluster功能,可以支持更大规模的高并发环境<br>Sentinel中的三个定时任务：<br>• 每10 秒每个sentinel 对master和slave执行info</p>
+<p>• 发现slave节点<br>• 确认主从关系<br>• 消息队列订阅者模式，每2秒每个sentinel通过master节点的channel交换信息(pub&#x2F;sub)</p>
+<p>• 通过sentinel__:hello频道交互<br>• 交互对节点的“看法”和自身信息<br>• 每1秒每个sentinel对其他sentinel和redis执行ping</p>
+<p>• 测试是否存活，类似keepalived的心跳线<br>案例：复用Redis主从服务器搭建Sentinel<br>• 实现主从复制<br>#哨兵的前提是已经实现了Redis的主从复制<br>#主节点<br>[root@master ~]#cat &#x2F;apps&#x2F;redis&#x2F;etc&#x2F;redis.conf |grep replicaof ; cat &#x2F;apps&#x2F;redis&#x2F;etc&#x2F;redis.conf |grep masterauth ; cat &#x2F;apps&#x2F;redis&#x2F;etc&#x2F;redis.conf |grep requirepass</p>
+<h1 id="Master-Replica-replication-Use-replicaof-to-make-a-Redis-instance-a-copy-of-1"><a href="#Master-Replica-replication-Use-replicaof-to-make-a-Redis-instance-a-copy-of-1" class="headerlink" title="Master-Replica replication. Use replicaof to make a Redis instance a copy of"></a>Master-Replica replication. Use replicaof to make a Redis instance a copy of</h1><h1 id="replicaof"><a href="#replicaof" class="headerlink" title="replicaof  "></a>replicaof <masterip> <masterport></h1><h1 id="masterauth"><a href="#masterauth" class="headerlink" title="masterauth "></a>masterauth <master-password></h1><h1 id="If-the-master-is-password-protected-using-the-“requirepass”-configuration-1"><a href="#If-the-master-is-password-protected-using-the-“requirepass”-configuration-1" class="headerlink" title="If the master is password protected (using the “requirepass” configuration"></a>If the master is password protected (using the “requirepass” configuration</h1><h1 id="IMPORTANT-NOTE-starting-with-Redis-6-“requirepass”-is-just-a-compatibility-1"><a href="#IMPORTANT-NOTE-starting-with-Redis-6-“requirepass”-is-just-a-compatibility-1" class="headerlink" title="IMPORTANT NOTE: starting with Redis 6 “requirepass” is just a compatibility"></a>IMPORTANT NOTE: starting with Redis 6 “requirepass” is just a compatibility</h1><h1 id="The-requirepass-is-not-compatible-with-aclfile-option-and-the-ACL-LOAD-1"><a href="#The-requirepass-is-not-compatible-with-aclfile-option-and-the-ACL-LOAD-1" class="headerlink" title="The requirepass is not compatible with aclfile option and the ACL LOAD"></a>The requirepass is not compatible with aclfile option and the ACL LOAD</h1><h1 id="command-these-will-cause-requirepass-to-be-ignored-1"><a href="#command-these-will-cause-requirepass-to-be-ignored-1" class="headerlink" title="command, these will cause requirepass to be ignored."></a>command, these will cause requirepass to be ignored.</h1><h1 id="requirepass-foobared"><a href="#requirepass-foobared" class="headerlink" title="requirepass foobared"></a>requirepass foobared</h1><p>requirepass 123456</p>
+<p>#从节点<br>[root@slave1 ~]#vim &#x2F;apps&#x2F;redis&#x2F;etc&#x2F;redis.conf<br>[root@slave1 ~]#cat &#x2F;apps&#x2F;redis&#x2F;etc&#x2F;redis.conf |grep replicaof ; cat &#x2F;apps&#x2F;redis&#x2F;etc&#x2F;redis.conf |grep masterauth ; cat &#x2F;apps&#x2F;redis&#x2F;etc&#x2F;redis.conf |grep requirepass</p>
+<h1 id="Master-Replica-replication-Use-replicaof-to-make-a-Redis-instance-a-copy-of-2"><a href="#Master-Replica-replication-Use-replicaof-to-make-a-Redis-instance-a-copy-of-2" class="headerlink" title="Master-Replica replication. Use replicaof to make a Redis instance a copy of"></a>Master-Replica replication. Use replicaof to make a Redis instance a copy of</h1><h1 id="replicaof-1"><a href="#replicaof-1" class="headerlink" title="replicaof  "></a>replicaof <masterip> <masterport></h1><p>replicaof 192.168.122.2 6379</p>
+<h1 id="masterauth-1"><a href="#masterauth-1" class="headerlink" title="masterauth "></a>masterauth <master-password></h1><p>masterauth 123456</p>
+<h1 id="If-the-master-is-password-protected-using-the-“requirepass”-configuration-2"><a href="#If-the-master-is-password-protected-using-the-“requirepass”-configuration-2" class="headerlink" title="If the master is password protected (using the “requirepass” configuration"></a>If the master is password protected (using the “requirepass” configuration</h1><h1 id="IMPORTANT-NOTE-starting-with-Redis-6-“requirepass”-is-just-a-compatibility-2"><a href="#IMPORTANT-NOTE-starting-with-Redis-6-“requirepass”-is-just-a-compatibility-2" class="headerlink" title="IMPORTANT NOTE: starting with Redis 6 “requirepass” is just a compatibility"></a>IMPORTANT NOTE: starting with Redis 6 “requirepass” is just a compatibility</h1><h1 id="The-requirepass-is-not-compatible-with-aclfile-option-and-the-ACL-LOAD-2"><a href="#The-requirepass-is-not-compatible-with-aclfile-option-and-the-ACL-LOAD-2" class="headerlink" title="The requirepass is not compatible with aclfile option and the ACL LOAD"></a>The requirepass is not compatible with aclfile option and the ACL LOAD</h1><h1 id="command-these-will-cause-requirepass-to-be-ignored-2"><a href="#command-these-will-cause-requirepass-to-be-ignored-2" class="headerlink" title="command, these will cause requirepass to be ignored."></a>command, these will cause requirepass to be ignored.</h1><h1 id="requirepass-foobared-1"><a href="#requirepass-foobared-1" class="headerlink" title="requirepass foobared"></a>requirepass foobared</h1><p>requirepass 123456</p>
+<p>[root@slave2 ~]#vim &#x2F;apps&#x2F;redis&#x2F;etc&#x2F;redis.conf<br>[root@slave2 ~]#cat &#x2F;apps&#x2F;redis&#x2F;etc&#x2F;redis.conf |grep replicaof ; cat &#x2F;apps&#x2F;redis&#x2F;etc&#x2F;redis.conf |grep masterauth ; cat &#x2F;apps&#x2F;redis&#x2F;etc&#x2F;redis.conf |grep requirepass</p>
+<h1 id="Master-Replica-replication-Use-replicaof-to-make-a-Redis-instance-a-copy-of-3"><a href="#Master-Replica-replication-Use-replicaof-to-make-a-Redis-instance-a-copy-of-3" class="headerlink" title="Master-Replica replication. Use replicaof to make a Redis instance a copy of"></a>Master-Replica replication. Use replicaof to make a Redis instance a copy of</h1><h1 id="replicaof-2"><a href="#replicaof-2" class="headerlink" title="replicaof  "></a>replicaof <masterip> <masterport></h1><p>replicaof 192.168.122.2 6379</p>
+<h1 id="masterauth-2"><a href="#masterauth-2" class="headerlink" title="masterauth "></a>masterauth <master-password></h1><p>masterauth 123456</p>
+<h1 id="If-the-master-is-password-protected-using-the-“requirepass”-configuration-3"><a href="#If-the-master-is-password-protected-using-the-“requirepass”-configuration-3" class="headerlink" title="If the master is password protected (using the “requirepass” configuration"></a>If the master is password protected (using the “requirepass” configuration</h1><h1 id="IMPORTANT-NOTE-starting-with-Redis-6-“requirepass”-is-just-a-compatibility-3"><a href="#IMPORTANT-NOTE-starting-with-Redis-6-“requirepass”-is-just-a-compatibility-3" class="headerlink" title="IMPORTANT NOTE: starting with Redis 6 “requirepass” is just a compatibility"></a>IMPORTANT NOTE: starting with Redis 6 “requirepass” is just a compatibility</h1><h1 id="The-requirepass-is-not-compatible-with-aclfile-option-and-the-ACL-LOAD-3"><a href="#The-requirepass-is-not-compatible-with-aclfile-option-and-the-ACL-LOAD-3" class="headerlink" title="The requirepass is not compatible with aclfile option and the ACL LOAD"></a>The requirepass is not compatible with aclfile option and the ACL LOAD</h1><h1 id="command-these-will-cause-requirepass-to-be-ignored-3"><a href="#command-these-will-cause-requirepass-to-be-ignored-3" class="headerlink" title="command, these will cause requirepass to be ignored."></a>command, these will cause requirepass to be ignored.</h1><h1 id="requirepass-foobared-2"><a href="#requirepass-foobared-2" class="headerlink" title="requirepass foobared"></a>requirepass foobared</h1><p>requirepass 123456• 搭建Sentinel</p>
+<p>• Sentinel实际上是一个特殊的redis服务器,有些redis指令支持,但很多指令并不支持.默认监听在26379&#x2F;tcp端口.<br>• 哨兵服务可以和Redis服务器分开部署在不同主机，但为了节约成本一般会部署在一起<br>#所有redis节点使用相同的以下示例的配置文件<br>#1. copy安装时自带的sentinel配置文件到redis安装目录下<br>[root@master ~]#cd &#x2F;usr&#x2F;local&#x2F;src&#x2F;redis-7.0.7&#x2F;<br>[root@master redis-7.0.7]#ls<br>00-RELEASENOTES  CODE_OF_CONDUCT.md  COPYING  MANIFESTO  README.md    TLS.md  redis.conf  runtest-cluster    runtest-sentinel  src    utils<br>BUGS             CONTRIBUTING.md     INSTALL  Makefile   SECURITY.md  deps    runtest     runtest-moduleapi  sentinel.conf     tests<br>[root@master redis-7.0.7]#cp sentinel.conf &#x2F;apps&#x2F;redis&#x2F;etc&#x2F;sentinel.conf<br>[root@master redis-7.0.7]#chown redis.redis &#x2F;apps&#x2F;redis&#x2F;etc&#x2F;sentinel.conf<br>[root@master redis-7.0.7]#cd &#x2F;apps&#x2F;redis&#x2F;etc&#x2F;<br>[root@master etc]#ll<br>total 132<br>drwxr-xr-x 2 redis redis   4096 Feb  1 16:20 .&#x2F;<br>drwxr-xr-x 7 redis redis   4096 Feb  1 13:53 ..&#x2F;<br>-rw-r–r– 1 redis redis 106610 Feb  1 13:53 redis.conf<br>-rw-r–r– 1 redis redis  14005 Feb  1 16:20 sentinel.conf</p>
+<h2 id="2-更改sentinel配置文件-root-master-etc-vim-sentinel-conf-root-master-etc-grep-Ev-“-”-x2F-apps-x2F-redis-x2F-etc-x2F-sentinel-confprotected-mode-noport-26379daemonize-nopidfile-x2F-var-x2F-run-x2F-redis-sentinel-pidlogfile-“-x2F-apps-x2F-redis-x2F-log-x2F-sentinel-log”-生成日志文件dir-x2F-tmp"><a href="#2-更改sentinel配置文件-root-master-etc-vim-sentinel-conf-root-master-etc-grep-Ev-“-”-x2F-apps-x2F-redis-x2F-etc-x2F-sentinel-confprotected-mode-noport-26379daemonize-nopidfile-x2F-var-x2F-run-x2F-redis-sentinel-pidlogfile-“-x2F-apps-x2F-redis-x2F-log-x2F-sentinel-log”-生成日志文件dir-x2F-tmp" class="headerlink" title="#2. 更改sentinel配置文件[root@master etc]#vim sentinel.conf[root@master etc]#grep -Ev “#|^$” &#x2F;apps&#x2F;redis&#x2F;etc&#x2F;sentinel.confprotected-mode noport 26379daemonize nopidfile &#x2F;var&#x2F;run&#x2F;redis-sentinel.pidlogfile “&#x2F;apps&#x2F;redis&#x2F;log&#x2F;sentinel.log” #生成日志文件dir &#x2F;tmp"></a>#2. 更改sentinel配置文件<br>[root@master etc]#vim sentinel.conf<br>[root@master etc]#grep -Ev “#|^$” &#x2F;apps&#x2F;redis&#x2F;etc&#x2F;sentinel.conf<br>protected-mode no<br>port 26379<br>daemonize no<br>pidfile &#x2F;var&#x2F;run&#x2F;redis-sentinel.pid<br>logfile “&#x2F;apps&#x2F;redis&#x2F;log&#x2F;sentinel.log” #生成日志文件<br>dir &#x2F;tmp</h2><h2 id="2为法定人数限制-quorum-，即有几个sentinel认为master-down了就进行故障转移，一般此值是所有sentinel节点-一般总数是-gt-x3D-3的-奇数-如-3-5-7等-的一半以上的整数值，比如，总数是3，即3-x2F-2-x3D-1-5，取整为2-是master的ODOWN客观下线的依据"><a href="#2为法定人数限制-quorum-，即有几个sentinel认为master-down了就进行故障转移，一般此值是所有sentinel节点-一般总数是-gt-x3D-3的-奇数-如-3-5-7等-的一半以上的整数值，比如，总数是3，即3-x2F-2-x3D-1-5，取整为2-是master的ODOWN客观下线的依据" class="headerlink" title="#2为法定人数限制(quorum)，即有几个sentinel认为master down了就进行故障转移，一般此值是所有sentinel节点(一般总数是&gt;&#x3D;3的 奇数,如:3,5,7等)的一半以上的整数值，比如，总数是3，即3&#x2F;2&#x3D;1.5，取整为2,是master的ODOWN客观下线的依据"></a>#2为法定人数限制(quorum)，即有几个sentinel认为master down了就进行故障转移，一般此值是所有sentinel节点(一般总数是&gt;&#x3D;3的 奇数,如:3,5,7等)的一半以上的整数值，比如，总数是3，即3&#x2F;2&#x3D;1.5，取整为2,是master的ODOWN客观下线的依据</h2><p>sentinel monitor mymaster 192.168.122.2 6379 2<br>sentinel auth-pass mymaster 123456 #mymaster集群中master的密码，注意此行要在上面行的下面<br>sentinel down-after-milliseconds mymaster 3000 #判断mymaster集群中所有节点的主观下线(SDOWN)的时间，单位：毫秒，建议3000<br>acllog-max-len 128<br>sentinel parallel-syncs mymaster 1 #发生故障转移后，可以同时向新master同步数据的slave的数量，数字越小总同步时间越长，但可以减轻新master的负载压力<br>sentinel failover-timeout mymaster 180000 #所有slaves指向新的master所需的超时时间，单位：毫秒<br>sentinel deny-scripts-reconfig yes #禁止修改脚本<br>SENTINEL resolve-hostnames no<br>SENTINEL announce-hostnames no<br>SENTINEL master-reboot-down-after-period mymaster 0</p>
+<p>#3. 复制配置文件到各个节点<br>[root@master etc]#rsync -a sentinel.conf 192.168.122.3:&#x2F;apps&#x2F;redis&#x2F;etc&#x2F;<br>[root@master etc]#rsync -a sentinel.conf 192.168.122.4:&#x2F;apps&#x2F;redis&#x2F;etc&#x2F;</p>
+<p>#4. 在所有节点准备Service文件<br>[root@master etc]#vim &#x2F;lib&#x2F;systemd&#x2F;system&#x2F;redis-sentinel.service<br>[root@master etc]#cat &#x2F;lib&#x2F;systemd&#x2F;system&#x2F;redis-sentinel.service<br>[Unit]<br>Description&#x3D;Redis Sentinel<br>After&#x3D;network.target</p>
+<p>[Service]<br>ExecStart&#x3D;&#x2F;apps&#x2F;redis&#x2F;bin&#x2F;redis-sentinel &#x2F;apps&#x2F;redis&#x2F;etc&#x2F;sentinel.conf –supervised systemd<br>ExecStop&#x3D;&#x2F;bin&#x2F;kill -s QUIT $MAINPID<br>User&#x3D;redis<br>Group&#x3D;redis<br>RuntimeDirectory&#x3D;redis<br>RuntimeDirectory<br>Mode&#x3D;0755</p>
+<p>[Install]<br>WantedBy&#x3D;multi-user.target</p>
+<p>[root@master etc]#systemctl daemon-reload<br>[root@master etc#systemctl enable –now redis-sentinel.service<br>Created symlink &#x2F;etc&#x2F;systemd&#x2F;system&#x2F;multi-user.target.wants&#x2F;redis-sentinel.service → &#x2F;lib&#x2F;systemd&#x2F;system&#x2F;redis-sentinel.service.</p>
+<p>#复制到其他节点并生成服务文件<br>[root@master etc]#scp &#x2F;lib&#x2F;systemd&#x2F;system&#x2F;redis-sentinel.service 192.168.122.3:&#x2F;lib&#x2F;systemd&#x2F;system&#x2F;redis-sentinel.service<br><a href="mailto:&#x72;&#x6f;&#111;&#x74;&#64;&#49;&#x39;&#x32;&#x2e;&#x31;&#54;&#x38;&#x2e;&#x31;&#50;&#50;&#x2e;&#51;">&#x72;&#x6f;&#111;&#x74;&#64;&#49;&#x39;&#x32;&#x2e;&#x31;&#54;&#x38;&#x2e;&#x31;&#50;&#50;&#x2e;&#51;</a>‘s password:<br>redis-sentinel.service                                                                                                                          100%  305   173.8KB&#x2F;s   00:00<br>[root@master etc]#scp &#x2F;lib&#x2F;systemd&#x2F;system&#x2F;redis-sentinel.service 192.168.122.4:&#x2F;lib&#x2F;systemd&#x2F;system&#x2F;redis-sentinel.service<br><a href="mailto:&#114;&#111;&#111;&#116;&#x40;&#49;&#x39;&#50;&#46;&#x31;&#x36;&#56;&#x2e;&#49;&#x32;&#x32;&#x2e;&#x34;">&#114;&#111;&#111;&#116;&#x40;&#49;&#x39;&#50;&#46;&#x31;&#x36;&#56;&#x2e;&#49;&#x32;&#x32;&#x2e;&#x34;</a>‘s password:<br>redis-sentinel.service                                                                                                                          100%  305   195.9KB&#x2F;s   00:00    </p>
+<p>#5. 确保所有节点的目录权限<br>[root@master ~]#chown -R redis.redis &#x2F;apps&#x2F;redis&#x2F;<br>[root@slave1 ~]#chown -R redis.redis &#x2F;apps&#x2F;redis&#x2F;<br>[root@slave2 ~]#chown -R redis.redis &#x2F;apps&#x2F;redis&#x2F;• 验证哨兵服务<br>#查看哨兵服务端口状态<br>[root@master ~]#ss -ntlp|grep redis<br>LISTEN 0      511          0.0.0.0:26379      0.0.0.0:*    users:((“redis-sentinel”,pid&#x3D;7225,fd&#x3D;6))<br>LISTEN 0      511          0.0.0.0:6379       0.0.0.0:*    users:((“redis-server”,pid&#x3D;5914,fd&#x3D;6))<br>LISTEN 0      511             [::]:26379         [::]:*    users:((“redis-sentinel”,pid&#x3D;7225,fd&#x3D;7))<br>LISTEN 0      511            [::1]:6379          [::]:*    users:((“redis-server”,pid&#x3D;5914,fd&#x3D;7)) </p>
+<p>[root@slave1 ~]#ss -ntlp|grep redis<br>LISTEN 0      511          0.0.0.0:26379      0.0.0.0:*    users:((“redis-sentinel”,pid&#x3D;6763,fd&#x3D;6))<br>LISTEN 0      511          0.0.0.0:6379       0.0.0.0:*    users:((“redis-server”,pid&#x3D;6228,fd&#x3D;6))<br>LISTEN 0      511             [::]:26379         [::]:*    users:((“redis-sentinel”,pid&#x3D;6763,fd&#x3D;7))<br>LISTEN 0      511            [::1]:6379          [::]:*    users:((“redis-server”,pid&#x3D;6228,fd&#x3D;7)) </p>
+<p>[root@slave2 ~]#ss -ntlp|grep redis<br>LISTEN 0      511          0.0.0.0:26379      0.0.0.0:*    users:((“redis-sentinel”,pid&#x3D;6227,fd&#x3D;6))<br>LISTEN 0      511          0.0.0.0:6379       0.0.0.0:*    users:((“redis-server”,pid&#x3D;5946,fd&#x3D;6))<br>LISTEN 0      511             [::]:26379         [::]:*    users:((“redis-sentinel”,pid&#x3D;6227,fd&#x3D;7))<br>LISTEN 0      511            [::1]:6379          [::]:*    users:((“redis-server”,pid&#x3D;5946,fd&#x3D;7)) </p>
+<p>#查看哨兵日志<br>[root@master ~]#tail -f &#x2F;apps&#x2F;redis&#x2F;log&#x2F;sentinel.log<br>7225:X 01 Feb 2023 16:53:50.939 # systemd supervision error: NOTIFY_SOCKET not found!<br>7225:X 01 Feb 2023 16:53:50.939 # systemd supervision error: NOTIFY_SOCKET not found!<br>7225:X 01 Feb 2023 16:53:50.941 * +slave slave 192.168.122.3:6379 192.168.122.3 6379 @ mymaster 192.168.122.2 6379<br>7225:X 01 Feb 2023 16:53:50.968 * Sentinel new configuration saved on disk<br>7225:X 01 Feb 2023 16:53:50.968 * +slave slave 192.168.122.4:6379 192.168.122.4 6379 @ mymaster 192.168.122.2 6379<br>7225:X 01 Feb 2023 16:53:51.026 * Sentinel new configuration saved on disk<br>7225:X 01 Feb 2023 16:53:58.391 * +sentinel sentinel a75b6523c1efefba98341c5bb9ec766e1d9b78bf 192.168.122.3 26379 @ mymaster 192.168.122.2 6379<br>7225:X 01 Feb 2023 16:53:58.435 * Sentinel new configuration saved on disk<br>7225:X 01 Feb 2023 16:54:01.231 * +sentinel sentinel f0866463210b4142e372b4fc61084b4a4eff7ab0 192.168.122.4 26379 @ mymaster 192.168.122.2 6379<br>7225:X 01 Feb 2023 16:54:01.267 * Sentinel new configuration saved on disk</p>
+<p>[root@slave1 ~]#tail -f &#x2F;apps&#x2F;redis&#x2F;log&#x2F;sentinel.log<br>6763:X 01 Feb 2023 16:53:56.379 # systemd supervision error: NOTIFY_SOCKET not found!<br>6763:X 01 Feb 2023 16:53:56.379 # systemd supervision error: NOTIFY_SOCKET not found!<br>6763:X 01 Feb 2023 16:53:56.381 * +slave slave 192.168.122.3:6379 192.168.122.3 6379 @ mymaster 192.168.122.2 6379<br>6763:X 01 Feb 2023 16:53:56.431 * Sentinel new configuration saved on disk<br>6763:X 01 Feb 2023 16:53:56.431 * +slave slave 192.168.122.4:6379 192.168.122.4 6379 @ mymaster 192.168.122.2 6379<br>6763:X 01 Feb 2023 16:53:56.452 * Sentinel new configuration saved on disk<br>6763:X 01 Feb 2023 16:53:57.090 * +sentinel sentinel 4c1c50da9885685a85f653107c5166cb650123dd 192.168.122.2 26379 @ mymaster 192.168.122.2 6379<br>6763:X 01 Feb 2023 16:53:57.132 * Sentinel new configuration saved on disk<br>6763:X 01 Feb 2023 16:54:01.227 * +sentinel sentinel f0866463210b4142e372b4fc61084b4a4eff7ab0 192.168.122.4 26379 @ mymaster 192.168.122.2 6379<br>6763:X 01 Feb 2023 16:54:01.261 * Sentinel new configuration saved on disk</p>
+<p>[root@slave2 ~]#tail -f &#x2F;apps&#x2F;redis&#x2F;log&#x2F;sentinel.log<br>6227:X 01 Feb 2023 16:53:59.287 # systemd supervision error: NOTIFY_SOCKET not found!<br>6227:X 01 Feb 2023 16:53:59.287 # systemd supervision error: NOTIFY_SOCKET not found!<br>6227:X 01 Feb 2023 16:53:59.289 * +slave slave 192.168.122.3:6379 192.168.122.3 6379 @ mymaster 192.168.122.2 6379<br>6227:X 01 Feb 2023 16:53:59.312 * Sentinel new configuration saved on disk<br>6227:X 01 Feb 2023 16:53:59.312 * +slave slave 192.168.122.4:6379 192.168.122.4 6379 @ mymaster 192.168.122.2 6379<br>6227:X 01 Feb 2023 16:53:59.344 * Sentinel new configuration saved on disk<br>6227:X 01 Feb 2023 16:54:00.460 * +sentinel sentinel a75b6523c1efefba98341c5bb9ec766e1d9b78bf 192.168.122.3 26379 @ mymaster 192.168.122.2 6379<br>6227:X 01 Feb 2023 16:54:00.493 * Sentinel new configuration saved on disk<br>6227:X 01 Feb 2023 16:54:01.180 * +sentinel sentinel 4c1c50da9885685a85f653107c5166cb650123dd 192.168.122.2 26379 @ mymaster 192.168.122.2 6379<br>6227:X 01 Feb 2023 16:54:01.246 * Sentinel new configuration saved on disk</p>
+<p>#确认sentien配置文件中生成了集成信息<br>[root@master ~]#cat &#x2F;apps&#x2F;redis&#x2F;etc&#x2F;sentinel.conf<br>….</p>
+<h1 id="Generated-by-CONFIG-REWRITE"><a href="#Generated-by-CONFIG-REWRITE" class="headerlink" title="Generated by CONFIG REWRITE"></a>Generated by CONFIG REWRITE</h1><p>supervised systemd<br>latency-tracking-info-percentiles 50 99 99.9<br>user default on nopass ~* &amp;* +@all<br>sentinel myid 4c1c50da9885685a85f653107c5166cb650123dd –&gt; 确保id不一致，一般是自动生成<br>sentinel config-epoch mymaster 0<br>sentinel leader-epoch mymaster 0<br>sentinel current-epoch 0</p>
+<p>sentinel known-replica mymaster 192.168.122.4 6379</p>
+<p>sentinel known-replica mymaster 192.168.122.3 6379</p>
+<p>sentinel known-sentinel mymaster 192.168.122.4 26379 f0866463210b4142e372b4fc61084b4a4eff7ab0</p>
+<p>sentinel known-sentinel mymaster 192.168.122.3 26379 a75b6523c1efefba98341c5bb9ec766e1d9b78bf</p>
+<p>[root@slave1 ~]#cat &#x2F;apps&#x2F;redis&#x2F;etc&#x2F;sentinel.conf<br>….</p>
+<h1 id="Generated-by-CONFIG-REWRITE-1"><a href="#Generated-by-CONFIG-REWRITE-1" class="headerlink" title="Generated by CONFIG REWRITE"></a>Generated by CONFIG REWRITE</h1><p>supervised systemd<br>latency-tracking-info-percentiles 50 99 99.9<br>user default on nopass ~* &amp;* +@all<br>sentinel myid a75b6523c1efefba98341c5bb9ec766e1d9b78bf<br>sentinel config-epoch mymaster 0<br>sentinel leader-epoch mymaster 0<br>sentinel current-epoch 0</p>
+<p>sentinel known-replica mymaster 192.168.122.4 6379</p>
+<p>sentinel known-replica mymaster 192.168.122.3 6379</p>
+<p>sentinel known-sentinel mymaster 192.168.122.4 26379 f0866463210b4142e372b4fc61084b4a4eff7ab0</p>
+<p>sentinel known-sentinel mymaster 192.168.122.2 26379 4c1c50da9885685a85f653107c5166cb650123dd</p>
+<p>[root@slave2 ~]#cat &#x2F;apps&#x2F;redis&#x2F;etc&#x2F;sentinel.conf<br>….</p>
+<h1 id="Generated-by-CONFIG-REWRITE-2"><a href="#Generated-by-CONFIG-REWRITE-2" class="headerlink" title="Generated by CONFIG REWRITE"></a>Generated by CONFIG REWRITE</h1><p>supervised systemd<br>latency-tracking-info-percentiles 50 99 99.9<br>user default on nopass ~* &amp;* +@all<br>sentinel myid f0866463210b4142e372b4fc61084b4a4eff7ab0<br>sentinel config-epoch mymaster 0<br>sentinel leader-epoch mymaster 0<br>sentinel current-epoch 0</p>
+<p>sentinel known-replica mymaster 192.168.122.3 6379</p>
+<p>sentinel known-replica mymaster 192.168.122.4 6379</p>
+<p>sentinel known-sentinel mymaster 192.168.122.3 26379 a75b6523c1efefba98341c5bb9ec766e1d9b78bf</p>
+<p>sentinel known-sentinel mymaster 192.168.122.2 26379 4c1c50da9885685a85f653107c5166cb650123dd</p>
+<p>#当前sentinel状态<br>[root@master ~]#redis-cli -p 26379<br>127.0.0.1:26379&gt; INFO sentinel</p>
+<h1 id="Sentinel"><a href="#Sentinel" class="headerlink" title="Sentinel"></a>Sentinel</h1><p>sentinel_masters:1<br>sentinel_tilt:0<br>sentinel_tilt_since_seconds:-1<br>sentinel_running_scripts:0<br>sentinel_scripts_queue_length:0<br>sentinel_simulate_failure_flags:0<br>master0:name&#x3D;mymaster,status&#x3D;ok,address&#x3D;192.168.122.2:6379,slaves&#x3D;2,sentinels&#x3D;3</p>
+<p>[root@slave1 ~]#redis-cli -p 26379<br>127.0.0.1:26379&gt; INFO sentinel</p>
+<h1 id="Sentinel-1"><a href="#Sentinel-1" class="headerlink" title="Sentinel"></a>Sentinel</h1><p>sentinel_masters:1<br>sentinel_tilt:0<br>sentinel_tilt_since_seconds:-1<br>sentinel_running_scripts:0<br>sentinel_scripts_queue_length:0<br>sentinel_simulate_failure_flags:0<br>master0:name&#x3D;mymaster,status&#x3D;ok,address&#x3D;192.168.122.2:6379,slaves&#x3D;2,sentinels&#x3D;3</p>
+<p>[root@slave2 ~]#redis-cli -p 26379<br>127.0.0.1:26379&gt; INFO sentinel</p>
+<h1 id="Sentinel-2"><a href="#Sentinel-2" class="headerlink" title="Sentinel"></a>Sentinel</h1><p>sentinel_masters:1<br>sentinel_tilt:0<br>sentinel_tilt_since_seconds:-1<br>sentinel_running_scripts:0<br>sentinel_scripts_queue_length:0<br>sentinel_simulate_failure_flags:0<br>master0:name&#x3D;mymaster,status&#x3D;ok,address&#x3D;192.168.122.2:6379,slaves&#x3D;2,sentinels&#x3D;3• 开始测试故障转移功能</p>
+<p>• 停止 Master 节点，观察日志<br>[root@master ~]#killall redis-server</p>
+<p>[root@slave1 ~]#tail -f &#x2F;apps&#x2F;redis&#x2F;log&#x2F;sentinel.log<br>…<br>6763:X 01 Feb 2023 17:17:42.652 # +sdown master mymaster 192.168.122.2 6379<br>6763:X 01 Feb 2023 17:17:42.788 * Sentinel new configuration saved on disk<br>6763:X 01 Feb 2023 17:17:42.788 # +new-epoch 1<br>6763:X 01 Feb 2023 17:17:42.821 * Sentinel new configuration saved on disk<br>6763:X 01 Feb 2023 17:17:42.821 # +vote-for-leader f0866463210b4142e372b4fc61084b4a4eff7ab0 1<br>6763:X 01 Feb 2023 17:17:42.822 # +odown master mymaster 192.168.122.2 6379 #quorum 3&#x2F;2<br>6763:X 01 Feb 2023 17:17:42.822 # Next failover delay: I will not start a failover before Wed Feb  1 17:23:42 2023<br>6763:X 01 Feb 2023 17:17:43.804 # +config-update-from sentinel f0866463210b4142e372b4fc61084b4a4eff7ab0 192.168.122.4 26379 @ mymaster 192.168.122.2 6379<br>6763:X 01 Feb 2023 17:17:43.804 # +switch-master mymaster 192.168.122.2 6379 192.168.122.4 6379<br>6763:X 01 Feb 2023 17:17:43.804 * +slave slave 192.168.122.3:6379 192.168.122.3 6379 @ mymaster 192.168.122.4 6379<br>6763:X 01 Feb 2023 17:17:43.804 * +slave slave 192.168.122.2:6379 192.168.122.2 6379 @ mymaster 192.168.122.4 6379<br>6763:X 01 Feb 2023 17:17:43.898 * Sentinel new configuration saved on disk<br>6763:X 01 Feb 2023 17:17:46.864 # +sdown slave 192.168.122.2:6379 192.168.122.2 6379 @ mymaster 192.168.122.4 6379</p>
+<p>[root@slave2 ~]#tail -f &#x2F;apps&#x2F;redis&#x2F;log&#x2F;sentinel.log<br>…<br>6227:X 01 Feb 2023 17:17:42.635 # +sdown master mymaster 192.168.122.2 6379<br>6227:X 01 Feb 2023 17:17:42.692 # +odown master mymaster 192.168.122.2 6379 #quorum 2&#x2F;2<br>6227:X 01 Feb 2023 17:17:42.692 # +new-epoch 1<br>6227:X 01 Feb 2023 17:17:42.692 # +try-failover master mymaster 192.168.122.2 6379<br>6227:X 01 Feb 2023 17:17:42.738 * Sentinel new configuration saved on disk<br>6227:X 01 Feb 2023 17:17:42.739 # +vote-for-leader f0866463210b4142e372b4fc61084b4a4eff7ab0 1<br>6227:X 01 Feb 2023 17:17:42.804 # 4c1c50da9885685a85f653107c5166cb650123dd voted for f0866463210b4142e372b4fc61084b4a4eff7ab0 1<br>6227:X 01 Feb 2023 17:17:42.820 # a75b6523c1efefba98341c5bb9ec766e1d9b78bf voted for f0866463210b4142e372b4fc61084b4a4eff7ab0 1<br>6227:X 01 Feb 2023 17:17:42.868 # +elected-leader master mymaster 192.168.122.2 6379<br>6227:X 01 Feb 2023 17:17:42.868 # +failover-state-select-slave master mymaster 192.168.122.2 6379<br>6227:X 01 Feb 2023 17:17:42.970 # +selected-slave slave 192.168.122.4:6379 192.168.122.4 6379 @ mymaster 192.168.122.2 6379<br>6227:X 01 Feb 2023 17:17:42.970 * +failover-state-send-slaveof-noone slave 192.168.122.4:6379 192.168.122.4 6379 @ mymaster 192.168.122.2 6379<br>6227:X 01 Feb 2023 17:17:43.029 * +failover-state-wait-promotion slave 192.168.122.4:6379 192.168.122.4 6379 @ mymaster 192.168.122.2 6379<br>6227:X 01 Feb 2023 17:17:43.765 * Sentinel new configuration saved on disk<br>6227:X 01 Feb 2023 17:17:43.765 # +promoted-slave slave 192.168.122.4:6379 192.168.122.4 6379 @ mymaster 192.168.122.2 6379<br>6227:X 01 Feb 2023 17:17:43.765 # +failover-state-reconf-slaves master mymaster 192.168.122.2 6379<br>6227:X 01 Feb 2023 17:17:43.801 * +slave-reconf-sent slave 192.168.122.3:6379 192.168.122.3 6379 @ mymaster 192.168.122.2 6379<br>6227:X 01 Feb 2023 17:17:43.919 # -odown master mymaster 192.168.122.2 6379<br>6227:X 01 Feb 2023 17:17:44.797 * +slave-reconf-inprog slave 192.168.122.3:6379 192.168.122.3 6379 @ mymaster 192.168.122.2 6379<br>6227:X 01 Feb 2023 17:17:44.797 * +slave-reconf-done slave 192.168.122.3:6379 192.168.122.3 6379 @ mymaster 192.168.122.2 6379<br>6227:X 01 Feb 2023 17:17:44.849 # +failover-end master mymaster 192.168.122.2 6379<br>6227:X 01 Feb 2023 17:17:44.849 # +switch-master mymaster 192.168.122.2 6379 192.168.122.4 6379<br>6227:X 01 Feb 2023 17:17:44.850 * +slave slave 192.168.122.3:6379 192.168.122.3 6379 @ mymaster 192.168.122.4 6379<br>6227:X 01 Feb 2023 17:17:44.850 * +slave slave 192.168.122.2:6379 192.168.122.2 6379 @ mymaster 192.168.122.4 6379<br>6227:X 01 Feb 2023 17:17:44.913 * Sentinel new configuration saved on disk<br>6227:X 01 Feb 2023 17:17:47.860 # +sdown slave 192.168.122.2:6379 192.168.122.2 6379 @ mymaster 192.168.122.4 6379• 故障转移后redis.conf中的replicaof行的master IP会被修改<br>[root@slave1 ~]#grep ^replicaof &#x2F;apps&#x2F;redis&#x2F;etc&#x2F;redis.conf<br>replicaof 192.168.122.4 6379</p>
+<p>[root@slave2 ~]#grep replicaof &#x2F;apps&#x2F;redis&#x2F;etc&#x2F;redis.conf</p>
+<h1 id="Master-Replica-replication-Use-replicaof-to-make-a-Redis-instance-a-copy-of-4"><a href="#Master-Replica-replication-Use-replicaof-to-make-a-Redis-instance-a-copy-of-4" class="headerlink" title="Master-Replica replication. Use replicaof to make a Redis instance a copy of"></a>Master-Replica replication. Use replicaof to make a Redis instance a copy of</h1><h1 id="replicaof-•-哨兵配置文件的sentinel-monitor-IP-同样也会被修改"><a href="#replicaof-•-哨兵配置文件的sentinel-monitor-IP-同样也会被修改" class="headerlink" title="replicaof  • 哨兵配置文件的sentinel monitor IP 同样也会被修改"></a>replicaof <masterip> <masterport>• 哨兵配置文件的sentinel monitor IP 同样也会被修改</h1><p>[root@slave1 ~]#grep -Ev “#|^$” &#x2F;apps&#x2F;redis&#x2F;etc&#x2F;sentinel.conf<br>protected-mode no<br>port 26379<br>daemonize no<br>pidfile “&#x2F;var&#x2F;run&#x2F;redis-sentinel.pid”<br>logfile “&#x2F;apps&#x2F;redis&#x2F;log&#x2F;sentinel.log”<br>dir “&#x2F;tmp”<br>sentinel monitor mymaster 192.168.122.4 6379 2  –&gt; ip变更<br>sentinel auth-pass mymaster 123456<br>sentinel down-after-milliseconds mymaster 3000<br>acllog-max-len 128<br>sentinel deny-scripts-reconfig yes<br>sentinel resolve-hostnames no<br>sentinel announce-hostnames no<br>supervised systemd<br>latency-tracking-info-percentiles 50 99 99.9<br>user default on nopass ~* &amp;* +@all<br>sentinel myid a75b6523c1efefba98341c5bb9ec766e1d9b78bf<br>sentinel config-epoch mymaster 1<br>sentinel leader-epoch mymaster 1<br>sentinel current-epoch 1<br>sentinel known-replica mymaster 192.168.122.2 6379<br>sentinel known-replica mymaster 192.168.122.3 6379<br>sentinel known-sentinel mymaster 192.168.122.4 26379 f0866463210b4142e372b4fc61084b4a4eff7ab0<br>sentinel known-sentinel mymaster 192.168.122.2 26379 4c1c50da9885685a85f653107c5166cb650123dd• 确认slave 提升成master<br>[root@slave2 ~]#redis-cli -a 123456<br>Warning: Using a password with ‘-a’ or ‘-u’ option on the command line interface may not be safe.<br>127.0.0.1:6379&gt; role</p>
+<ol>
+<li>“master”</li>
+<li>(integer) 546715</li>
+<li><ol>
+<li><ol>
+<li>“192.168.122.3”</li>
+<li>“6379”</li>
+<li>“546715”• 原master重新加入Redis集群</li>
+</ol>
+</li>
+</ol>
+</li>
+</ol>
+<p>#原Master的变化<br>[root@master ~]#systemctl start redis<br>[root@master ~]#tail -f &#x2F;apps&#x2F;redis&#x2F;log&#x2F;sentinel.log<br>…<br>7225:X 01 Feb 2023 17:40:06.028 # -sdown slave 192.168.122.2:6379 192.168.122.2 6379 @ mymaster 192.168.122.4 6379<br>7225:X 01 Feb 2023 17:40:16.032 * +convert-to-slave slave 192.168.122.2:6379 192.168.122.2 6379 @ mymaster 192.168.122.4 6379<br>[root@master ~]#grep -Ev “#|^$” &#x2F;apps&#x2F;redis&#x2F;etc&#x2F;sentinel.conf<br>protected-mode no<br>port 26379<br>daemonize no<br>pidfile “&#x2F;var&#x2F;run&#x2F;redis-sentinel.pid”<br>logfile “&#x2F;apps&#x2F;redis&#x2F;log&#x2F;sentinel.log”<br>dir “&#x2F;tmp”<br>sentinel monitor mymaster 192.168.122.4 6379 2<br>sentinel auth-pass mymaster 123456<br>sentinel down-after-milliseconds mymaster 3000<br>acllog-max-len 128<br>sentinel deny-scripts-reconfig yes<br>sentinel resolve-hostnames no<br>sentinel announce-hostnames no<br>supervised systemd<br>latency-tracking-info-percentiles 50 99 99.9<br>user default on nopass ~* &amp;* +@all<br>sentinel myid 4c1c50da9885685a85f653107c5166cb650123dd<br>sentinel config-epoch mymaster 1<br>sentinel leader-epoch mymaster 1<br>sentinel current-epoch 1<br>sentinel known-replica mymaster 192.168.122.3 6379<br>sentinel known-replica mymaster 192.168.122.2 6379<br>sentinel known-sentinel mymaster 192.168.122.4 26379 f0866463210b4142e372b4fc61084b4a4eff7ab0<br>sentinel known-sentinel mymaster 192.168.122.3 26379 a75b6523c1efefba98341c5bb9ec766e1d9b78bf<br>[root@master ~]#redis-cli -a 123456 role<br>Warning: Using a password with ‘-a’ or ‘-u’ option on the command line interface may not be safe.</p>
+<ol>
+<li>“slave”</li>
+<li>“192.168.122.4”</li>
+<li>(integer) 6379</li>
+<li>“handshake”</li>
+<li>(integer) -1</li>
+</ol>
+<p>#新Master日志<br>[root@slave2 ~]#tail -f &#x2F;apps&#x2F;redis&#x2F;log&#x2F;sentinel.log<br>…<br>6227:X 01 Feb 2023 17:40:06.122 # -sdown slave 192.168.122.2:6379 192.168.122.2 6379 @ mymaster 192.168.122.4 6379我是Moore,新的一年，希望大家都好运！深夜写文章还是很痛快的….</p>
+
+      
+       <hr><span style="font-style: italic;color: gray;"> 转载请注明来源，欢迎对文章中的引用来源进行考证，欢迎指出任何有错误或不够清晰的表达。可以在下面评论区评论，也可以邮件至 jaytp@qq.com </span>
+    </div>
+</article>
+
+
+<p>
+    <a  class="dashang" onclick="dashangToggle()">💰</a>
+</p>
+
+
+
+
+
+
+    
+
+
+
+
+    </div>
+    <div class="copyright">
+        <p class="footer-entry">
+    ©2016-2020 Yelog
+</p>
+<p class="footer-entry">Built with <a href="https://hexo.io/" target="_blank">Hexo</a> and <a href="https://github.com/yelog/hexo-theme-3-hexo" target="_blank">3-hexo</a> theme</p>
+
+    </div>
+    <div class="full-toc">
+        <button class="full" data-title="切换全屏 快捷键 s"><span class="min "></span></button>
+<a class="" id="rocket" ></a>
+
+    </div>
+</div>
+
+<div class="hide_box" onclick="dashangToggle()"></div>
+<div class="shang_box">
+    <a class="shang_close"  onclick="dashangToggle()">×</a>
+    <div class="shang_tit">
+        <p>Help us with donation</p>
+    </div>
+    <div class="shang_payimg">
+        <div class="pay_img">
+            <img src="/img/alipay.jpg" class="alipay" title="扫码支持">
+            <img src="/img/weixin.jpg" class="weixin" title="扫码支持">
+        </div>
+    </div>
+    <div class="shang_payselect">
+        <span><label><input type="radio" name="pay" checked value="alipay">alipay</label></span><span><label><input type="radio" name="pay" value="weixin">weixin</label></span>
+    </div>
+</div>
+
+
+</body>
+<script src="/js/jquery.pjax.js?v=1.1.0" ></script>
+
+<script src="/js/script.js?v=1.1.0" ></script>
+<script>
+    var img_resize = 'default';
+    function initArticle() {
+        /*渲染对应的表格样式*/
+        
+            $("#post .pjax table").addClass("green_title");
+        
+
+        /*渲染打赏样式*/
+        
+        $("input[name=pay]").on("click", function () {
+            if($("input[name=pay]:checked").val()=="weixin"){
+                $(".shang_box .shang_payimg .pay_img").addClass("weixin_img");
+            } else {
+                $(".shang_box .shang_payimg .pay_img").removeClass("weixin_img");
+            }
+        })
+        
+
+        /*高亮代码块行号*/
+        
+
+        /*访问数量*/
+        
+        $.getScript("//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js");
+        
+
+        /*代码高亮，行号对齐*/
+        $('.pre-numbering').css('line-height',$('.has-numbering').css('line-height'));
+
+        
+        
+    }
+
+    /*打赏页面隐藏与展示*/
+    
+    function dashangToggle() {
+        $(".shang_box").fadeToggle();
+        $(".hide_box").fadeToggle();
+    }
+    
+
+</script>
+
+<!--加入行号的高亮代码块样式-->
+
+<!--自定义样式设置-->
+<style>
+    
+    
+    .nav {
+        width: 542px;
+    }
+    .nav.fullscreen {
+        margin-left: -542px;
+    }
+    .nav-left {
+        width: 120px;
+    }
+    
+    
+    @media screen and (max-width: 1468px) {
+        .nav {
+            width: 492px;
+        }
+        .nav.fullscreen {
+            margin-left: -492px;
+        }
+        .nav-left {
+            width: 100px;
+        }
+    }
+    
+    
+    @media screen and (max-width: 1024px) {
+        .nav {
+            width: 492px;
+            margin-left: -492px
+        }
+        .nav.fullscreen {
+            margin-left: 0;
+        }
+    }
+    
+    @media screen and (max-width: 426px) {
+        .nav {
+            width: 100%;
+        }
+        .nav-left {
+            width: 100%;
+        }
+    }
+    
+    
+    .nav-right .title-list nav a .post-title, .nav-right .title-list #local-search-result a .post-title {
+        color: #383636;
+    }
+    
+    
+    .nav-right .title-list nav a .post-date, .nav-right .title-list #local-search-result a .post-date {
+        color: #5e5e5f;
+    }
+    
+    
+    .nav-right nav a.hover, #local-search-result a.hover{
+        background-color: #e2e0e0;
+    }
+    
+    
+
+    /*列表样式*/
+    
+
+    /* 背景图样式 */
+    
+    
+
+
+    /*引用块样式*/
+    
+
+    /*文章列表背景图*/
+    
+
+    
+</style>
+
+
+
+
+
+
+
+</html>

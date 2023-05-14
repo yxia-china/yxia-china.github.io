@@ -1,0 +1,1099 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>87-云原生操作系统-Redis单机和集群业务容器化案例 | Hexo</title>
+  <meta name="keywords" content="">
+  <meta name="description" content="87-云原生操作系统-Redis单机和集群业务容器化案例 | Hexo">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="description" content="基于现有虚拟机磁盘为模版创建新的虚拟机使用 virt-install 创建虚拟机• 虽然使用virt-manager 可以方便的管理虚拟机,但如果需要批量进行虚拟机的创建管理,命令行工具virtinstall更加方便和适合案例：利用 qemu-img命令创建虚拟磁盘#注意: qemu-img create 一定要确认对应路径下没有此文件,如果存在将覆盖原文件  确认现有的虚拟磁盘文件[root@u">
+<meta property="og:type" content="article">
+<meta property="og:title" content="42-KVM虚拟化-基于现有虚拟机磁盘为模版创建新的虚拟机">
+<meta property="og:url" content="http://example.com/2023/05/14/42-KVM%E8%99%9A%E6%8B%9F%E5%8C%96-%E5%9F%BA%E4%BA%8E%E7%8E%B0%E6%9C%89%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%A3%81%E7%9B%98%E4%B8%BA%E6%A8%A1%E7%89%88%E5%88%9B%E5%BB%BA%E6%96%B0%E7%9A%84%E8%99%9A%E6%8B%9F%E6%9C%BA/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="基于现有虚拟机磁盘为模版创建新的虚拟机使用 virt-install 创建虚拟机• 虽然使用virt-manager 可以方便的管理虚拟机,但如果需要批量进行虚拟机的创建管理,命令行工具virtinstall更加方便和适合案例：利用 qemu-img命令创建虚拟磁盘#注意: qemu-img create 一定要确认对应路径下没有此文件,如果存在将覆盖原文件  确认现有的虚拟磁盘文件[root@u">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="http://example.com/img/092d6b54082e04ec1c20121058c692bc5844b5.png">
+<meta property="og:image" content="http://example.com/img/f8bada3025892d742fe1746c42ead86f562ddc.png">
+<meta property="article:published_time" content="2023-05-14T08:21:34.888Z">
+<meta property="article:modified_time" content="2023-05-14T08:23:40.552Z">
+<meta property="article:author" content="John Doe">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/img/092d6b54082e04ec1c20121058c692bc5844b5.png">
+
+
+<link rel="icon" href="/img/avatar.jpg">
+
+<link href="/css/style.css?v=1.1.0" rel="stylesheet">
+
+<link href="/css/hl_theme/atom-light.css?v=1.1.0" rel="stylesheet">
+
+<link href="//cdn.jsdelivr.net/npm/animate.css@4.1.0/animate.min.css" rel="stylesheet">
+
+<script src="//cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js"></script>
+<script src="/js/titleTip.js?v=1.1.0" ></script>
+
+<script src="//cdn.jsdelivr.net/npm/highlightjs@9.16.2/highlight.pack.min.js"></script>
+<script>
+    hljs.initHighlightingOnLoad();
+</script>
+
+<script src="//cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.min.js"></script>
+
+
+
+<script src="//cdn.jsdelivr.net/npm/jquery.cookie@1.4.1/jquery.cookie.min.js" ></script>
+
+<script src="/js/iconfont.js?v=1.1.0" ></script>
+
+<meta name="generator" content="Hexo 6.3.0"></head>
+<div style="display: none">
+  <input class="theme_disqus_on" value="false">
+  <input class="theme_preload_comment" value="">
+  <input class="theme_blog_path" value="">
+  <input id="theme_shortcut" value="true" />
+  <input id="theme_highlight_on" value="true" />
+  <input id="theme_code_copy" value="true" />
+</div>
+
+
+
+<body>
+<aside class="nav">
+    <div class="nav-left">
+        <a href="/"
+   class="avatar_target">
+    <img class="avatar"
+         src="/img/avatar.jpg"/>
+</a>
+<div class="author">
+    <span>John Doe</span>
+</div>
+
+<div class="icon">
+    
+        
+            <a title="rss"
+               href="/atom.xml"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-rss"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="github"
+               href="https://github.com/yelog"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-github"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="facebook"
+               href="https://www.facebook.com/faker.tops"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-facebook"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+    
+        
+    
+        
+            <a title="instagram"
+               href="https://www.facebook.com/faker.tops"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-instagram"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="reddit"
+               href="https://www.reddit.com/user/yelog/"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-reddit"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="weibo"
+               href="http://weibo.com/u/2307534817"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-weibo"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="jianshu"
+               href="https://www.jianshu.com/u/ff56736de7cf"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-jianshu"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="zhihu"
+               href="https://www.zhihu.com/people/jaytp/activities"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-zhihu"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+    
+        
+            <a title="oschina"
+               href="https://my.oschina.net/yelog"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-oschina"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+    
+        
+            <a title="email"
+               href="mailto:jaytp@qq.com"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-email"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="qq"
+               href="http://wpa.qq.com/msgrd?v=3&uin=872336115&site=qq&menu=yes"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-qq"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="kugou"
+               href="https://www.kugou.com/"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-kugou"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="neteasemusic"
+               href="https://music.163.com/#/user/home?id=88151013"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-neteasemusic"></use>
+                    </svg>
+                
+            </a>
+        
+    
+</div>
+
+
+
+
+<ul>
+    <li>
+        <div class="all active" data-rel="All">All
+            
+                <small>(36)</small>
+            
+        </div>
+    </li>
+    
+        
+            
+                <li>
+                    <div data-rel="SRE linux云计算">
+                        
+                        SRE linux云计算
+                        <small>(11)</small>
+                        
+                    </div>
+                    
+                </li>
+            
+        
+    
+        
+            
+                <li>
+                    <div data-rel="云原生">
+                        
+                        云原生
+                        <small>(10)</small>
+                        
+                    </div>
+                    
+                </li>
+            
+        
+    
+        
+            
+                <li>
+                    <div data-rel="PMP管理">
+                        
+                        PMP管理
+                        <small>(1)</small>
+                        
+                    </div>
+                    
+                </li>
+            
+        
+    
+        
+            
+                <li>
+                    <div data-rel="Python 爬虫">
+                        
+                        Python 爬虫
+                        <small>(14)</small>
+                        
+                    </div>
+                    
+                </li>
+            
+        
+    
+</ul>
+<div class="left-bottom">
+    <div class="menus">
+        
+            
+            
+            
+    </div>
+    <div>
+        
+            <a class="about  hasFriend  site_url"
+               
+               href="/about">About</a>
+        
+        <a style="width: 50%"
+                
+                                           class="friends">Friends</a>
+        
+    </div>
+</div>
+<input type="hidden" id="yelog_site_posts_number" value="36">
+
+<div style="display: none">
+    <span id="busuanzi_value_site_uv"></span>
+    <span id="busuanzi_value_site_pv"></span>
+</div>
+
+    </div>
+    <div class="nav-right">
+        <div class="friends-area">
+    <div class="friends-title">
+        Links
+        <i class="iconfont icon-left"></i>
+    </div>
+    <div class="friends-content">
+        <ul>
+            
+            <li><a target="_blank" href="http://yelog.org/">叶落阁</a></li>
+            
+        </ul>
+    </div>
+</div>
+        <div class="title-list">
+    <div class="right-top">
+        <div id="default-panel">
+            <i class="iconfont icon-search" data-title="搜索 快捷键 i"></i>
+            <div class="right-title">All</div>
+            <i class="iconfont icon-file-tree" data-title="切换到大纲视图 快捷键 w"></i>
+        </div>
+        <div id="search-panel">
+            <i class="iconfont icon-left" data-title="返回"></i>
+            <input id="local-search-input" autocomplete="off"/>
+            <label class="border-line" for="input"></label>
+            <i class="iconfont icon-case-sensitive" data-title="大小写敏感"></i>
+            <i class="iconfont icon-tag" data-title="标签"></i>
+        </div>
+        <div id="outline-panel" style="display: none">
+            <div class="right-title">大纲</div>
+            <i class="iconfont icon-list" data-title="切换到文章列表"></i>
+        </div>
+    </div>
+
+    <div class="tags-list">
+    <input id="tag-search" />
+    <div class="tag-wrapper">
+        
+    </div>
+
+</div>
+
+    
+    <nav id="title-list-nav">
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/14/42-KVM%E8%99%9A%E6%8B%9F%E5%8C%96-%E5%9F%BA%E4%BA%8E%E7%8E%B0%E6%9C%89%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%A3%81%E7%9B%98%E4%B8%BA%E6%A8%A1%E7%89%88%E5%88%9B%E5%BB%BA%E6%96%B0%E7%9A%84%E8%99%9A%E6%8B%9F%E6%9C%BA/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="42-KVM虚拟化-基于现有虚拟机磁盘为模版创建新的虚拟机">42-KVM虚拟化-基于现有虚拟机磁盘为模版创建新的虚拟机</span>
+            <span class="post-date" title="2023-05-14 16:21:34">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%B8%89%E7%AB%A0-2-requests%20%E8%BF%9B%E9%98%B6%E2%80%A2%20%E7%88%AC%E5%8F%96%E6%9F%90%E8%A7%86%E9%A2%91%E7%BD%91%E7%9B%B8%E5%85%B3%E8%A7%86%E9%A2%91/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第三章-2-requests 进阶• 爬取某视频网相关视频">Python爬虫-第三章-2-requests 进阶• 爬取某视频网相关视频</span>
+            <span class="post-date" title="2023-05-14 16:20:20">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/14/44-KVM%E8%99%9A%E6%8B%9F%E5%8C%96-%E5%AD%98%E5%82%A8%E7%AE%A1%E7%90%86%E5%92%8C%E7%A3%81%E7%9B%98%E6%89%A9%E5%AE%B9/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="44-KVM虚拟化-存储管理和磁盘扩容">44-KVM虚拟化-存储管理和磁盘扩容</span>
+            <span class="post-date" title="2023-05-14 16:18:30">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%B8%89%E7%AB%A0-3-%E5%88%A9%E7%94%A8re%E6%A8%A1%E5%9D%97%E7%88%AC%E5%8F%96%E6%9F%90%E7%BD%91%E7%94%B5%E5%BD%B1%E6%8E%92%E8%A1%8C%E6%A6%9C/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第三章-3-利用re模块爬取某网电影排行榜">Python爬虫-第三章-3-利用re模块爬取某网电影排行榜</span>
+            <span class="post-date" title="2023-05-14 16:16:51">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/14/46-Docker-Container%E5%AE%B9%E5%99%A8%E7%AE%A1%E7%90%86%E5%90%84%E7%A7%8D%E6%93%8D%E4%BD%9C/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="46-Docker-Container容器管理各种操作">46-Docker-Container容器管理各种操作</span>
+            <span class="post-date" title="2023-05-14 16:14:04">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/14/47-Docker-Dockerfile%E9%95%9C%E5%83%8F%E5%88%9B%E5%BB%BA%E8%87%AA%E5%8A%A8%E5%8C%96%E7%94%9F%E4%BA%A7%E6%A1%88%E4%BE%8B/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="47-Docker-Dockerfile镜像创建自动化生产案例">47-Docker-Dockerfile镜像创建自动化生产案例</span>
+            <span class="post-date" title="2023-05-14 16:09:19">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/14/48-Docker-%E5%A4%9A%E5%AE%B9%E5%99%A8%E6%95%B0%E6%8D%AE%E5%85%B1%E4%BA%AB%E5%8F%8A%E6%8C%81%E4%B9%85%E5%8C%96/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="48-Docker-多容器数据共享及持久化">48-Docker-多容器数据共享及持久化</span>
+            <span class="post-date" title="2023-05-14 16:06:48">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%B8%89%E7%AB%A0-4-%E5%88%A9%E7%94%A8BeautifulSoup%E6%A8%A1%E5%9D%97%E7%88%AC%E5%8F%96%E6%9F%90%E7%BD%91%E5%A3%81%E7%BA%B8%E5%9B%BE%E5%BA%93%E5%9B%BE%E7%89%87/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第三章-4-利用BeautifulSoup模块爬取某网壁纸图库图片">Python爬虫-第三章-4-利用BeautifulSoup模块爬取某网壁纸图库图片</span>
+            <span class="post-date" title="2023-05-14 16:05:34">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%B8%89%E7%AB%A0-5-%E5%88%A9%E7%94%A8xpath%E7%88%AC%E5%8F%96%E6%9F%90%E5%85%AB%E6%88%92%E7%BD%91%E7%9B%B8%E5%85%B3%E8%AF%8D%E8%AF%AD%E5%85%AC%E5%8F%B8%E7%9A%84%E4%BF%A1%E6%81%AF%E5%92%8C%E4%BB%B7%E6%A0%BC/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第三章-5-利用xpath爬取某八戒网相关词语公司的信息和价格">Python爬虫-第三章-5-利用xpath爬取某八戒网相关词语公司的信息和价格</span>
+            <span class="post-date" title="2023-05-14 16:04:16">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%B8%89%E7%AB%A0-6-%E6%8A%93%E5%8F%96%E6%9F%90%E4%BA%91%E9%9F%B3%E4%B9%90%E8%AF%84%E8%AE%BA%E6%95%B0%E6%8D%AE/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第三章-6-抓取某云音乐评论数据">Python爬虫-第三章-6-抓取某云音乐评论数据</span>
+            <span class="post-date" title="2023-05-14 16:03:15">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-1-%E5%A4%9A%E7%BA%BF%E7%A8%8B%E5%A4%9A%E8%BF%9B%E7%A8%8B%E5%B9%B6%E5%8F%91%E7%88%AC%E5%8F%96%E2%85%A0/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-1-多线程多进程并发爬取Ⅰ">Python爬虫-第四章-1-多线程多进程并发爬取Ⅰ</span>
+            <span class="post-date" title="2023-05-14 16:01:27">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-1-%E5%A4%9A%E7%BA%BF%E7%A8%8B%E5%A4%9A%E8%BF%9B%E7%A8%8B%E5%B9%B6%E5%8F%91%E7%88%AC%E5%8F%96%E2%85%A1/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-1-多线程多进程并发爬取Ⅱ">Python爬虫-第四章-1-多线程多进程并发爬取Ⅱ</span>
+            <span class="post-date" title="2023-05-14 16:00:37">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-1-%E5%A4%9A%E7%BA%BF%E7%A8%8B%E5%A4%9A%E8%BF%9B%E7%A8%8B%E5%B9%B6%E5%8F%91%E7%88%AC%E5%8F%96%E2%85%A2-%E7%88%AC%E5%8F%96%E6%9F%90%E8%8F%9C%E5%B8%82%E5%9C%BA%E6%89%B9%E5%8F%91%E4%BB%B7%E6%95%B0%E6%8D%AE/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-1-多线程多进程并发爬取Ⅲ-爬取某菜市场批发价数据">Python爬虫-第四章-1-多线程多进程并发爬取Ⅲ-爬取某菜市场批发价数据</span>
+            <span class="post-date" title="2023-05-14 15:59:35">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-2-%E5%8D%8F%E7%A8%8B%E4%B8%8E%E5%BC%82%E6%AD%A5/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-2-协程与异步">Python爬虫-第四章-2-协程与异步</span>
+            <span class="post-date" title="2023-05-14 15:58:20">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/14/52-HAProxy-10%E7%A7%8D%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E8%B0%83%E5%BA%A6%E7%AE%97%E6%B3%95/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="52-HAProxy-10种负载均衡调度算法">52-HAProxy-10种负载均衡调度算法</span>
+            <span class="post-date" title="2023-05-14 15:56:12">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/14/55-Redis-%E7%BC%96%E8%AF%91%E9%83%A8%E7%BD%B2%E5%8F%8A%E6%95%B0%E6%8D%AE%E6%8C%81%E4%B9%85%E5%8C%96/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="55-Redis-编译部署及数据持久化">55-Redis-编译部署及数据持久化</span>
+            <span class="post-date" title="2023-05-14 15:54:02">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/14/56-Redis%E9%9B%86%E7%BE%A4-%E5%93%A8%E5%85%B5Sentinel%E6%90%AD%E5%BB%BA%E5%AE%9E%E7%8E%B0%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E9%AB%98%E5%8F%AF%E7%94%A8/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="56-Redis集群-哨兵Sentinel搭建实现负载均衡高可用">56-Redis集群-哨兵Sentinel搭建实现负载均衡高可用</span>
+            <span class="post-date" title="2023-05-14 15:41:50">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/14/998-%E6%90%AD%E5%BB%BA%E4%B8%80%E5%8F%B0%E7%A7%81%E7%94%A8%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%A8%E8%BF%87%E7%A8%8B/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="998-搭建一台私用服务器全过程">998-搭建一台私用服务器全过程</span>
+            <span class="post-date" title="2023-05-14 15:36:20">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/%20Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-3-%E5%A4%9A%E7%BA%BF%E7%A8%8B%E5%A4%9A%E8%BF%9B%E7%A8%8B%E6%8F%90%E5%8D%87%E4%BB%BB%E5%8A%A1%E6%89%A7%E8%A1%8C%E6%95%88%E7%8E%87/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-3-多线程多进程提升任务执行效率">Python爬虫-第四章-3-多线程多进程提升任务执行效率</span>
+            <span class="post-date" title="2023-05-14 15:35:16">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/%20Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-4-%E5%88%A9%E7%94%A8%E7%BA%BF%E7%A8%8B%E6%B1%A0%E5%92%8C%E8%BF%9B%E7%A8%8B%E6%B1%A0%E9%AB%98%E6%95%88%E7%88%AC%E5%8F%96%E5%8C%97%E4%BA%AC%E6%9F%90%E5%8F%91%E8%8F%9C%E5%9C%B0%E6%95%B0%E6%8D%AE/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-4-利用线程池和进程池高效爬取北京某发菜地数据">Python爬虫-第四章-4-利用线程池和进程池高效爬取北京某发菜地数据</span>
+            <span class="post-date" title="2023-05-14 15:34:07">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/13/%20Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-5-%E9%AB%98%E6%95%88%E6%8A%93%E5%8F%96%E8%A7%86%E9%A2%91%E7%BD%91%E7%AB%99%E8%A7%86%E9%A2%91%E8%B5%84%E6%BA%90%E8%87%B3%E6%9C%AC%E5%9C%B0/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-5-高效抓取视频网站视频资源至本地">Python爬虫-第四章-5-高效抓取视频网站视频资源至本地</span>
+            <span class="post-date" title="2023-05-13 20:13:14">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/13/%20Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%BA%94%E7%AB%A0-1-%E8%B6%85%E7%BA%A7%E9%B9%B0%E6%8F%92%E4%BB%B6%E5%AE%9E%E7%8E%B0%E8%87%AA%E5%8A%A8%E5%A1%AB%E5%86%99%E8%AF%86%E5%88%AB%E7%A0%81%E5%B9%B6%E7%99%BB%E5%BD%9512306%E7%BD%91%E7%AB%99/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第五章-1-超级鹰插件实现自动填写识别码并登录12306网站">Python爬虫-第五章-1-超级鹰插件实现自动填写识别码并登录12306网站</span>
+            <span class="post-date" title="2023-05-13 19:54:30">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/13/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%BA%94%E7%AB%A0-2-%E7%88%AC%E5%8F%96%E6%9F%90%E7%BD%91%E7%AB%99%E5%9B%BE%E5%BA%93/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第五章-2-爬取某网站图库">Python爬虫-第五章-2-爬取某网站图库</span>
+            <span class="post-date" title="2023-05-13 19:52:47">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/66-CICD%E6%8C%81%E7%BB%AD%E9%9B%86%E6%88%90%E5%B7%A5%E5%85%B7-Jenkins%E5%A3%B0%E6%98%8E%E5%BC%8FPipeline%E9%83%A8%E7%BD%B2JAVA%E7%A8%8B%E5%BA%8F%E7%94%9F%E4%BA%A7%E6%A1%88%E4%BE%8B(%E5%8C%85%E5%90%ABDocker%E6%A1%88%E4%BE%8B)/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="66-CICD持续集成工具-Jenkins声明式Pipeline部署JAVA程序生产案例(包含Docker案例)">66-CICD持续集成工具-Jenkins声明式Pipeline部署JAVA程序生产案例(包含Docker案例)</span>
+            <span class="post-date" title="2023-05-13 19:49:20">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/997-%E6%89%A9%E5%B1%95KVM%E8%99%9A%E6%8B%9F%E6%9C%BA%E9%80%BB%E8%BE%91%E5%8D%B7/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="67-日志分析系统ELK-ELK架构简述">67-日志分析系统ELK-ELK架构简述</span>
+            <span class="post-date" title="2023-05-13 19:47:57">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/67-%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90%E7%B3%BB%E7%BB%9FELK-ELK%E6%9E%B6%E6%9E%84%E7%AE%80%E8%BF%B0/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="67-日志分析系统ELK-ELK架构简述">67-日志分析系统ELK-ELK架构简述</span>
+            <span class="post-date" title="2023-05-13 19:46:06">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/68-%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90%E7%B3%BB%E7%BB%9FELK-Elasticsearch%E5%8D%95%E7%82%B9%E9%83%A8%E7%BD%B2%E5%92%8C%E9%85%8D%E7%BD%AE%E4%BC%98%E5%8C%96%EF%BC%88%E5%90%AB%E5%9F%BA%E4%BA%8EDocker%E5%8D%95%E7%82%B9%E9%83%A8%E7%BD%B2%E6%A1%88%E4%BE%8B%EF%BC%89/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="68-日志分析系统ELK-Elasticsearch单点部署和配置优化（含基于Docker单点部署案例）">68-日志分析系统ELK-Elasticsearch单点部署和配置优化（含基于Docker单点部署案例）</span>
+            <span class="post-date" title="2023-05-13 19:44:06">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/13/78-%E4%BA%91%E5%8E%9F%E7%94%9F%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-Kubernetes%E9%9B%86%E7%BE%A4%E8%8A%82%E7%82%B9%E6%A8%AA%E5%90%91%E4%BC%B8%E7%BC%A9%E5%8F%8A%E6%A0%B8%E5%BF%83%E7%BB%84%E4%BB%B6%E7%89%88%E6%9C%AC%E5%8D%87%E7%BA%A7/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="78-云原生操作系统-Kubernetes集群节点横向伸缩及核心组件版本升级">78-云原生操作系统-Kubernetes集群节点横向伸缩及核心组件版本升级</span>
+            <span class="post-date" title="2023-05-13 17:37:37">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/13/79-%E4%BA%91%E5%8E%9F%E7%94%9F%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-Kubectl%E5%91%BD%E4%BB%A4%E4%BB%A5%E5%8F%8AEtcd%E5%9F%BA%E4%BA%8E%E5%BF%AB%E7%85%A7%E7%9A%84%E6%95%B0%E6%8D%AE%E5%A4%87%E4%BB%BD%E4%B8%8E%E6%81%A2%E5%A4%8D/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="79-云原生操作系统-Kubectl命令以及Etcd基于快照的数据备份与恢复">79-云原生操作系统-Kubectl命令以及Etcd基于快照的数据备份与恢复</span>
+            <span class="post-date" title="2023-05-13 17:34:14">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All PMP管理 "
+           href="/2023/05/13/%E9%A2%84%E6%B5%8B%E5%9E%8B%E9%A1%B9%E7%9B%AE%E7%AE%A1%E7%90%86-6-%E9%A1%B9%E7%9B%AE%E8%BF%9B%E5%BA%A6%E7%AE%A1%E7%90%86%E2%85%A1/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="预测型项目管理-6-项目进度管理Ⅱ">预测型项目管理-6-项目进度管理Ⅱ</span>
+            <span class="post-date" title="2023-05-13 17:32:31">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/13/84-%E4%BA%91%E5%8E%9F%E7%94%9F%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-%E5%9F%BA%E4%BA%8Enerdctl%20+%20buildkitd%E6%9E%84%E5%BB%BA%E5%AE%B9%E5%99%A8%E9%95%9C%E5%83%8F20230513/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="84-云原生操作系统-基于nerdctl + buildkitd构建容器镜像">84-云原生操作系统-基于nerdctl + buildkitd构建容器镜像</span>
+            <span class="post-date" title="2023-05-13 17:22:54">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/13/86-%E4%BA%91%E5%8E%9F%E7%94%9F%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-Zookeeper%E9%9B%86%E7%BE%A4%E5%8F%8A%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%8A%A8%E6%80%81%E6%B3%A8%E5%86%8C%E5%92%8C%E5%8F%91%E7%8E%B0%E4%B8%9A%E5%8A%A1%E5%AE%B9%E5%99%A8%E5%8C%96%E6%A1%88%E4%BE%8B/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="86-云原生操作系统-Zookeeper集群及微服务动态注册和发现业务容器化案例">86-云原生操作系统-Zookeeper集群及微服务动态注册和发现业务容器化案例</span>
+            <span class="post-date" title="2023-05-13 17:13:23">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/13/87-%E4%BA%91%E5%8E%9F%E7%94%9F%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-Redis%E5%8D%95%E6%9C%BA%E5%92%8C%E9%9B%86%E7%BE%A4%E4%B8%9A%E5%8A%A1%E5%AE%B9%E5%99%A8%E5%8C%96%E6%A1%88%E4%BE%8B/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="87-云原生操作系统-Redis单机和集群业务容器化案例">87-云原生操作系统-Redis单机和集群业务容器化案例</span>
+            <span class="post-date" title="2023-05-13 17:08:49">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/997-%E4%BD%BF%E7%94%A8ChatGPT%E5%81%9A%E8%BF%90%E7%BB%B4%E5%BA%94%E7%94%A8%E5%B7%A5%E5%85%B7%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E8%A7%A3%E7%AD%94/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="997-使用ChatGPT做运维应用工具常见问题解答">997-使用ChatGPT做运维应用工具常见问题解答</span>
+            <span class="post-date" title="2023-05-13 15:49:52">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/%E5%A4%A7%E5%9E%8B%E4%BA%92%E8%81%94%E7%BD%91%E5%BE%AE%E6%9C%8D%E5%8A%A1%E6%9E%B6%E6%9E%84%E5%9B%BE/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="大型互联网微服务架构图">大型互联网微服务架构图</span>
+            <span class="post-date" title="2023-05-13 15:47:16">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/%E4%BA%91%E8%AE%A1%E7%AE%97%E6%9E%B6%E6%9E%84%E5%9B%BE/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="云计算架构图">云计算架构图</span>
+            <span class="post-date" title="2023-05-13 15:24:25">2023/05/13</span>
+        </a>
+        
+        <div id="no-item-tips">
+
+        </div>
+    </nav>
+    <div id="outline-list">
+    </div>
+</div>
+
+    </div>
+    <div class="hide-list">
+        <div class="semicircle" data-title="切换全屏 快捷键 s">
+            <div class="brackets first"><</div>
+            <div class="brackets">&gt;</div>
+        </div>
+    </div>
+</aside>
+<div id="post">
+    <div class="pjax">
+        <article id="post-87-云原生操作系统-Redis单机和集群业务容器化案例" class="article article-type-post" itemscope itemprop="blogPost">
+    
+        <h1 class="article-title">87-云原生操作系统-Redis单机和集群业务容器化案例</h1>
+    
+    <div class="article-meta">
+        
+        
+        
+        <span class="book">
+            <i class="iconfont icon-category"></i>
+            
+            
+            <a  data-rel="云原生">云原生</a>
+            
+        </span>
+        
+        
+    </div>
+    <div class="article-meta">
+        
+            Created At : <time class="date" title='Updated At: 2023-05-13 17:12:10'>2023-05-13 17:08</time>
+        
+    </div>
+    <div class="article-meta">
+        
+        
+        <span id="busuanzi_container_page_pv">
+            Views 👀 :<span id="busuanzi_value_page_pv">
+                <span class="count-comment">
+                    <span class="spinner">
+                      <div class="cube1"></div>
+                      <div class="cube2"></div>
+                    </span>
+                </span>
+            </span>
+        </span>
+        
+        
+    </div>
+    
+    <div class="toc-ref">
+    
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Server"><span class="toc-text">Server</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#x2F-etc-x2F-exports-the-access-control-list-for-filesystems-which-may-be-exported"><span class="toc-text">&#x2F;etc&#x2F;exports: the access control list for filesystems which may be exported</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#to-NFS-clients-See-exports-5"><span class="toc-text">to NFS clients.  See exports(5).</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-text"></span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Example-for-NFSv2-and-NFSv3"><span class="toc-text">Example for NFSv2 and NFSv3:</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#x2F-srv-x2F-homes-hostname1-rw-sync-no-subtree-check-hostname2-ro-sync-no-subtree-check"><span class="toc-text">&#x2F;srv&#x2F;homes       hostname1(rw,sync,no_subtree_check) hostname2(ro,sync,no_subtree_check)</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#-1"><span class="toc-text"></span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Example-for-NFSv4"><span class="toc-text">Example for NFSv4:</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#x2F-srv-x2F-nfs4-gss-x2F-krb5i-rw-sync-fsid-x3D-0-crossmnt-no-subtree-check"><span class="toc-text">&#x2F;srv&#x2F;nfs4        gss&#x2F;krb5i(rw,sync,fsid&#x3D;0,crossmnt,no_subtree_check)</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#x2F-srv-x2F-nfs4-x2F-homes-gss-x2F-krb5i-rw-sync-no-subtree-check"><span class="toc-text">&#x2F;srv&#x2F;nfs4&#x2F;homes  gss&#x2F;krb5i(rw,sync,no_subtree_check)</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#-2"><span class="toc-text"></span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%88%9B%E5%BB%BApv-root-K8s-ansible-redis-cat-pv-x2F-redis-persistentvolume-yaml"><span class="toc-text">#创建pv[root@K8s-ansible redis]#cat pv&#x2F;redis-persistentvolume.yaml </span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%88%9B%E5%BB%BApvc-root-K8s-ansible-redis-cat-pv-x2F-redis-persistentvolumeclaim-yaml"><span class="toc-text">#创建pvc[root@K8s-ansible redis]#cat pv&#x2F;redis-persistentvolumeclaim.yaml </span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#root-K8s-ansible-redis-kubectl-logs-deploy-devops-redis-54c95d8765-rzl85-n-mooreyxia8-C-11-Apr-15-53-54-232-oO0OoO0OoO0Oo-Redis-is-starting-oO0OoO0OoO0Oo8-C-11-Apr-15-53-54-232-Redis-versinotallow-x3D-4-0-14-bits-x3D-64-commit-x3D-00000000-modified-x3D-0-pid-x3D-8-just-started8-C-11-Apr-15-53-54-232-Configuration-loaded-Kubernetes-managed-hosts-file-127-0-0-1-localhost-1-localhost-ip6-localhost-ip6-loopbackfe00-0-ip6-localnetfe00-0-ip6-mcastprefixfe00-1-ip6-allnodesfe00-2-ip6-allrouters10-200-67-39-deploy-devops-redis-54c95d8765-rzl85%E2%80%A2-%E9%AA%8C%E8%AF%81Redis%E6%95%B0%E6%8D%AE%E8%AF%BB%E5%86%99-%E8%BF%9C%E7%A8%8B%E5%AE%A2%E6%88%B7%E7%AB%AF%E8%BF%9E%E6%8E%A5-%E6%B3%A8%E6%84%8F-Redis%E6%B2%A1%E6%9C%89%E7%94%A8%E6%88%B7%E7%9A%84%E6%A6%82%E5%BF%B5redis-cli-h-lt-Redis%E6%9C%8D%E5%8A%A1%E5%99%A8IP-gt-p-a-%E2%80%93no-auth-warning"><span class="toc-text">[root@K8s-ansible redis]#kubectl logs deploy-devops-redis-54c95d8765-rzl85 -n mooreyxia8:C 11 Apr 15:53:54.232 # oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo8:C 11 Apr 15:53:54.232 # Redis versinotallow&#x3D;4.0.14, bits&#x3D;64, commit&#x3D;00000000, modified&#x3D;0, pid&#x3D;8, just started8:C 11 Apr 15:53:54.232 # Configuration loaded# Kubernetes-managed hosts file.127.0.0.1   localhost::1 localhost ip6-localhost ip6-loopbackfe00::0 ip6-localnetfe00::0 ip6-mcastprefixfe00::1 ip6-allnodesfe00::2 ip6-allrouters10.200.67.39    deploy-devops-redis-54c95d8765-rzl85• 验证Redis数据读写#远程客户端连接,注意:Redis没有用户的概念redis-cli -h &lt;Redis服务器IP&gt; -p  -a  –no-auth-warning</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%BF%9B%E5%85%A5pod%E9%AA%8C%E8%AF%81-root-K8s-ansible-redis-kubectl-exec-it-deploy-devops-redis-54c95d8765-rzl85-n-mooreyxia-bashkubectl-exec-POD-COMMAND-is-DEPRECATED-and-will-be-removed-in-a-future-version-Use-kubectl-exec-POD-%E2%80%93-COMMAND-instead-root-deploy-devops-redis-54c95d8765-rzl85-x2F-redis-cli127-0-0-1-6379-gt-auth-123456OK127-0-0-1-6379-gt-set-name-mooreyxiaOK127-0-0-1-6379-gt-get-name%E2%80%9Cmooreyxia%E2%80%9D127-0-0-1-6379-gt-set-name-MOOREYXIAOK127-0-0-1-6379-gt-get-name%E2%80%9CMOOREYXIA%E2%80%9D127-0-0-1-6379-gt-DEL-name-integer-1127-0-0-1-6379-gt-get-name-nil"><span class="toc-text">#进入pod验证[root@K8s-ansible redis]#kubectl exec -it deploy-devops-redis-54c95d8765-rzl85 -n mooreyxia bashkubectl exec [POD] [COMMAND] is DEPRECATED and will be removed in a future version. Use kubectl exec [POD] – [COMMAND] instead.[root@deploy-devops-redis-54c95d8765-rzl85 &#x2F;]# redis-cli127.0.0.1:6379&gt; auth 123456OK127.0.0.1:6379&gt; set name mooreyxiaOK127.0.0.1:6379&gt; get name“mooreyxia”127.0.0.1:6379&gt; set name MOOREYXIAOK127.0.0.1:6379&gt; get name“MOOREYXIA”127.0.0.1:6379&gt; DEL name(integer) 1127.0.0.1:6379&gt; get name(nil)</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#x2F-etc-x2F-exports-the-access-control-list-for-filesystems-which-may-be-exported-1"><span class="toc-text">&#x2F;etc&#x2F;exports: the access control list for filesystems which may be exported</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#to-NFS-clients-See-exports-5-1"><span class="toc-text">to NFS clients.  See exports(5).</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#-3"><span class="toc-text"></span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Example-for-NFSv2-and-NFSv3-1"><span class="toc-text">Example for NFSv2 and NFSv3:</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#x2F-srv-x2F-homes-hostname1-rw-sync-no-subtree-check-hostname2-ro-sync-no-subtree-check-1"><span class="toc-text">&#x2F;srv&#x2F;homes       hostname1(rw,sync,no_subtree_check) hostname2(ro,sync,no_subtree_check)</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#-4"><span class="toc-text"></span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Example-for-NFSv4-1"><span class="toc-text">Example for NFSv4:</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#x2F-srv-x2F-nfs4-gss-x2F-krb5i-rw-sync-fsid-x3D-0-crossmnt-no-subtree-check-1"><span class="toc-text">&#x2F;srv&#x2F;nfs4        gss&#x2F;krb5i(rw,sync,fsid&#x3D;0,crossmnt,no_subtree_check)</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#x2F-srv-x2F-nfs4-x2F-homes-gss-x2F-krb5i-rw-sync-no-subtree-check-1"><span class="toc-text">&#x2F;srv&#x2F;nfs4&#x2F;homes  gss&#x2F;krb5i(rw,sync,no_subtree_check)</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#-5"><span class="toc-text"></span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%A1%AE%E8%AE%A4pv%E5%8F%AF%E7%94%A8-root-K8s-ansible-redis-cluster-kubectl-get-pv-grep-redis-clusterredis-cluster-pv0-5Gi-RWO-Retain-Available-44sredis-cluster-pv1-5Gi-RWO-Retain-Available-44sredis-cluster-pv2-5Gi-RWO-Retain-Available-44sredis-cluster-pv3-5Gi-RWO-Retain-Available-44sredis-cluster-pv4-5Gi-RWO-Retain-Available-44sredis-cluster-pv5-5Gi-RWO-Retain-Available-44s%E2%80%A2-%E9%83%A8%E7%BD%B2redis-cluster"><span class="toc-text">#确认pv可用[root@K8s-ansible redis-cluster]#kubectl get pv |grep redis-clusterredis-cluster-pv0                          5Gi        RWO            Retain           Available                                                                          44sredis-cluster-pv1                          5Gi        RWO            Retain           Available                                                                          44sredis-cluster-pv2                          5Gi        RWO            Retain           Available                                                                          44sredis-cluster-pv3                          5Gi        RWO            Retain           Available                                                                          44sredis-cluster-pv4                          5Gi        RWO            Retain           Available                                                                          44sredis-cluster-pv5                          5Gi        RWO            Retain           Available                                                                          44s• 部署redis cluster</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Data"><span class="toc-text">Data</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#redis-conf"><span class="toc-text">redis.conf:</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#BinaryData"><span class="toc-text">BinaryData</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%88%9B%E5%BB%BAredis-cluster%E9%9C%80%E8%A6%81%E4%BD%BF%E7%94%A8%E7%9A%84%E6%89%80%E6%9C%89pod%E8%8A%82%E7%82%B9-%E5%88%9B%E5%BB%BA%E5%90%8E%E4%B8%BA%E5%8D%95%E6%9C%BA%E6%A8%A1%E5%BC%8F-root-K8s-ansible-redis-cluster-vim-redis-yaml-root-K8s-ansible-redis-cluster-cat-redis-yamlapiVersion-v1kind-Servicemetadata-name-redis-namespace-mooreyxia-labels-app-redisspec-selector-app-redis-appCluster-redis-cluster-ports-name-redis-port-6379-clusterIP-None-%E7%94%A8%E4%BA%8E%E5%86%85%E9%83%A8%E6%9C%8D%E5%8A%A1%E5%9F%BA%E4%BA%8Eservice-name%E7%9A%84%E8%AE%BF%E9%97%AE"><span class="toc-text">#创建redis-cluster需要使用的所有pod节点,创建后为单机模式[root@K8s-ansible redis-cluster]#vim redis.yaml[root@K8s-ansible redis-cluster]#cat redis.yamlapiVersion: v1kind: Servicemetadata:  name: redis  namespace: mooreyxia  labels:    app: redisspec:  selector:    app: redis    appCluster: redis-cluster  ports:  - name: redis    port: 6379  clusterIP: None #用于内部服务基于service name的访问
+  </span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Server-1"><span class="toc-text">Server</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Clients"><span class="toc-text">Clients</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Memory"><span class="toc-text">Memory</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Persistence"><span class="toc-text">Persistence</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Stats"><span class="toc-text">Stats</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Replication"><span class="toc-text">Replication</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#CPU"><span class="toc-text">CPU</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Cluster"><span class="toc-text">Cluster</span></a></li></ol>
+    
+<style>
+    .left-col .switch-btn,
+    .left-col .switch-area {
+        display: none;
+    }
+    .toc-level-3 i,
+    .toc-level-3 ol {
+        display: none !important;
+    }
+</style>
+</div>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>前提：基础镜像的构建请参考分层镜像构建并部署业务到Kubernetes集群生产案例<br>PV&#x2F;PVC及Redis单机业务容器化<br>架构及部署<br>• 架构图<br><img src="/../img/7464bf765c76fd86f9e897c5f966a00f274faf.png"><br>• 单机redis迁移至kubernetes步骤<br>• 构建redis镜像<br>#准备镜像构建文件<br>[root@K8s-ansible redis]#ls<br>Dockerfile  build-command.sh  redis-4.0.14.tar.gz  redis.conf  run_redis.sh</p>
+<p>#redis配置 - 更多优化方式参考redis专题博客<br>[root@K8s-ansible redis]#grep -Ev “^ *#|^$” redis.conf<br>bind 0.0.0.0<br>protected-mode yes<br>port 6379<br>tcp-backlog 511<br>timeout 0<br>tcp-keepalive 300<br>daemonize yes<br>supervised no<br>pidfile &#x2F;var&#x2F;run&#x2F;redis_6379.pid<br>loglevel notice<br>logfile “”<br>databases 16<br>always-show-logo yes<br>save 900 1  #定义触发快照规则 - save m秒 n次变化 可配置多个<br>save 5 1<br>save 300 10<br>save 60 10000<br>stop-writes-on-bgsave-error no #后台出现错误时不停止写入<br>rdbcompression yes<br>rdbchecksum yes<br>dbfilename dump.rdb<br>dir &#x2F;data&#x2F;redis-data #快照存放<br>slave-serve-stale-data yes<br>slave-read-only yes<br>repl-diskless-sync no<br>repl-diskless-sync-delay 5<br>repl-disable-tcp-nodelay no<br>slave-priority 100<br>requirepass 123456<br>lazyfree-lazy-eviction no<br>lazyfree-lazy-expire no<br>lazyfree-lazy-server-del no<br>slave-lazy-flush no<br>appendonly no<br>appendfilename “appendonly.aof”<br>appendfsync everysec<br>no-appendfsync-on-rewrite no<br>auto-aof-rewrite-percentage 100<br>auto-aof-rewrite-min-size 64mb<br>aof-load-truncated yes<br>aof-use-rdb-preamble no<br>lua-time-limit 5000<br>slowlog-log-slower-than 10000<br>slowlog-max-len 128<br>latency-monitor-threshold 0<br>notify-keyspace-events “”<br>hash-max-ziplist-entries 512<br>hash-max-ziplist-value 64<br>list-max-ziplist-size -2<br>list-compress-depth 0<br>set-max-intset-entries 512<br>zset-max-ziplist-entries 128<br>zset-max-ziplist-value 64<br>hll-sparse-max-bytes 3000<br>activerehashing yes<br>client-output-buffer-limit normal 0 0 0<br>client-output-buffer-limit slave 256mb 64mb 60<br>client-output-buffer-limit pubsub 32mb 8mb 60<br>hz 10<br>aof-rewrite-incremental-fsync yes</p>
+<p>#redis服务启动脚本<br>[root@K8s-ansible redis]#cat run_redis.sh<br>#!&#x2F;bin&#x2F;bash</p>
+<p>&#x2F;usr&#x2F;sbin&#x2F;redis-server &#x2F;usr&#x2F;local&#x2F;redis&#x2F;redis.conf</p>
+<p>tail -f  &#x2F;etc&#x2F;hosts</p>
+<p>#镜像构建<br>[root@K8s-ansible redis]#vim Dockerfile<br>[root@K8s-ansible redis]#cat Dockerfile<br>#Redis Image<br>FROM K8s-harbor01.mooreyxia.com&#x2F;baseimages&#x2F;centos-base:7.9.2009 #以构建的基础镜像</p>
+<p>MAINTAINER mooreyxia “<a href="mailto:&#x6d;&#111;&#x6f;&#x72;&#x65;&#121;&#120;&#105;&#x61;&#64;&#x67;&#109;&#97;&#105;&#108;&#46;&#99;&#x6f;&#x6d;">&#x6d;&#111;&#x6f;&#x72;&#x65;&#121;&#120;&#105;&#x61;&#64;&#x67;&#109;&#97;&#105;&#108;&#46;&#99;&#x6f;&#x6d;</a>“</p>
+<p>ADD redis-4.0.14.tar.gz &#x2F;usr&#x2F;local&#x2F;src #源码<br>RUN ln -sv &#x2F;usr&#x2F;local&#x2F;src&#x2F;redis-4.0.14 &#x2F;usr&#x2F;local&#x2F;redis &amp;&amp; cd &#x2F;usr&#x2F;local&#x2F;redis &amp;&amp; make &amp;&amp; cp src&#x2F;redis-cli &#x2F;usr&#x2F;sbin&#x2F; &amp;&amp; cp src&#x2F;redis-server  &#x2F;usr&#x2F;sbin&#x2F; &amp;&amp; mkdir -pv &#x2F;data&#x2F;redis-data<br>ADD redis.conf &#x2F;usr&#x2F;local&#x2F;redis&#x2F;redis.conf #配置文件<br>ADD run_redis.sh &#x2F;usr&#x2F;local&#x2F;redis&#x2F;run_redis.sh</p>
+<p>EXPOSE 6379</p>
+<p>CMD [“&#x2F;usr&#x2F;local&#x2F;redis&#x2F;run_redis.sh”] #拉起redis服务脚本</p>
+<p>#生成镜像并上传到harbor<br>[root@K8s-ansible redis]#cat build-command.sh<br>#!&#x2F;bin&#x2F;bash<br>TAG&#x3D;$1<br>docker build -t K8s-harbor01.mooreyxia.com&#x2F;demo&#x2F;redis:${TAG} .<br>sleep 3<br>docker push  K8s-harbor01.mooreyxia.com&#x2F;demo&#x2F;redis:${TAG}</p>
+<p>[root@K8s-ansible redis]#bash build-command.sh 4.0.14<br>…<br>Successfully built f4c0b8e14f7e<br>Successfully tagged K8s-harbor01.mooreyxia.com&#x2F;demo&#x2F;redis:4.0.14<br>The push refers to repository [K8s-harbor01.mooreyxia.com&#x2F;demo&#x2F;redis]<br>ef00240fbc60: Pushed<br>ecfb952b7eeb: Pushed<br>deca2c414cae: Pushed<br>7a54ec7cbc12: Pushed<br>3e6fa9b75f89: Mounted from demo&#x2F;nginx-web1<br>cf71274b159a: Mounted from demo&#x2F;nginx-web1<br>174f56854903: Mounted from demo&#x2F;nginx-web1<br>4.0.14: digest: sha256:b41df008ed3ae9b274999e52a277d6216997a929d5632f5e0230d67fd9ac83f7 size: 1793• 测试redis 镜像<br>#运行容器<br>[root@K8s-ansible redis]#docker run -it -p 6379:6379 K8s-harbor01.mooreyxia.com&#x2F;demo&#x2F;redis:4.0.14<br>7:C 11 Apr 15:26:33.304 # oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo<br>7:C 11 Apr 15:26:33.305 # Redis versinotallow&#x3D;4.0.14, bits&#x3D;64, commit&#x3D;00000000, modified&#x3D;0, pid&#x3D;7, just started<br>7:C 11 Apr 15:26:33.306 # Configuration loaded<br>127.0.0.1   localhost<br>::1 localhost ip6-localhost ip6-loopback<br>fe00::0 ip6-localnet<br>ff00::0 ip6-mcastprefix<br>ff02::1 ip6-allnodes<br>ff02::2 ip6-allrouters<br>172.17.0.4  ec744d12b8d4</p>
+<p>#测试访问<br>[root@K8s-harbor01 ~]#telnet 192.168.11.205 6379<br>Trying 192.168.11.205…<br>Connected to 192.168.11.205.<br>Escape character is ‘^]’.<br>auth 123456<br>+OK<br>info<br>$2726</p>
+<h1 id="Server"><a href="#Server" class="headerlink" title="Server"></a>Server</h1><p>redis_version:4.0.14<br>redis_git_sha1:00000000<br>redis_git_dirty:0<br>redis_build_id:598238f247b3743a<br>redis_mode:standalone<br>os:Linux 5.15.0-69-generic x86_64<br>arch_bits:64<br>…• 创建PV与PVC<br>[root@K8s-ansible redis]#tree .<br>.<br>├── pv<br>│   ├── redis-persistentvolume.yaml<br>│   └── redis-persistentvolumeclaim.yaml<br>└── redis.yaml</p>
+<p>1 directory, 3 files</p>
+<p>#创建NFS存储<br>[root@K8s-haproxy01 ~]#mkdir -p &#x2F;data&#x2F;k8sdata&#x2F;mooreyxia&#x2F;redis-datadir-1<br>[root@K8s-haproxy01 ~]#vim &#x2F;etc&#x2F;exports<br>[root@K8s-haproxy01 ~]#cat &#x2F;etc&#x2F;exports </p>
+<h1 id="x2F-etc-x2F-exports-the-access-control-list-for-filesystems-which-may-be-exported"><a href="#x2F-etc-x2F-exports-the-access-control-list-for-filesystems-which-may-be-exported" class="headerlink" title="&#x2F;etc&#x2F;exports: the access control list for filesystems which may be exported"></a>&#x2F;etc&#x2F;exports: the access control list for filesystems which may be exported</h1><h1 id="to-NFS-clients-See-exports-5"><a href="#to-NFS-clients-See-exports-5" class="headerlink" title="to NFS clients.  See exports(5)."></a>to NFS clients.  See exports(5).</h1><h1 id=""><a href="#" class="headerlink" title=""></a></h1><h1 id="Example-for-NFSv2-and-NFSv3"><a href="#Example-for-NFSv2-and-NFSv3" class="headerlink" title="Example for NFSv2 and NFSv3:"></a>Example for NFSv2 and NFSv3:</h1><h1 id="x2F-srv-x2F-homes-hostname1-rw-sync-no-subtree-check-hostname2-ro-sync-no-subtree-check"><a href="#x2F-srv-x2F-homes-hostname1-rw-sync-no-subtree-check-hostname2-ro-sync-no-subtree-check" class="headerlink" title="&#x2F;srv&#x2F;homes       hostname1(rw,sync,no_subtree_check) hostname2(ro,sync,no_subtree_check)"></a>&#x2F;srv&#x2F;homes       hostname1(rw,sync,no_subtree_check) hostname2(ro,sync,no_subtree_check)</h1><h1 id="-1"><a href="#-1" class="headerlink" title=""></a></h1><h1 id="Example-for-NFSv4"><a href="#Example-for-NFSv4" class="headerlink" title="Example for NFSv4:"></a>Example for NFSv4:</h1><h1 id="x2F-srv-x2F-nfs4-gss-x2F-krb5i-rw-sync-fsid-x3D-0-crossmnt-no-subtree-check"><a href="#x2F-srv-x2F-nfs4-gss-x2F-krb5i-rw-sync-fsid-x3D-0-crossmnt-no-subtree-check" class="headerlink" title="&#x2F;srv&#x2F;nfs4        gss&#x2F;krb5i(rw,sync,fsid&#x3D;0,crossmnt,no_subtree_check)"></a>&#x2F;srv&#x2F;nfs4        gss&#x2F;krb5i(rw,sync,fsid&#x3D;0,crossmnt,no_subtree_check)</h1><h1 id="x2F-srv-x2F-nfs4-x2F-homes-gss-x2F-krb5i-rw-sync-no-subtree-check"><a href="#x2F-srv-x2F-nfs4-x2F-homes-gss-x2F-krb5i-rw-sync-no-subtree-check" class="headerlink" title="&#x2F;srv&#x2F;nfs4&#x2F;homes  gss&#x2F;krb5i(rw,sync,no_subtree_check)"></a>&#x2F;srv&#x2F;nfs4&#x2F;homes  gss&#x2F;krb5i(rw,sync,no_subtree_check)</h1><h1 id="-2"><a href="#-2" class="headerlink" title=""></a></h1><p>&#x2F;data&#x2F;k8sdata *(rw,no_root_squash)<br>&#x2F;data&#x2F;volumes <em>(rw,no_root_squash)<br>[root@K8s-haproxy01 ~]#exportfs -avs<br>exportfs: &#x2F;etc&#x2F;exports [2]: Neither ‘subtree_check’ or ‘no_subtree_check’ specified for export “</em>:&#x2F;data&#x2F;k8sdata”.<br>  Assuming default behaviour (‘no_subtree_check’).<br>  NOTE: this default has changed since nfs-utils version 1.0.x</p>
+<p>exportfs: &#x2F;etc&#x2F;exports [3]: Neither ‘subtree_check’ or ‘no_subtree_check’ specified for export “*:&#x2F;data&#x2F;volumes”.<br>  Assuming default behaviour (‘no_subtree_check’).<br>  NOTE: this default has changed since nfs-utils version 1.0.x</p>
+<p>exporting *:&#x2F;data&#x2F;volumes<br>exporting *:&#x2F;data&#x2F;k8sdata</p>
+<p>#showmount<br>[root@K8s-ansible redis]#showmount -e 192.168.11.203<br>Export list for 192.168.11.203:<br>&#x2F;data&#x2F;volumes *<br>&#x2F;data&#x2F;k8sdata *</p>
+<h2 id="创建pv-root-K8s-ansible-redis-cat-pv-x2F-redis-persistentvolume-yaml"><a href="#创建pv-root-K8s-ansible-redis-cat-pv-x2F-redis-persistentvolume-yaml" class="headerlink" title="#创建pv[root@K8s-ansible redis]#cat pv&#x2F;redis-persistentvolume.yaml "></a>#创建pv<br>[root@K8s-ansible redis]#cat pv&#x2F;redis-persistentvolume.yaml </h2><p>apiVersion: v1<br>kind: PersistentVolume<br>metadata:<br>  name: redis-datadir-pv-1<br>spec:<br>  capacity:<br>    storage: 10Gi<br>  accessModes:<br>    - ReadWriteOnce<br>  nfs:<br>    path: &#x2F;data&#x2F;k8sdata&#x2F;mooreyxia&#x2F;redis-datadir-1<br>    server: 192.168.11.203</p>
+<p>[root@K8s-ansible redis]#kubectl apply -f pv&#x2F;redis-persistentvolume.yaml<br>persistentvolume&#x2F;redis-datadir-pv-1 created</p>
+<p>[root@K8s-ansible redis]#kubectl get pv|grep redis-datadir-pv-1<br>redis-datadir-pv-1                         10Gi       RWO            Retain           Available                                                                          23s</p>
+<h2 id="创建pvc-root-K8s-ansible-redis-cat-pv-x2F-redis-persistentvolumeclaim-yaml"><a href="#创建pvc-root-K8s-ansible-redis-cat-pv-x2F-redis-persistentvolumeclaim-yaml" class="headerlink" title="#创建pvc[root@K8s-ansible redis]#cat pv&#x2F;redis-persistentvolumeclaim.yaml "></a>#创建pvc<br>[root@K8s-ansible redis]#cat pv&#x2F;redis-persistentvolumeclaim.yaml </h2><p>apiVersion: v1<br>kind: PersistentVolumeClaim<br>metadata:<br>  name: redis-datadir-pvc-1<br>  namespace: mooreyxia<br>spec:<br>  volumeName: redis-datadir-pv-1<br>  accessModes:<br>    - ReadWriteOnce<br>  resources:<br>    requests:<br>      storage: 10Gi</p>
+<p>[root@K8s-ansible redis]#kubectl apply -f pv&#x2F;redis-persistentvolumeclaim.yaml<br>persistentvolumeclaim&#x2F;redis-datadir-pvc-1 created</p>
+<p>[root@K8s-ansible redis]#kubectl get pvc -n mooreyxia|grep redis-datadir-pvc-1<br>redis-datadir-pvc-1       Bound    redis-datadir-pv-1       10Gi       RWO                           90s• 运行Redis服务<br>#创建控制器并运行<br>[root@K8s-ansible redis]#cat redis.yaml<br>kind: Deployment<br>apiVersion: apps&#x2F;v1<br>metadata:<br>  labels:<br>    app: devops-redis<br>  name: deploy-devops-redis<br>  namespace: mooreyxia<br>spec:<br>  replicas: 1<br>  selector:<br>    matchLabels:<br>      app: devops-redis<br>  template:<br>    metadata:<br>      labels:<br>        app: devops-redis<br>    spec:<br>      containers:<br>        - name: redis-container<br>          image: K8s-harbor01.mooreyxia.com&#x2F;demo&#x2F;redis:4.0.14<br>          imagePullPolicy: Always<br>          volumeMounts:<br>          - mountPath: “&#x2F;data&#x2F;redis-data&#x2F;“<br>            name: redis-datadir<br>      volumes:<br>        - name: redis-datadir<br>          persistentVolumeClaim:<br>            claimName: redis-datadir-pvc-1 </p>
+<hr>
+<p>kind: Service<br>apiVersion: v1<br>metadata:<br>  labels:<br>    app: devops-redis<br>  name: srv-devops-redis<br>  namespace: mooreyxia<br>spec:<br>  type: NodePort<br>  ports:</p>
+<ul>
+<li>name: http<br>port: 6379<br>targetPort: 6379<br>nodePort: 30379 #这里要在kubernetes设定的端口范围内<br>  selector:<br>app: devops-redis<br>  sessionAffinity: ClientIP #亲和,pod内部访问<br>  sessionAffinityConfig:<br>clientIP:<br>  timeoutSeconds: 10800</li>
+</ul>
+<p>[root@K8s-ansible redis]#kubectl apply -f redis.yaml<br>deployment.apps&#x2F;deploy-devops-redis unchanged<br>service&#x2F;srv-devops-redis created</p>
+<p>#确认pod运行没有报错<br>[root@K8s-ansible redis]#kubectl get svc -n mooreyxia|grep srv-devops-redis<br>srv-devops-redis                NodePort    10.100.185.130   <none>        6379:30379&#x2F;TCP                                 47s</p>
+<p>[root@K8s-ansible redis]#kubectl get pod -n  mooreyxia|grep devops-redis<br>deploy-devops-redis-54c95d8765-rzl85                1&#x2F;1     Running   0               3m41s</p>
+<p>[root@K8s-ansible redis]#kubectl describe pod deploy-devops-redis-54c95d8765-rzl85 -n mooreyxia<br>Name:             deploy-devops-redis-54c95d8765-rzl85<br>Namespace:        mooreyxia<br>Priority:         0<br>Service Account:  default<br>Node:             192.168.11.215&#x2F;192.168.11.215<br>Start Time:       Tue, 11 Apr 2023 07:53:46 +0000<br>Labels:           app&#x3D;devops-redis<br>                  pod-template-hash&#x3D;54c95d8765<br>Annotations:      <none><br>Status:           Running<br>IP:               10.200.67.39<br>IPs:<br>  IP:           10.200.67.39<br>Controlled By:  ReplicaSet&#x2F;deploy-devops-redis-54c95d8765<br>Containers:<br>  redis-container:<br>    Container ID:   containerd:&#x2F;&#x2F;47ecdeb9e8b7a8639c21c829d572d392d70c694e1a10e63cc451f22bf297aa67<br>    Image:          K8s-harbor01.mooreyxia.com&#x2F;demo&#x2F;redis:4.0.14<br>    Image ID:       K8s-harbor01.mooreyxia.com&#x2F;demo&#x2F;redis@sha256:b41df008ed3ae9b274999e52a277d6216997a929d5632f5e0230d67fd9ac83f7<br>    Port:           <none><br>    Host Port:      <none><br>    State:          Running<br>      Started:      Tue, 11 Apr 2023 07:53:54 +0000<br>    Ready:          True<br>    Restart Count:  0<br>    Environment:    <none><br>    Mounts:<br>      &#x2F;data&#x2F;redis-data&#x2F; from redis-datadir (rw)<br>      &#x2F;var&#x2F;run&#x2F;secrets&#x2F;kubernetes.io&#x2F;serviceaccount from kube-api-access-6cmz4 (ro)<br>Conditions:<br>  Type              Status<br>  Initialized       True<br>  Ready             True<br>  ContainersReady   True<br>  PodScheduled      True<br>Volumes:<br>  redis-datadir:<br>    Type:       PersistentVolumeClaim (a reference to a PersistentVolumeClaim in the same namespace)<br>    ClaimName:  redis-datadir-pvc-1<br>    ReadOnly:   false<br>  kube-api-access-6cmz4:<br>    Type:                    Projected (a volume that contains injected data from multiple sources)<br>    TokenExpirationSeconds:  3607<br>    ConfigMapName:           kube-root-ca.crt<br>    ConfigMapOptional:       <nil><br>    DownwardAPI:             true<br>QoS Class:                   BestEffort<br>Node-Selectors:              <none><br>Tolerations:                 node.kubernetes.io&#x2F;not-ready:NoExecute op&#x3D;Exists for 300s<br>                             node.kubernetes.io&#x2F;unreachable:NoExecute op&#x3D;Exists for 300s<br>Events:<br>  Type    Reason     Age    From               Message</p>
+<hr>
+<p>  Normal  Scheduled  4m1s   default-scheduler  Successfully assigned mooreyxia&#x2F;deploy-devops-redis-54c95d8765-rzl85 to 192.168.11.215<br>  Normal  Pulling    3m59s  kubelet            Pulling image “K8s-harbor01.mooreyxia.com&#x2F;demo&#x2F;redis:4.0.14”<br>  Normal  Pulled     3m54s  kubelet            Successfully pulled image “K8s-harbor01.mooreyxia.com&#x2F;demo&#x2F;redis:4.0.14” in 5.810379411s (5.810427887s including waiting)<br>  Normal  Created    3m53s  kubelet            Created container redis-container<br>  Normal  Started    3m53s  kubelet            Started container redis-container</p>
+<h2 id="root-K8s-ansible-redis-kubectl-logs-deploy-devops-redis-54c95d8765-rzl85-n-mooreyxia8-C-11-Apr-15-53-54-232-oO0OoO0OoO0Oo-Redis-is-starting-oO0OoO0OoO0Oo8-C-11-Apr-15-53-54-232-Redis-versinotallow-x3D-4-0-14-bits-x3D-64-commit-x3D-00000000-modified-x3D-0-pid-x3D-8-just-started8-C-11-Apr-15-53-54-232-Configuration-loaded-Kubernetes-managed-hosts-file-127-0-0-1-localhost-1-localhost-ip6-localhost-ip6-loopbackfe00-0-ip6-localnetfe00-0-ip6-mcastprefixfe00-1-ip6-allnodesfe00-2-ip6-allrouters10-200-67-39-deploy-devops-redis-54c95d8765-rzl85•-验证Redis数据读写-远程客户端连接-注意-Redis没有用户的概念redis-cli-h-lt-Redis服务器IP-gt-p-a-–no-auth-warning"><a href="#root-K8s-ansible-redis-kubectl-logs-deploy-devops-redis-54c95d8765-rzl85-n-mooreyxia8-C-11-Apr-15-53-54-232-oO0OoO0OoO0Oo-Redis-is-starting-oO0OoO0OoO0Oo8-C-11-Apr-15-53-54-232-Redis-versinotallow-x3D-4-0-14-bits-x3D-64-commit-x3D-00000000-modified-x3D-0-pid-x3D-8-just-started8-C-11-Apr-15-53-54-232-Configuration-loaded-Kubernetes-managed-hosts-file-127-0-0-1-localhost-1-localhost-ip6-localhost-ip6-loopbackfe00-0-ip6-localnetfe00-0-ip6-mcastprefixfe00-1-ip6-allnodesfe00-2-ip6-allrouters10-200-67-39-deploy-devops-redis-54c95d8765-rzl85•-验证Redis数据读写-远程客户端连接-注意-Redis没有用户的概念redis-cli-h-lt-Redis服务器IP-gt-p-a-–no-auth-warning" class="headerlink" title="[root@K8s-ansible redis]#kubectl logs deploy-devops-redis-54c95d8765-rzl85 -n mooreyxia8:C 11 Apr 15:53:54.232 # oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo8:C 11 Apr 15:53:54.232 # Redis versinotallow&#x3D;4.0.14, bits&#x3D;64, commit&#x3D;00000000, modified&#x3D;0, pid&#x3D;8, just started8:C 11 Apr 15:53:54.232 # Configuration loaded# Kubernetes-managed hosts file.127.0.0.1   localhost::1 localhost ip6-localhost ip6-loopbackfe00::0 ip6-localnetfe00::0 ip6-mcastprefixfe00::1 ip6-allnodesfe00::2 ip6-allrouters10.200.67.39    deploy-devops-redis-54c95d8765-rzl85• 验证Redis数据读写#远程客户端连接,注意:Redis没有用户的概念redis-cli -h &lt;Redis服务器IP&gt; -p  -a  –no-auth-warning"></a>[root@K8s-ansible redis]#kubectl logs deploy-devops-redis-54c95d8765-rzl85 -n mooreyxia<br>8:C 11 Apr 15:53:54.232 # oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo<br>8:C 11 Apr 15:53:54.232 # Redis versinotallow&#x3D;4.0.14, bits&#x3D;64, commit&#x3D;00000000, modified&#x3D;0, pid&#x3D;8, just started<br>8:C 11 Apr 15:53:54.232 # Configuration loaded<br># Kubernetes-managed hosts file.<br>127.0.0.1   localhost<br>::1 localhost ip6-localhost ip6-loopback<br>fe00::0 ip6-localnet<br>fe00::0 ip6-mcastprefix<br>fe00::1 ip6-allnodes<br>fe00::2 ip6-allrouters<br>10.200.67.39    deploy-devops-redis-54c95d8765-rzl85• 验证Redis数据读写<br>#远程客户端连接,注意:Redis没有用户的概念<br>redis-cli -h &lt;Redis服务器IP&gt; -p <PORT> -a <PASSWORD> –no-auth-warning</h2><h2 id="进入pod验证-root-K8s-ansible-redis-kubectl-exec-it-deploy-devops-redis-54c95d8765-rzl85-n-mooreyxia-bashkubectl-exec-POD-COMMAND-is-DEPRECATED-and-will-be-removed-in-a-future-version-Use-kubectl-exec-POD-–-COMMAND-instead-root-deploy-devops-redis-54c95d8765-rzl85-x2F-redis-cli127-0-0-1-6379-gt-auth-123456OK127-0-0-1-6379-gt-set-name-mooreyxiaOK127-0-0-1-6379-gt-get-name“mooreyxia”127-0-0-1-6379-gt-set-name-MOOREYXIAOK127-0-0-1-6379-gt-get-name“MOOREYXIA”127-0-0-1-6379-gt-DEL-name-integer-1127-0-0-1-6379-gt-get-name-nil"><a href="#进入pod验证-root-K8s-ansible-redis-kubectl-exec-it-deploy-devops-redis-54c95d8765-rzl85-n-mooreyxia-bashkubectl-exec-POD-COMMAND-is-DEPRECATED-and-will-be-removed-in-a-future-version-Use-kubectl-exec-POD-–-COMMAND-instead-root-deploy-devops-redis-54c95d8765-rzl85-x2F-redis-cli127-0-0-1-6379-gt-auth-123456OK127-0-0-1-6379-gt-set-name-mooreyxiaOK127-0-0-1-6379-gt-get-name“mooreyxia”127-0-0-1-6379-gt-set-name-MOOREYXIAOK127-0-0-1-6379-gt-get-name“MOOREYXIA”127-0-0-1-6379-gt-DEL-name-integer-1127-0-0-1-6379-gt-get-name-nil" class="headerlink" title="#进入pod验证[root@K8s-ansible redis]#kubectl exec -it deploy-devops-redis-54c95d8765-rzl85 -n mooreyxia bashkubectl exec [POD] [COMMAND] is DEPRECATED and will be removed in a future version. Use kubectl exec [POD] – [COMMAND] instead.[root@deploy-devops-redis-54c95d8765-rzl85 &#x2F;]# redis-cli127.0.0.1:6379&gt; auth 123456OK127.0.0.1:6379&gt; set name mooreyxiaOK127.0.0.1:6379&gt; get name“mooreyxia”127.0.0.1:6379&gt; set name MOOREYXIAOK127.0.0.1:6379&gt; get name“MOOREYXIA”127.0.0.1:6379&gt; DEL name(integer) 1127.0.0.1:6379&gt; get name(nil)"></a>#进入pod验证<br>[root@K8s-ansible redis]#kubectl exec -it deploy-devops-redis-54c95d8765-rzl85 -n mooreyxia bash<br>kubectl exec [POD] [COMMAND] is DEPRECATED and will be removed in a future version. Use kubectl exec [POD] – [COMMAND] instead.<br>[root@deploy-devops-redis-54c95d8765-rzl85 &#x2F;]# redis-cli<br>127.0.0.1:6379&gt; auth 123456<br>OK<br>127.0.0.1:6379&gt; set name mooreyxia<br>OK<br>127.0.0.1:6379&gt; get name<br>“mooreyxia”<br>127.0.0.1:6379&gt; set name MOOREYXIA<br>OK<br>127.0.0.1:6379&gt; get name<br>“MOOREYXIA”<br>127.0.0.1:6379&gt; DEL name<br>(integer) 1<br>127.0.0.1:6379&gt; get name<br>(nil)</h2><p>[root@K8s-haproxy01 ~]#cat redis_test.sh<br>#!&#x2F;bin&#x2F;bash</p>
+<p>NUM&#x3D;500<br>PASS&#x3D;123456</p>
+<p>for i in <code>seq $NUM</code>;do<br>    redis-cli -h 192.168.11.211 -p 30379 -a “$PASS”  –no-auth-warning  set key${i} value${i}<br>    echo “key${i} value${i} 写入完成”<br>done<br>echo “$NUM个key写入到Redis完成” </p>
+<p>#批量写入<br>[root@K8s-haproxy01 ~]#apt install redis<br>[root@K8s-haproxy01 ~]#bash redis_test.sh<br>…<br>key499 value499 写入完成<br>OK<br>key500 value500 写入完成<br>500个key写入到Redis完成</p>
+<p>#进入pod验证<br>[root@K8s-ansible redis]#kubectl exec -it deploy-devops-redis-54c95d8765-rzl85 -n mooreyxia bash<br>kubectl exec [POD] [COMMAND] is DEPRECATED and will be removed in a future version. Use kubectl exec [POD] – [COMMAND] instead.<br>[root@deploy-devops-redis-54c95d8765-rzl85 &#x2F;]# redis-cli<br>127.0.0.1:6379&gt; auth 123456<br>OK<br>127.0.0.1:6379&gt; get key499<br>“value499”</p>
+<p>#根据快照生成策略，验证快照是否生成<br>[root@K8s-ansible redis]#grep -Ev “^ *#|^$” redis.conf |grep save<br>save 900 1<br>save 5 1<br>save 300 10<br>save 60 10000<br>…</p>
+<p>[root@K8s-haproxy01 ~]#ll &#x2F;data&#x2F;k8sdata&#x2F;mooreyxia&#x2F;redis-datadir-1&#x2F; -h<br>total 20K<br>drwxr-xr-x 2 root root 4.0K Apr 11 08:19 .&#x2F;<br>drwxr-xr-x 8 root root 4.0K Apr 11 07:36 ..&#x2F;<br>-rw-r–r– 1 root root 8.2K Apr 11 08:19 dump.rdb </p>
+<p>[root@K8s-haproxy01 ~]#file &#x2F;data&#x2F;k8sdata&#x2F;mooreyxia&#x2F;redis-datadir-1&#x2F;dump.rdb<br>&#x2F;data&#x2F;k8sdata&#x2F;mooreyxia&#x2F;redis-datadir-1&#x2F;dump.rdb: Redis RDB file, version 0008</p>
+<hr>
+<p>#尝试删除pod，根据控制器策略，kubernetes会重建pod，我们希望数据未丢失<br>[root@K8s-ansible redis]#kubectl get pod -n  mooreyxia|grep devops-redis<br>deploy-devops-redis-54c95d8765-rzl85                1&#x2F;1     Running   0               35m</p>
+<p>[root@K8s-ansible redis]#kubectl delete pod deploy-devops-redis-54c95d8765-rzl85 -n mooreyxia<br>pod “deploy-devops-redis-54c95d8765-rzl85” deleted</p>
+<p>[root@K8s-ansible redis]#kubectl get pod -n  mooreyxia|grep devops-redis<br>deploy-devops-redis-54c95d8765-zmxfw                1&#x2F;1     Running   0               45s</p>
+<p>[root@K8s-ansible redis]#kubectl exec -it deploy-devops-redis-54c95d8765-zmxfw  -n mooreyxia bash<br>kubectl exec [POD] [COMMAND] is DEPRECATED and will be removed in a future version. Use kubectl exec [POD] – [COMMAND] instead.<br>[root@deploy-devops-redis-54c95d8765-zmxfw &#x2F;]# redis-cli<br>127.0.0.1:6379&gt; auth<br>(error) ERR wrong number of arguments for ‘auth’ command<br>127.0.0.1:6379&gt; auth 123456<br>OK<br>127.0.0.1:6379&gt; get key499 #数据未丢失<br>“value499”<br>127.0.0.1:6379&gt; get key500<br>“value500”PV&#x2F;PVC及RedisCluster集群业务容器化<br>架构及部署<br>• 架构图<br><img src="/../img/95472ea743742148aae73826e2c9677ee1e18f.png"><br>• 集群redis迁移至kubernetes步骤<br>• 创建存储<br>#这里用NFS，生产根据需要调整<br>[root@K8s-haproxy01 ~]#apt install nfs-server<br>[root@K8s-haproxy01 ~]#mkdir -pv &#x2F;data&#x2F;k8sdata&#x2F;mooreyxia&#x2F;{redis0,redis1,redis2,redis3,redis4,redis5}<br>mkdir: created directory ‘&#x2F;data&#x2F;k8sdata&#x2F;mooreyxia&#x2F;redis0’<br>mkdir: created directory ‘&#x2F;data&#x2F;k8sdata&#x2F;mooreyxia&#x2F;redis1’<br>mkdir: created directory ‘&#x2F;data&#x2F;k8sdata&#x2F;mooreyxia&#x2F;redis2’<br>mkdir: created directory ‘&#x2F;data&#x2F;k8sdata&#x2F;mooreyxia&#x2F;redis3’<br>mkdir: created directory ‘&#x2F;data&#x2F;k8sdata&#x2F;mooreyxia&#x2F;redis4’<br>mkdir: created directory ‘&#x2F;data&#x2F;k8sdata&#x2F;mooreyxia&#x2F;redis5’</p>
+<p>[root@K8s-haproxy01 ~]#vim &#x2F;etc&#x2F;exports<br>[root@K8s-haproxy01 ~]#cat &#x2F;etc&#x2F;exports </p>
+<h1 id="x2F-etc-x2F-exports-the-access-control-list-for-filesystems-which-may-be-exported-1"><a href="#x2F-etc-x2F-exports-the-access-control-list-for-filesystems-which-may-be-exported-1" class="headerlink" title="&#x2F;etc&#x2F;exports: the access control list for filesystems which may be exported"></a>&#x2F;etc&#x2F;exports: the access control list for filesystems which may be exported</h1><h1 id="to-NFS-clients-See-exports-5-1"><a href="#to-NFS-clients-See-exports-5-1" class="headerlink" title="to NFS clients.  See exports(5)."></a>to NFS clients.  See exports(5).</h1><h1 id="-3"><a href="#-3" class="headerlink" title=""></a></h1><h1 id="Example-for-NFSv2-and-NFSv3-1"><a href="#Example-for-NFSv2-and-NFSv3-1" class="headerlink" title="Example for NFSv2 and NFSv3:"></a>Example for NFSv2 and NFSv3:</h1><h1 id="x2F-srv-x2F-homes-hostname1-rw-sync-no-subtree-check-hostname2-ro-sync-no-subtree-check-1"><a href="#x2F-srv-x2F-homes-hostname1-rw-sync-no-subtree-check-hostname2-ro-sync-no-subtree-check-1" class="headerlink" title="&#x2F;srv&#x2F;homes       hostname1(rw,sync,no_subtree_check) hostname2(ro,sync,no_subtree_check)"></a>&#x2F;srv&#x2F;homes       hostname1(rw,sync,no_subtree_check) hostname2(ro,sync,no_subtree_check)</h1><h1 id="-4"><a href="#-4" class="headerlink" title=""></a></h1><h1 id="Example-for-NFSv4-1"><a href="#Example-for-NFSv4-1" class="headerlink" title="Example for NFSv4:"></a>Example for NFSv4:</h1><h1 id="x2F-srv-x2F-nfs4-gss-x2F-krb5i-rw-sync-fsid-x3D-0-crossmnt-no-subtree-check-1"><a href="#x2F-srv-x2F-nfs4-gss-x2F-krb5i-rw-sync-fsid-x3D-0-crossmnt-no-subtree-check-1" class="headerlink" title="&#x2F;srv&#x2F;nfs4        gss&#x2F;krb5i(rw,sync,fsid&#x3D;0,crossmnt,no_subtree_check)"></a>&#x2F;srv&#x2F;nfs4        gss&#x2F;krb5i(rw,sync,fsid&#x3D;0,crossmnt,no_subtree_check)</h1><h1 id="x2F-srv-x2F-nfs4-x2F-homes-gss-x2F-krb5i-rw-sync-no-subtree-check-1"><a href="#x2F-srv-x2F-nfs4-x2F-homes-gss-x2F-krb5i-rw-sync-no-subtree-check-1" class="headerlink" title="&#x2F;srv&#x2F;nfs4&#x2F;homes  gss&#x2F;krb5i(rw,sync,no_subtree_check)"></a>&#x2F;srv&#x2F;nfs4&#x2F;homes  gss&#x2F;krb5i(rw,sync,no_subtree_check)</h1><h1 id="-5"><a href="#-5" class="headerlink" title=""></a></h1><p>&#x2F;data&#x2F;k8sdata *(rw,no_root_squash)<br>&#x2F;data&#x2F;volumes <em>(rw,no_root_squash)<br>[root@K8s-haproxy01 ~]#exportfs -avs<br>exportfs: &#x2F;etc&#x2F;exports [2]: Neither ‘subtree_check’ or ‘no_subtree_check’ specified for export “</em>:&#x2F;data&#x2F;k8sdata”.<br>  Assuming default behaviour (‘no_subtree_check’).<br>  NOTE: this default has changed since nfs-utils version 1.0.x</p>
+<p>exportfs: &#x2F;etc&#x2F;exports [3]: Neither ‘subtree_check’ or ‘no_subtree_check’ specified for export “*:&#x2F;data&#x2F;volumes”.<br>  Assuming default behaviour (‘no_subtree_check’).<br>  NOTE: this default has changed since nfs-utils version 1.0.x</p>
+<p>exporting *:&#x2F;data&#x2F;volumes<br>exporting *:&#x2F;data&#x2F;k8sdata</p>
+<p>#showmount<br>[root@K8s-ansible redis]#showmount -e 192.168.11.203<br>Export list for 192.168.11.203:<br>&#x2F;data&#x2F;volumes *<br>&#x2F;data&#x2F;k8sdata *• 创建PV与PVC<br>[root@K8s-ansible redis-cluster]#vim pv&#x2F;redis-cluster-pv.yaml<br>[root@K8s-ansible redis-cluster]#cat pv&#x2F;redis-cluster-pv.yaml<br>apiVersion: v1<br>kind: PersistentVolume<br>metadata:<br>  name: redis-cluster-pv0<br>spec:<br>  capacity:<br>    storage: 5Gi<br>  accessModes:<br>    - ReadWriteOnce<br>  nfs:<br>    server: 192.168.11.203<br>    path: &#x2F;data&#x2F;k8sdata&#x2F;mooreyxia&#x2F;redis0 </p>
+<hr>
+<p>apiVersion: v1<br>kind: PersistentVolume<br>metadata:<br>  name: redis-cluster-pv1<br>spec:<br>  capacity:<br>    storage: 5Gi<br>  accessModes:<br>    - ReadWriteOnce<br>  nfs:<br>    server: 192.168.11.203<br>    path: &#x2F;data&#x2F;k8sdata&#x2F;mooreyxia&#x2F;redis1 </p>
+<hr>
+<p>apiVersion: v1<br>kind: PersistentVolume<br>metadata:<br>  name: redis-cluster-pv2<br>spec:<br>  capacity:<br>    storage: 5Gi<br>  accessModes:<br>    - ReadWriteOnce<br>  nfs:<br>    server: 192.168.11.203<br>    path: &#x2F;data&#x2F;k8sdata&#x2F;mooreyxia&#x2F;redis2 </p>
+<hr>
+<p>apiVersion: v1<br>kind: PersistentVolume<br>metadata:<br>  name: redis-cluster-pv3<br>spec:<br>  capacity:<br>    storage: 5Gi<br>  accessModes:<br>    - ReadWriteOnce<br>  nfs:<br>    server: 192.168.11.203<br>    path: &#x2F;data&#x2F;k8sdata&#x2F;mooreyxia&#x2F;redis3 </p>
+<hr>
+<p>apiVersion: v1<br>kind: PersistentVolume<br>metadata:<br>  name: redis-cluster-pv4<br>spec:<br>  capacity:<br>    storage: 5Gi<br>  accessModes:<br>    - ReadWriteOnce<br>  nfs:<br>    server: 192.168.11.203<br>    path: &#x2F;data&#x2F;k8sdata&#x2F;mooreyxia&#x2F;redis4 </p>
+<hr>
+<p>apiVersion: v1<br>kind: PersistentVolume<br>metadata:<br>  name: redis-cluster-pv5<br>spec:<br>  capacity:<br>    storage: 5Gi<br>  accessModes:<br>    - ReadWriteOnce<br>  nfs:<br>    server: 192.168.11.203<br>    path: &#x2F;data&#x2F;k8sdata&#x2F;mooreyxia&#x2F;redis5 </p>
+<p>[root@K8s-ansible redis-cluster]#kubectl apply -f pv&#x2F;redis-cluster-pv.yaml<br>persistentvolume&#x2F;redis-cluster-pv0 created<br>persistentvolume&#x2F;redis-cluster-pv1 created<br>persistentvolume&#x2F;redis-cluster-pv2 created<br>persistentvolume&#x2F;redis-cluster-pv3 created<br>persistentvolume&#x2F;redis-cluster-pv4 created<br>persistentvolume&#x2F;redis-cluster-pv5 created</p>
+<h2 id="确认pv可用-root-K8s-ansible-redis-cluster-kubectl-get-pv-grep-redis-clusterredis-cluster-pv0-5Gi-RWO-Retain-Available-44sredis-cluster-pv1-5Gi-RWO-Retain-Available-44sredis-cluster-pv2-5Gi-RWO-Retain-Available-44sredis-cluster-pv3-5Gi-RWO-Retain-Available-44sredis-cluster-pv4-5Gi-RWO-Retain-Available-44sredis-cluster-pv5-5Gi-RWO-Retain-Available-44s•-部署redis-cluster"><a href="#确认pv可用-root-K8s-ansible-redis-cluster-kubectl-get-pv-grep-redis-clusterredis-cluster-pv0-5Gi-RWO-Retain-Available-44sredis-cluster-pv1-5Gi-RWO-Retain-Available-44sredis-cluster-pv2-5Gi-RWO-Retain-Available-44sredis-cluster-pv3-5Gi-RWO-Retain-Available-44sredis-cluster-pv4-5Gi-RWO-Retain-Available-44sredis-cluster-pv5-5Gi-RWO-Retain-Available-44s•-部署redis-cluster" class="headerlink" title="#确认pv可用[root@K8s-ansible redis-cluster]#kubectl get pv |grep redis-clusterredis-cluster-pv0                          5Gi        RWO            Retain           Available                                                                          44sredis-cluster-pv1                          5Gi        RWO            Retain           Available                                                                          44sredis-cluster-pv2                          5Gi        RWO            Retain           Available                                                                          44sredis-cluster-pv3                          5Gi        RWO            Retain           Available                                                                          44sredis-cluster-pv4                          5Gi        RWO            Retain           Available                                                                          44sredis-cluster-pv5                          5Gi        RWO            Retain           Available                                                                          44s• 部署redis cluster"></a>#确认pv可用<br>[root@K8s-ansible redis-cluster]#kubectl get pv |grep redis-cluster<br>redis-cluster-pv0                          5Gi        RWO            Retain           Available                                                                          44s<br>redis-cluster-pv1                          5Gi        RWO            Retain           Available                                                                          44s<br>redis-cluster-pv2                          5Gi        RWO            Retain           Available                                                                          44s<br>redis-cluster-pv3                          5Gi        RWO            Retain           Available                                                                          44s<br>redis-cluster-pv4                          5Gi        RWO            Retain           Available                                                                          44s<br>redis-cluster-pv5                          5Gi        RWO            Retain           Available                                                                          44s• 部署redis cluster</h2><p>#基于配置文件创建configmap(或者提前将配置文件加入到基础镜像中)<br>[root@K8s-ansible redis-cluster]#tree .<br>.<br>├── pv<br>│   └── redis-cluster-pv.yaml<br>├── redis.conf<br>└── redis.yaml</p>
+<p>1 directory, 3 files</p>
+<p>#配置文件 - 简化，生产根据实际需要进行优化<br>[root@K8s-ansible redis-cluster]#vim redis.conf<br>[root@K8s-ansible redis-cluster]#cat redis.conf<br>appendonly yes<br>cluster-enabled yes<br>cluster-config-file &#x2F;var&#x2F;lib&#x2F;redis&#x2F;nodes.conf<br>cluster-node-timeout 5000<br>dir &#x2F;var&#x2F;lib&#x2F;redis<br>port 6379</p>
+<p>#基于配置文件创建configmap<br>[root@K8s-ansible redis-cluster]#kubectl create configmap redis-conf –from-file&#x3D;redis.conf -n mooreyxia<br>configmap&#x2F;redis-conf created</p>
+<p>#验证configmap：<br>[root@K8s-ansible redis-cluster]#kubectl get configmaps -n mooreyxia |grep redis<br>redis-conf         1      86s</p>
+<p>#想看的更详细加参数-o json 或者 -o yaml，此处省略<br>[root@K8s-ansible redis-cluster]#kubectl describe configmaps redis-conf -n mooreyxia<br>Name:         redis-conf<br>Namespace:    mooreyxia<br>Labels:       <none><br>Annotations:  <none></p>
+<h1 id="Data"><a href="#Data" class="headerlink" title="Data"></a>Data</h1><h2 id="redis-conf"><a href="#redis-conf" class="headerlink" title="redis.conf:"></a>redis.conf:</h2><p>appendonly yes<br>cluster-enabled yes<br>cluster-config-file &#x2F;var&#x2F;lib&#x2F;redis&#x2F;nodes.conf<br>cluster-node-timeout 5000<br>dir &#x2F;var&#x2F;lib&#x2F;redis<br>port 6379</p>
+<h1 id="BinaryData"><a href="#BinaryData" class="headerlink" title="BinaryData"></a>BinaryData</h1><p>Events:  <none></p>
+<hr>
+<h2 id="创建redis-cluster需要使用的所有pod节点-创建后为单机模式-root-K8s-ansible-redis-cluster-vim-redis-yaml-root-K8s-ansible-redis-cluster-cat-redis-yamlapiVersion-v1kind-Servicemetadata-name-redis-namespace-mooreyxia-labels-app-redisspec-selector-app-redis-appCluster-redis-cluster-ports-name-redis-port-6379-clusterIP-None-用于内部服务基于service-name的访问"><a href="#创建redis-cluster需要使用的所有pod节点-创建后为单机模式-root-K8s-ansible-redis-cluster-vim-redis-yaml-root-K8s-ansible-redis-cluster-cat-redis-yamlapiVersion-v1kind-Servicemetadata-name-redis-namespace-mooreyxia-labels-app-redisspec-selector-app-redis-appCluster-redis-cluster-ports-name-redis-port-6379-clusterIP-None-用于内部服务基于service-name的访问" class="headerlink" title="#创建redis-cluster需要使用的所有pod节点,创建后为单机模式[root@K8s-ansible redis-cluster]#vim redis.yaml[root@K8s-ansible redis-cluster]#cat redis.yamlapiVersion: v1kind: Servicemetadata:  name: redis  namespace: mooreyxia  labels:    app: redisspec:  selector:    app: redis    appCluster: redis-cluster  ports:  - name: redis    port: 6379  clusterIP: None #用于内部服务基于service name的访问
+  "></a>#创建redis-cluster需要使用的所有pod节点,创建后为单机模式<br>[root@K8s-ansible redis-cluster]#vim redis.yaml<br>[root@K8s-ansible redis-cluster]#cat redis.yaml<br>apiVersion: v1<br>kind: Service<br>metadata:<br>  name: redis<br>  namespace: mooreyxia<br>  labels:<br>    app: redis<br>spec:<br>  selector:<br>    app: redis<br>    appCluster: redis-cluster<br>  ports:<br>  - name: redis<br>    port: 6379<br>  clusterIP: None #用于内部服务基于service name的访问
+  </h2><p>apiVersion: v1<br>kind: Service<br>metadata:<br>  name: redis-access<br>  namespace: mooreyxia<br>  labels:<br>    app: redis<br>spec:<br>  selector:<br>    app: redis<br>    appCluster: redis-cluster<br>  ports:</p>
+<ul>
+<li>name: redis-access<br>protocol: TCP<br>port: 6379<br>targetPort: 6379 #用于集群外访问</li>
+</ul>
+<hr>
+<p>apiVersion: apps&#x2F;v1<br>kind: StatefulSet #创建有状态控制器<br>metadata:<br>  name: redis #StatefulSet控制器名称<br>  namespace: mooreyxia<br>spec:<br>  serviceName: redis<br>  replicas: 6 #副本数<br>  selector:<br>    matchLabels:<br>      app: redis<br>      appCluster: redis-cluster<br>  template:<br>    metadata:<br>      labels:<br>        app: redis<br>        appCluster: redis-cluster<br>    spec:<br>      terminationGracePeriodSeconds: 20<br>      affinity: #以主机hostname做pod亲和<br>        podAntiAffinity:<br>          preferredDuringSchedulingIgnoredDuringExecution:<br>          - weight: 100<br>            podAffinityTerm:<br>              labelSelector:<br>                matchExpressions:<br>                - key: app<br>                  operator: In<br>                  values:<br>                  - redis<br>              topologyKey: kubernetes.io&#x2F;hostname<br>      containers:<br>      - name: redis<br>        image: redis:4.0.14 #镜像<br>        command: #启动服务并传参<br>          - “redis-server”<br>        args:<br>          - “&#x2F;etc&#x2F;redis&#x2F;redis.conf”<br>          - “–protected-mode”<br>          - “no”<br>        resources:<br>          requests: #资源限制<br>            cpu: “500m”<br>            memory: “500Mi”<br>        ports: #集群情况下端口设定<br>        - containerPort: 6379 #客户端端口<br>          name: redis<br>          protocol: TCP<br>        - containerPort: 16379 #集群端口 - 默认在客户端端口前+1<br>          name: cluster<br>          protocol: TCP<br>        volumeMounts: #挂载<br>        - name: conf<br>          mountPath: &#x2F;etc&#x2F;redis<br>        - name: data<br>          mountPath: &#x2F;var&#x2F;lib&#x2F;redis<br>      volumes:<br>      - name: conf<br>        configMap:<br>          name: redis-conf<br>          items:<br>          - key: redis.conf<br>            path: redis.conf<br>  volumeClaimTemplates: #以模板的形式批量创建pvc - 模板名称+StatefulSet控制器名称+id(data-redis-number)</p>
+<ul>
+<li>metadata:<br>  name: data #模板名称<br>  namespace: mooreyxia<br>spec:<br>  accessModes: [ “ReadWriteOnce” ]<br>  resources:<br>requests:<br>  storage: 5Gi</li>
+</ul>
+<p>#确认pod运行 - 注意这里的redis-pod都是单机，集群配置需要单独创建并初始化，涉及到槽位划分16384<br>[root@K8s-ansible redis-cluster]#kubectl get pod -n mooreyxia<br>NAME                                                READY   STATUS    RESTARTS     AGE<br>redis-0                                             1&#x2F;1     Running   0            140m<br>redis-1                                             1&#x2F;1     Running   0            139m<br>redis-2                                             1&#x2F;1     Running   0            139m<br>redis-3                                             1&#x2F;1     Running   0            138m<br>redis-4                                             1&#x2F;1     Running   0            138m<br>redis-5                                             1&#x2F;1     Running   0            138m</p>
+<p>#确认pvc创建 - 模板名称+StatefulSet控制器名称+id<br>[root@K8s-ansible redis-cluster]#kubectl get pvc -n mooreyxia<br>NAME                      STATUS   VOLUME                   CAPACITY   ACCESS MODES   STORAGECLASS   AGE<br>data-redis-0              Bound    redis-cluster-pv1        5Gi        RWO                           149m<br>data-redis-1              Bound    redis-cluster-pv4        5Gi        RWO                           148m<br>data-redis-2              Bound    redis-cluster-pv2        5Gi        RWO                           148m<br>data-redis-3              Bound    redis-cluster-pv0        5Gi        RWO                           148m<br>data-redis-4              Bound    redis-cluster-pv3        5Gi        RWO                           147m<br>data-redis-5              Bound    redis-cluster-pv5        5Gi        RWO                           147m• 初始化redis cluster<br>#初始化只需要初始化一次，redis 4 及之前的版本需要使用redis-tribe 工具进行初始化，redis5 开始使用redis-cli。</p>
+<p>#创建初始化pod - 这里使用redis-tribe进行初始化，命令使用方式和redis-cli基本相同 restart&#x3D;Never 退出后不启用<br>[root@K8s-ansible redis-cluster]#kubectl run -it ubuntu1804 –image&#x3D;ubuntu:18.04 –restart&#x3D;Never -n mooreyxia bash<br>If you don’t see a command prompt, try pressing enter.</p>
+<p>#环境初始化-安装redis-tribe<br>root@ubuntu1804:&#x2F;# apt install python2.7 python-pip redis-tools dnsutils iputils-ping net-tools<br>root@ubuntu1804:&#x2F;# pip install –upgrade pip<br>root@ubuntu1804:&#x2F;# pip install redis-trib&#x3D;&#x3D;0.5.1</p>
+<p>#确认redis-pod服务可以被解析<br>root@ubuntu1804:&#x2F;# dig redis-0.redis.mooreyxia.svc.mooreyxia.local</p>
+<p>; &lt;&lt;&gt;&gt; DiG 9.11.3-1ubuntu1.18-Ubuntu &lt;&lt;&gt;&gt; redis-0.redis.mooreyxia.svc.mooreyxia.local<br>;; global options: +cmd<br>;; Got answer:<br>;; WARNING: .local is reserved for Multicast DNS<br>;; You are currently testing what happens when an mDNS query is leaked to DNS<br>;; -&gt;&gt;HEADER&lt;&lt;- opcode: QUERY, status: NOERROR, id: 63752<br>;; flags: qr aa rd; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 1<br>;; WARNING: recursion requested but not available</p>
+<p>;; OPT PSEUDOSECTION:<br>; EDNS: version: 0, flags:; udp: 4096<br>; COOKIE: 6b3ba2281c9cf58a (echoed)<br>;; QUESTION SECTION:<br>;redis-0.redis.mooreyxia.svc.mooreyxia.local. IN    A</p>
+<p>;; ANSWER SECTION:<br>redis-0.redis.mooreyxia.svc.mooreyxia.local. 30 IN A 10.200.67.40</p>
+<p>;; Query time: 15 msec<br>;; SERVER: 10.100.0.2#53(10.100.0.2)<br>;; WHEN: Tue Apr 11 13:22:37 UTC 2023<br>;; MSG SIZE  rcvd: 143</p>
+<p>#创建集群<br>root@ubuntu1804:&#x2F;# redis-trib.py create \</p>
+<blockquote>
+<p><code>dig +short redis-0.redis.mooreyxia.svc.mooreyxia.local</code>:6379 <br><code>dig +short redis-1.redis.mooreyxia.svc.mooreyxia.local</code>:6379 <br><code>dig +short redis-2.redis.mooreyxia.svc.mooreyxia.local</code>:6379<br>Redis-trib 0.5.1 Copyright (c) HunanTV Platform developers<br>INFO:root:Instance at 10.200.209.43:6379 checked<br>INFO:root:Instance at 10.200.67.40:6379 checked<br>INFO:root:Instance at 10.200.128.181:6379 checked<br>INFO:root:Add 5462 slots to 10.200.209.43:6379 #自动分配槽位，合计16384<br>INFO:root:Add 5461 slots to 10.200.67.40:6379<br>INFO:root:Add 5461 slots to 10.200.128.181:6379</p>
+</blockquote>
+<p>#接下来为集群中每个pod增加一个副本节点，做高可用。<br>#虽然k8s会在pod节点宕机时自动重建，但是存在延迟，建议利用服务本身的高可用方案<br>#将redis-3 加入redis-0：<br>root@ubuntu1804:&#x2F;# redis-trib.py replicate \</p>
+<blockquote>
+<p>–master-addr <code>dig +short redis-0.redis.magedu.svc.magedu.local</code>:6379 <br>^Cslave-addr <code>dig +short redis-3.redis.magedu.svc.magedu.local</code>:6379<br>root@ubuntu1804:&#x2F;# redis-trib.py replicate <br>–master-addr <code>dig +short redis-0.redis.mooreyxia.svc.mooreyxia.local</code>:6379 <br>–slave-addr <code>dig +short redis-3.redis.mooreyxia.svc.mooreyxia.local</code>:6379<br>Redis-trib 0.5.1 Copyright (c) HunanTV Platform developers<br>INFO:root:Instance at 10.200.67.41:6379 has joined 10.200.67.40:6379; now set replica<br>INFO:root:Instance at 10.200.67.41:6379 set as replica to 98d89d30afda50c347f3420e6d97842214bb885f<br>#将redis-4 加入redis-1：<br>root@ubuntu1804:&#x2F;# redis-trib.py replicate <br>–master-addr <code>dig +short redis-1.redis.mooreyxia.svc.mooreyxia.local</code>:6379 <br>–slave-addr <code>dig +short redis-4.redis.mooreyxia.svc.mooreyxia.local</code>:6379<br>Redis-trib 0.5.1 Copyright (c) HunanTV Platform developers<br>INFO:root:Instance at 10.200.128.182:6379 has joined 10.200.128.181:6379; now set replica<br>INFO:root:Instance at 10.200.128.182:6379 set as replica to b54dc4d56255058339435d86aaab978140617caf<br>#将redis-5 加入redis-2：<br>root@ubuntu1804:&#x2F;# redis-trib.py replicate <br>–master-addr <code>dig +short redis-2.redis.mooreyxia.svc.mooreyxia.local</code>:6379 <br>–slave-addr <code>dig +short redis-5.redis.mooreyxia.svc.mooreyxia.local</code>:6379<br>Redis-trib 0.5.1 Copyright (c) HunanTV Platform developers<br>INFO:root:Instance at 10.200.209.44:6379 has joined 10.200.209.43:6379; now set replica<br>INFO:root:Instance at 10.200.209.44:6379 set as replica to ed496e09c658f6d09a8ce664e41f0e4dec580fa7</p>
+</blockquote>
+<p>#完成集群搭建后退出初始化pod，下一步验证redis cluster状态<br>root@ubuntu1804:&#x2F;# exit<br>exit• 验证redis cluster状态<br>[root@K8s-ansible redis-cluster]#kubectl get pod -n mooreyxia|grep redis-<br>deploy-devops-redis-54c95d8765-zmxfw                1&#x2F;1     Running     0             5h6m<br>redis-0                                             1&#x2F;1     Running     0             3h42m<br>redis-1                                             1&#x2F;1     Running     0             3h42m<br>redis-2                                             1&#x2F;1     Running     0             3h41m<br>redis-3                                             1&#x2F;1     Running     0             3h41m<br>redis-4                                             1&#x2F;1     Running     0             3h40m<br>redis-5                                             1&#x2F;1     Running     0             3h40m</p>
+<p>#进入任意集群节点内确认redis状态<br>[root@K8s-ansible redis-cluster]#kubectl exec -it redis-0 bash -n mooreyxia<br>kubectl exec [POD] [COMMAND] is DEPRECATED and will be removed in a future version. Use kubectl exec [POD] – [COMMAND] instead.<br>root@redis-0:&#x2F;data# redis-cli </p>
+<p>127.0.0.1:6379&gt; CLUSTER INFO<br>cluster_state:ok<br>cluster_slots_assigned:16384<br>cluster_slots_ok:16384<br>cluster_slots_pfail:0<br>cluster_slots_fail:0<br>cluster_known_nodes:6<br>cluster_size:3<br>cluster_current_epoch:4<br>cluster_my_epoch:2<br>cluster_stats_messages_ping_sent:1116<br>cluster_stats_messages_pong_sent:1172<br>cluster_stats_messages_meet_sent:3<br>cluster_stats_messages_sent:2291<br>cluster_stats_messages_ping_received:1170<br>cluster_stats_messages_pong_received:1119<br>cluster_stats_messages_meet_received:2<br>cluster_stats_messages_received:2291</p>
+<p>127.0.0.1:6379&gt; CLUSTER NODES<br>301d3e34d8a0f2951bafca67f3ee05bcab49e5fa 10.200.209.44:6379@16379 slave ed496e09c658f6d09a8ce664e41f0e4dec580fa7 0 1681220382000 4 connected<br>ed496e09c658f6d09a8ce664e41f0e4dec580fa7 10.200.209.43:6379@16379 master - 0 1681220382161 4 connected 0-5461<br>98d89d30afda50c347f3420e6d97842214bb885f 10.200.67.40:6379@16379 myself,master - 0 1681220381000 2 connected 5462-10922<br>b54dc4d56255058339435d86aaab978140617caf 10.200.128.181:6379@16379 master - 0 1681220382000 1 connected 10923-16383<br>2dbe646d7bac54811f46cb57305970cc45623e0a 10.200.67.41:6379@16379 slave 98d89d30afda50c347f3420e6d97842214bb885f 0 1681220382566 3 connected<br>f00b2ceb87eaf4a3d62153692726ead615420162 10.200.128.182:6379@16379 slave b54dc4d56255058339435d86aaab978140617caf 0 1681220381000 1 connected</p>
+<p>127.0.0.1:6379&gt; info</p>
+<h1 id="Server-1"><a href="#Server-1" class="headerlink" title="Server"></a>Server</h1><p>redis_version:4.0.14<br>redis_git_sha1:00000000<br>redis_git_dirty:0<br>redis_build_id:165c932261a105d7<br>redis_mode:cluster<br>os:Linux 5.15.0-69-generic x86_64<br>arch_bits:64<br>multiplexing_api:epoll<br>atomicvar_api:atomic-builtin<br>gcc_version:8.3.0<br>process_id:1<br>run_id:acb6353ce676c7cf63a92436a73972fbcb8c6c2c<br>tcp_port:6379<br>uptime_in_seconds:14544<br>uptime_in_days:0<br>hz:10<br>lru_clock:3499826<br>executable:&#x2F;data&#x2F;redis-server<br>config_file:&#x2F;etc&#x2F;redis&#x2F;redis.conf</p>
+<h1 id="Clients"><a href="#Clients" class="headerlink" title="Clients"></a>Clients</h1><p>connected_clients:1<br>client_longest_output_list:0<br>client_biggest_input_buf:0<br>blocked_clients:0</p>
+<h1 id="Memory"><a href="#Memory" class="headerlink" title="Memory"></a>Memory</h1><p>used_memory:2643360<br>used_memory_human:2.52M<br>used_memory_rss:5111808<br>used_memory_rss_human:4.88M<br>used_memory_peak:2683264<br>used_memory_peak_human:2.56M<br>used_memory_peak_perc:98.51%<br>used_memory_overhead:2559936<br>used_memory_startup:1444856<br>used_memory_dataset:83424<br>used_memory_dataset_perc:6.96%<br>total_system_memory:2071683072<br>total_system_memory_human:1.93G<br>used_memory_lua:37888<br>used_memory_lua_human:37.00K<br>maxmemory:0<br>maxmemory_human:0B<br>maxmemory_policy:noeviction<br>mem_fragmentation_ratio:1.93<br>mem_allocator:jemalloc-4.0.3<br>active_defrag_running:0<br>lazyfree_pending_objects:0</p>
+<h1 id="Persistence"><a href="#Persistence" class="headerlink" title="Persistence"></a>Persistence</h1><p>loading:0<br>rdb_changes_since_last_save:0<br>rdb_bgsave_in_progress:0<br>rdb_last_save_time:1681219901<br>rdb_last_bgsave_status:ok<br>rdb_last_bgsave_time_sec:0<br>rdb_current_bgsave_time_sec:-1<br>rdb_last_cow_size:315392<br>aof_enabled:1<br>aof_rewrite_in_progress:0<br>aof_rewrite_scheduled:0<br>aof_last_rewrite_time_sec:-1<br>aof_current_rewrite_time_sec:-1<br>aof_last_bgrewrite_status:ok<br>aof_last_write_status:ok<br>aof_last_cow_size:0<br>aof_current_size:0<br>aof_base_size:0<br>aof_pending_rewrite:0<br>aof_buffer_length:0<br>aof_rewrite_buffer_length:0<br>aof_pending_bio_fsync:0<br>aof_delayed_fsync:0</p>
+<h1 id="Stats"><a href="#Stats" class="headerlink" title="Stats"></a>Stats</h1><p>total_connections_received:4<br>total_commands_processed:1545<br>instantaneous_ops_per_sec:0<br>total_net_input_bytes:111791<br>total_net_output_bytes:25844<br>instantaneous_input_kbps:0.02<br>instantaneous_output_kbps:0.00<br>rejected_connections:0<br>sync_full:1<br>sync_partial_ok:0<br>sync_partial_err:1<br>expired_keys:0<br>expired_stale_perc:0.00<br>expired_time_cap_reached_count:0<br>evicted_keys:0<br>keyspace_hits:0<br>keyspace_misses:0<br>pubsub_channels:0<br>pubsub_patterns:0<br>latest_fork_usec:769<br>migrate_cached_sockets:0<br>slave_expires_tracked_keys:0<br>active_defrag_hits:0<br>active_defrag_misses:0<br>active_defrag_key_hits:0<br>active_defrag_key_misses:0</p>
+<h1 id="Replication"><a href="#Replication" class="headerlink" title="Replication"></a>Replication</h1><p>role:master<br>connected_slaves:1 #有一个slave节点连接，下面是备份策略<br>slave0:ip&#x3D;10.200.67.41,port&#x3D;6379,state&#x3D;online,offset&#x3D;2128,lag&#x3D;1<br>master_replid:e038a1203874d441a2611089bd7bfa22cd9a1a4a<br>master_replid2:0000000000000000000000000000000000000000<br>master_repl_offset:2128<br>second_repl_offset:-1<br>repl_backlog_active:1<br>repl_backlog_size:1048576<br>repl_backlog_first_byte_offset:1<br>repl_backlog_histlen:2128</p>
+<h1 id="CPU"><a href="#CPU" class="headerlink" title="CPU"></a>CPU</h1><p>used_cpu_sys:14.78<br>used_cpu_user:6.83<br>used_cpu_sys_children:0.00<br>used_cpu_user_children:0.00</p>
+<h1 id="Cluster"><a href="#Cluster" class="headerlink" title="Cluster"></a>Cluster</h1><p>cluster_enabled:1</p>
+<p>#测试写入数据:需要根据槽位分配的位置写入<br>127.0.0.1:6379&gt; set key1 valye1<br>OK<br>127.0.0.1:6379&gt; set key2 valye2<br>(error) MOVED 4998 10.200.209.43:6379 #这里告诉用户需要到指定的节点写入<br>127.0.0.1:6379&gt; exit<br>root@redis-0:~# exit<br>exit</p>
+<p>[root@K8s-ansible redis-cluster]#kubectl get pod -n mooreyxia -o wide|grep redis-<br>deploy-devops-redis-54c95d8765-zmxfw                1&#x2F;1     Running     0             5h38m   10.200.128.180   192.168.11.216   <none>           <none><br>redis-0                                             1&#x2F;1     Running     0             4h14m   10.200.67.40     192.168.11.215   <none>           <none><br>redis-1                                             1&#x2F;1     Running     0             4h14m   10.200.128.181   192.168.11.216   <none>           <none><br>redis-2                                             1&#x2F;1     Running     0             4h13m   10.200.209.43    192.168.11.214   <none>           <none><br>redis-3                                             1&#x2F;1     Running     0             4h13m   10.200.67.41     192.168.11.215   <none>           <none><br>redis-4                                             1&#x2F;1     Running     0             4h13m   10.200.128.182   192.168.11.216   <none>           <none><br>redis-5                                             1&#x2F;1     Running     0             4h13m   10.200.209.44    192.168.11.214   <none>           <none><br>[root@K8s-ansible redis-cluster]#kubectl exec -it redis-2 bash -n mooreyxia<br>kubectl exec [POD] [COMMAND] is DEPRECATED and will be removed in a future version. Use kubectl exec [POD] – [COMMAND] instead.<br>root@redis-2:&#x2F;data# redis-cli<br>127.0.0.1:6379&gt; set key2 valye2<br>OK<br>127.0.0.1:6379&gt; KEYS *</p>
+<ol>
+<li>“key2”• 验证redis cluster高可用</li>
+</ol>
+<p>#删除任意pod主节点，检查对应的副本是否提升为master，此处省略</p>
+<p>#确认集群配置开启的数据持久化是否生效-到数据目录中确认<br>[root@K8s-haproxy01 ~]#tree &#x2F;data&#x2F;k8sdata&#x2F;mooreyxia&#x2F;redis*<br>&#x2F;data&#x2F;k8sdata&#x2F;mooreyxia&#x2F;redis-datadir-1<br>└── dump.rdb<br>&#x2F;data&#x2F;k8sdata&#x2F;mooreyxia&#x2F;redis0<br>├── appendonly.aof #aof<br>├── dump.rdb #快照<br>└── nodes.conf #集群配置<br>&#x2F;data&#x2F;k8sdata&#x2F;mooreyxia&#x2F;redis1<br>├── appendonly.aof<br>├── dump.rdb<br>└── nodes.conf<br>&#x2F;data&#x2F;k8sdata&#x2F;mooreyxia&#x2F;redis2<br>├── appendonly.aof<br>├── dump.rdb<br>└── nodes.conf<br>&#x2F;data&#x2F;k8sdata&#x2F;mooreyxia&#x2F;redis3<br>├── appendonly.aof<br>├── dump.rdb<br>└── nodes.conf<br>&#x2F;data&#x2F;k8sdata&#x2F;mooreyxia&#x2F;redis4<br>├── appendonly.aof<br>├── dump.rdb<br>└── nodes.conf<br>&#x2F;data&#x2F;k8sdata&#x2F;mooreyxia&#x2F;redis5<br>├── appendonly.aof<br>├── dump.rdb<br>└── nodes.conf</p>
+<p>0 directories, 3 files</p>
+<p>#集群配置信息自动生成，可以查看<br>[root@K8s-haproxy01 ~]#cat &#x2F;data&#x2F;k8sdata&#x2F;mooreyxia&#x2F;redis0&#x2F;nodes.conf<br>301d3e34d8a0f2951bafca67f3ee05bcab49e5fa 10.200.209.44:6379@16379 slave ed496e09c658f6d09a8ce664e41f0e4dec580fa7 0 1681220041599 4 connected<br>ed496e09c658f6d09a8ce664e41f0e4dec580fa7 10.200.209.43:6379@16379 master - 0 1681220041197 4 connected 0-5461<br>f00b2ceb87eaf4a3d62153692726ead615420162 10.200.128.182:6379@16379 slave b54dc4d56255058339435d86aaab978140617caf 0 1681220040195 1 connected<br>98d89d30afda50c347f3420e6d97842214bb885f 10.200.67.40:6379@16379 master - 0 1681220040000 2 connected 5462-10922<br>b54dc4d56255058339435d86aaab978140617caf 10.200.128.181:6379@16379 master - 0 1681220041000 1 connected 10923-16383<br>2dbe646d7bac54811f46cb57305970cc45623e0a 10.200.67.41:6379@16379 myself,slave 98d89d30afda50c347f3420e6d97842214bb885f 0 1681220039000 3 connected<br>vars currentEpoch 4 lastVoteEpoch 0我是moore,大家一起加油！！！</p>
+
+      
+       <hr><span style="font-style: italic;color: gray;"> 转载请注明来源，欢迎对文章中的引用来源进行考证，欢迎指出任何有错误或不够清晰的表达。可以在下面评论区评论，也可以邮件至 jaytp@qq.com </span>
+    </div>
+</article>
+
+
+<p>
+    <a  class="dashang" onclick="dashangToggle()">💰</a>
+</p>
+
+
+
+
+
+
+    
+
+
+
+
+    </div>
+    <div class="copyright">
+        <p class="footer-entry">
+    ©2016-2020 Yelog
+</p>
+<p class="footer-entry">Built with <a href="https://hexo.io/" target="_blank">Hexo</a> and <a href="https://github.com/yelog/hexo-theme-3-hexo" target="_blank">3-hexo</a> theme</p>
+
+    </div>
+    <div class="full-toc">
+        <button class="full" data-title="切换全屏 快捷键 s"><span class="min "></span></button>
+<a class="" id="rocket" ></a>
+
+    </div>
+</div>
+
+<div class="hide_box" onclick="dashangToggle()"></div>
+<div class="shang_box">
+    <a class="shang_close"  onclick="dashangToggle()">×</a>
+    <div class="shang_tit">
+        <p>Help us with donation</p>
+    </div>
+    <div class="shang_payimg">
+        <div class="pay_img">
+            <img src="/img/alipay.jpg" class="alipay" title="扫码支持">
+            <img src="/img/weixin.jpg" class="weixin" title="扫码支持">
+        </div>
+    </div>
+    <div class="shang_payselect">
+        <span><label><input type="radio" name="pay" checked value="alipay">alipay</label></span><span><label><input type="radio" name="pay" value="weixin">weixin</label></span>
+    </div>
+</div>
+
+
+</body>
+<script src="/js/jquery.pjax.js?v=1.1.0" ></script>
+
+<script src="/js/script.js?v=1.1.0" ></script>
+<script>
+    var img_resize = 'default';
+    function initArticle() {
+        /*渲染对应的表格样式*/
+        
+            $("#post .pjax table").addClass("green_title");
+        
+
+        /*渲染打赏样式*/
+        
+        $("input[name=pay]").on("click", function () {
+            if($("input[name=pay]:checked").val()=="weixin"){
+                $(".shang_box .shang_payimg .pay_img").addClass("weixin_img");
+            } else {
+                $(".shang_box .shang_payimg .pay_img").removeClass("weixin_img");
+            }
+        })
+        
+
+        /*高亮代码块行号*/
+        
+
+        /*访问数量*/
+        
+        $.getScript("//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js");
+        
+
+        /*代码高亮，行号对齐*/
+        $('.pre-numbering').css('line-height',$('.has-numbering').css('line-height'));
+
+        
+        
+    }
+
+    /*打赏页面隐藏与展示*/
+    
+    function dashangToggle() {
+        $(".shang_box").fadeToggle();
+        $(".hide_box").fadeToggle();
+    }
+    
+
+</script>
+
+<!--加入行号的高亮代码块样式-->
+
+<!--自定义样式设置-->
+<style>
+    
+    
+    .nav {
+        width: 542px;
+    }
+    .nav.fullscreen {
+        margin-left: -542px;
+    }
+    .nav-left {
+        width: 120px;
+    }
+    
+    
+    @media screen and (max-width: 1468px) {
+        .nav {
+            width: 492px;
+        }
+        .nav.fullscreen {
+            margin-left: -492px;
+        }
+        .nav-left {
+            width: 100px;
+        }
+    }
+    
+    
+    @media screen and (max-width: 1024px) {
+        .nav {
+            width: 492px;
+            margin-left: -492px
+        }
+        .nav.fullscreen {
+            margin-left: 0;
+        }
+    }
+    
+    @media screen and (max-width: 426px) {
+        .nav {
+            width: 100%;
+        }
+        .nav-left {
+            width: 100%;
+        }
+    }
+    
+    
+    .nav-right .title-list nav a .post-title, .nav-right .title-list #local-search-result a .post-title {
+        color: #383636;
+    }
+    
+    
+    .nav-right .title-list nav a .post-date, .nav-right .title-list #local-search-result a .post-date {
+        color: #5e5e5f;
+    }
+    
+    
+    .nav-right nav a.hover, #local-search-result a.hover{
+        background-color: #e2e0e0;
+    }
+    
+    
+
+    /*列表样式*/
+    
+
+    /* 背景图样式 */
+    
+    
+
+
+    /*引用块样式*/
+    
+
+    /*文章列表背景图*/
+    
+
+    
+</style>
+
+
+
+
+
+
+
+</html>

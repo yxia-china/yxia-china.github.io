@@ -1,0 +1,1075 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>86-云原生操作系统-Zookeeper集群及微服务动态注册和发现业务容器化案例 | Hexo</title>
+  <meta name="keywords" content="">
+  <meta name="description" content="86-云原生操作系统-Zookeeper集群及微服务动态注册和发现业务容器化案例 | Hexo">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="description" content="基于现有虚拟机磁盘为模版创建新的虚拟机使用 virt-install 创建虚拟机• 虽然使用virt-manager 可以方便的管理虚拟机,但如果需要批量进行虚拟机的创建管理,命令行工具virtinstall更加方便和适合案例：利用 qemu-img命令创建虚拟磁盘#注意: qemu-img create 一定要确认对应路径下没有此文件,如果存在将覆盖原文件  确认现有的虚拟磁盘文件[root@u">
+<meta property="og:type" content="article">
+<meta property="og:title" content="42-KVM虚拟化-基于现有虚拟机磁盘为模版创建新的虚拟机">
+<meta property="og:url" content="http://example.com/2023/05/14/42-KVM%E8%99%9A%E6%8B%9F%E5%8C%96-%E5%9F%BA%E4%BA%8E%E7%8E%B0%E6%9C%89%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%A3%81%E7%9B%98%E4%B8%BA%E6%A8%A1%E7%89%88%E5%88%9B%E5%BB%BA%E6%96%B0%E7%9A%84%E8%99%9A%E6%8B%9F%E6%9C%BA/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="基于现有虚拟机磁盘为模版创建新的虚拟机使用 virt-install 创建虚拟机• 虽然使用virt-manager 可以方便的管理虚拟机,但如果需要批量进行虚拟机的创建管理,命令行工具virtinstall更加方便和适合案例：利用 qemu-img命令创建虚拟磁盘#注意: qemu-img create 一定要确认对应路径下没有此文件,如果存在将覆盖原文件  确认现有的虚拟磁盘文件[root@u">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="http://example.com/img/092d6b54082e04ec1c20121058c692bc5844b5.png">
+<meta property="og:image" content="http://example.com/img/f8bada3025892d742fe1746c42ead86f562ddc.png">
+<meta property="article:published_time" content="2023-05-14T08:21:34.888Z">
+<meta property="article:modified_time" content="2023-05-14T08:23:40.552Z">
+<meta property="article:author" content="John Doe">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/img/092d6b54082e04ec1c20121058c692bc5844b5.png">
+
+
+<link rel="icon" href="/img/avatar.jpg">
+
+<link href="/css/style.css?v=1.1.0" rel="stylesheet">
+
+<link href="/css/hl_theme/atom-light.css?v=1.1.0" rel="stylesheet">
+
+<link href="//cdn.jsdelivr.net/npm/animate.css@4.1.0/animate.min.css" rel="stylesheet">
+
+<script src="//cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js"></script>
+<script src="/js/titleTip.js?v=1.1.0" ></script>
+
+<script src="//cdn.jsdelivr.net/npm/highlightjs@9.16.2/highlight.pack.min.js"></script>
+<script>
+    hljs.initHighlightingOnLoad();
+</script>
+
+<script src="//cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.min.js"></script>
+
+
+
+<script src="//cdn.jsdelivr.net/npm/jquery.cookie@1.4.1/jquery.cookie.min.js" ></script>
+
+<script src="/js/iconfont.js?v=1.1.0" ></script>
+
+<meta name="generator" content="Hexo 6.3.0"></head>
+<div style="display: none">
+  <input class="theme_disqus_on" value="false">
+  <input class="theme_preload_comment" value="">
+  <input class="theme_blog_path" value="">
+  <input id="theme_shortcut" value="true" />
+  <input id="theme_highlight_on" value="true" />
+  <input id="theme_code_copy" value="true" />
+</div>
+
+
+
+<body>
+<aside class="nav">
+    <div class="nav-left">
+        <a href="/"
+   class="avatar_target">
+    <img class="avatar"
+         src="/img/avatar.jpg"/>
+</a>
+<div class="author">
+    <span>John Doe</span>
+</div>
+
+<div class="icon">
+    
+        
+            <a title="rss"
+               href="/atom.xml"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-rss"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="github"
+               href="https://github.com/yelog"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-github"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="facebook"
+               href="https://www.facebook.com/faker.tops"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-facebook"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+    
+        
+    
+        
+            <a title="instagram"
+               href="https://www.facebook.com/faker.tops"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-instagram"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="reddit"
+               href="https://www.reddit.com/user/yelog/"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-reddit"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="weibo"
+               href="http://weibo.com/u/2307534817"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-weibo"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="jianshu"
+               href="https://www.jianshu.com/u/ff56736de7cf"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-jianshu"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="zhihu"
+               href="https://www.zhihu.com/people/jaytp/activities"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-zhihu"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+    
+        
+            <a title="oschina"
+               href="https://my.oschina.net/yelog"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-oschina"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+    
+        
+            <a title="email"
+               href="mailto:jaytp@qq.com"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-email"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="qq"
+               href="http://wpa.qq.com/msgrd?v=3&uin=872336115&site=qq&menu=yes"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-qq"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="kugou"
+               href="https://www.kugou.com/"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-kugou"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="neteasemusic"
+               href="https://music.163.com/#/user/home?id=88151013"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-neteasemusic"></use>
+                    </svg>
+                
+            </a>
+        
+    
+</div>
+
+
+
+
+<ul>
+    <li>
+        <div class="all active" data-rel="All">All
+            
+                <small>(36)</small>
+            
+        </div>
+    </li>
+    
+        
+            
+                <li>
+                    <div data-rel="SRE linux云计算">
+                        
+                        SRE linux云计算
+                        <small>(11)</small>
+                        
+                    </div>
+                    
+                </li>
+            
+        
+    
+        
+            
+                <li>
+                    <div data-rel="云原生">
+                        
+                        云原生
+                        <small>(10)</small>
+                        
+                    </div>
+                    
+                </li>
+            
+        
+    
+        
+            
+                <li>
+                    <div data-rel="PMP管理">
+                        
+                        PMP管理
+                        <small>(1)</small>
+                        
+                    </div>
+                    
+                </li>
+            
+        
+    
+        
+            
+                <li>
+                    <div data-rel="Python 爬虫">
+                        
+                        Python 爬虫
+                        <small>(14)</small>
+                        
+                    </div>
+                    
+                </li>
+            
+        
+    
+</ul>
+<div class="left-bottom">
+    <div class="menus">
+        
+            
+            
+            
+    </div>
+    <div>
+        
+            <a class="about  hasFriend  site_url"
+               
+               href="/about">About</a>
+        
+        <a style="width: 50%"
+                
+                                           class="friends">Friends</a>
+        
+    </div>
+</div>
+<input type="hidden" id="yelog_site_posts_number" value="36">
+
+<div style="display: none">
+    <span id="busuanzi_value_site_uv"></span>
+    <span id="busuanzi_value_site_pv"></span>
+</div>
+
+    </div>
+    <div class="nav-right">
+        <div class="friends-area">
+    <div class="friends-title">
+        Links
+        <i class="iconfont icon-left"></i>
+    </div>
+    <div class="friends-content">
+        <ul>
+            
+            <li><a target="_blank" href="http://yelog.org/">叶落阁</a></li>
+            
+        </ul>
+    </div>
+</div>
+        <div class="title-list">
+    <div class="right-top">
+        <div id="default-panel">
+            <i class="iconfont icon-search" data-title="搜索 快捷键 i"></i>
+            <div class="right-title">All</div>
+            <i class="iconfont icon-file-tree" data-title="切换到大纲视图 快捷键 w"></i>
+        </div>
+        <div id="search-panel">
+            <i class="iconfont icon-left" data-title="返回"></i>
+            <input id="local-search-input" autocomplete="off"/>
+            <label class="border-line" for="input"></label>
+            <i class="iconfont icon-case-sensitive" data-title="大小写敏感"></i>
+            <i class="iconfont icon-tag" data-title="标签"></i>
+        </div>
+        <div id="outline-panel" style="display: none">
+            <div class="right-title">大纲</div>
+            <i class="iconfont icon-list" data-title="切换到文章列表"></i>
+        </div>
+    </div>
+
+    <div class="tags-list">
+    <input id="tag-search" />
+    <div class="tag-wrapper">
+        
+    </div>
+
+</div>
+
+    
+    <nav id="title-list-nav">
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/14/42-KVM%E8%99%9A%E6%8B%9F%E5%8C%96-%E5%9F%BA%E4%BA%8E%E7%8E%B0%E6%9C%89%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%A3%81%E7%9B%98%E4%B8%BA%E6%A8%A1%E7%89%88%E5%88%9B%E5%BB%BA%E6%96%B0%E7%9A%84%E8%99%9A%E6%8B%9F%E6%9C%BA/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="42-KVM虚拟化-基于现有虚拟机磁盘为模版创建新的虚拟机">42-KVM虚拟化-基于现有虚拟机磁盘为模版创建新的虚拟机</span>
+            <span class="post-date" title="2023-05-14 16:21:34">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%B8%89%E7%AB%A0-2-requests%20%E8%BF%9B%E9%98%B6%E2%80%A2%20%E7%88%AC%E5%8F%96%E6%9F%90%E8%A7%86%E9%A2%91%E7%BD%91%E7%9B%B8%E5%85%B3%E8%A7%86%E9%A2%91/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第三章-2-requests 进阶• 爬取某视频网相关视频">Python爬虫-第三章-2-requests 进阶• 爬取某视频网相关视频</span>
+            <span class="post-date" title="2023-05-14 16:20:20">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/14/44-KVM%E8%99%9A%E6%8B%9F%E5%8C%96-%E5%AD%98%E5%82%A8%E7%AE%A1%E7%90%86%E5%92%8C%E7%A3%81%E7%9B%98%E6%89%A9%E5%AE%B9/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="44-KVM虚拟化-存储管理和磁盘扩容">44-KVM虚拟化-存储管理和磁盘扩容</span>
+            <span class="post-date" title="2023-05-14 16:18:30">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%B8%89%E7%AB%A0-3-%E5%88%A9%E7%94%A8re%E6%A8%A1%E5%9D%97%E7%88%AC%E5%8F%96%E6%9F%90%E7%BD%91%E7%94%B5%E5%BD%B1%E6%8E%92%E8%A1%8C%E6%A6%9C/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第三章-3-利用re模块爬取某网电影排行榜">Python爬虫-第三章-3-利用re模块爬取某网电影排行榜</span>
+            <span class="post-date" title="2023-05-14 16:16:51">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/14/46-Docker-Container%E5%AE%B9%E5%99%A8%E7%AE%A1%E7%90%86%E5%90%84%E7%A7%8D%E6%93%8D%E4%BD%9C/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="46-Docker-Container容器管理各种操作">46-Docker-Container容器管理各种操作</span>
+            <span class="post-date" title="2023-05-14 16:14:04">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/14/47-Docker-Dockerfile%E9%95%9C%E5%83%8F%E5%88%9B%E5%BB%BA%E8%87%AA%E5%8A%A8%E5%8C%96%E7%94%9F%E4%BA%A7%E6%A1%88%E4%BE%8B/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="47-Docker-Dockerfile镜像创建自动化生产案例">47-Docker-Dockerfile镜像创建自动化生产案例</span>
+            <span class="post-date" title="2023-05-14 16:09:19">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/14/48-Docker-%E5%A4%9A%E5%AE%B9%E5%99%A8%E6%95%B0%E6%8D%AE%E5%85%B1%E4%BA%AB%E5%8F%8A%E6%8C%81%E4%B9%85%E5%8C%96/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="48-Docker-多容器数据共享及持久化">48-Docker-多容器数据共享及持久化</span>
+            <span class="post-date" title="2023-05-14 16:06:48">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%B8%89%E7%AB%A0-4-%E5%88%A9%E7%94%A8BeautifulSoup%E6%A8%A1%E5%9D%97%E7%88%AC%E5%8F%96%E6%9F%90%E7%BD%91%E5%A3%81%E7%BA%B8%E5%9B%BE%E5%BA%93%E5%9B%BE%E7%89%87/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第三章-4-利用BeautifulSoup模块爬取某网壁纸图库图片">Python爬虫-第三章-4-利用BeautifulSoup模块爬取某网壁纸图库图片</span>
+            <span class="post-date" title="2023-05-14 16:05:34">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%B8%89%E7%AB%A0-5-%E5%88%A9%E7%94%A8xpath%E7%88%AC%E5%8F%96%E6%9F%90%E5%85%AB%E6%88%92%E7%BD%91%E7%9B%B8%E5%85%B3%E8%AF%8D%E8%AF%AD%E5%85%AC%E5%8F%B8%E7%9A%84%E4%BF%A1%E6%81%AF%E5%92%8C%E4%BB%B7%E6%A0%BC/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第三章-5-利用xpath爬取某八戒网相关词语公司的信息和价格">Python爬虫-第三章-5-利用xpath爬取某八戒网相关词语公司的信息和价格</span>
+            <span class="post-date" title="2023-05-14 16:04:16">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%B8%89%E7%AB%A0-6-%E6%8A%93%E5%8F%96%E6%9F%90%E4%BA%91%E9%9F%B3%E4%B9%90%E8%AF%84%E8%AE%BA%E6%95%B0%E6%8D%AE/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第三章-6-抓取某云音乐评论数据">Python爬虫-第三章-6-抓取某云音乐评论数据</span>
+            <span class="post-date" title="2023-05-14 16:03:15">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-1-%E5%A4%9A%E7%BA%BF%E7%A8%8B%E5%A4%9A%E8%BF%9B%E7%A8%8B%E5%B9%B6%E5%8F%91%E7%88%AC%E5%8F%96%E2%85%A0/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-1-多线程多进程并发爬取Ⅰ">Python爬虫-第四章-1-多线程多进程并发爬取Ⅰ</span>
+            <span class="post-date" title="2023-05-14 16:01:27">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-1-%E5%A4%9A%E7%BA%BF%E7%A8%8B%E5%A4%9A%E8%BF%9B%E7%A8%8B%E5%B9%B6%E5%8F%91%E7%88%AC%E5%8F%96%E2%85%A1/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-1-多线程多进程并发爬取Ⅱ">Python爬虫-第四章-1-多线程多进程并发爬取Ⅱ</span>
+            <span class="post-date" title="2023-05-14 16:00:37">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-1-%E5%A4%9A%E7%BA%BF%E7%A8%8B%E5%A4%9A%E8%BF%9B%E7%A8%8B%E5%B9%B6%E5%8F%91%E7%88%AC%E5%8F%96%E2%85%A2-%E7%88%AC%E5%8F%96%E6%9F%90%E8%8F%9C%E5%B8%82%E5%9C%BA%E6%89%B9%E5%8F%91%E4%BB%B7%E6%95%B0%E6%8D%AE/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-1-多线程多进程并发爬取Ⅲ-爬取某菜市场批发价数据">Python爬虫-第四章-1-多线程多进程并发爬取Ⅲ-爬取某菜市场批发价数据</span>
+            <span class="post-date" title="2023-05-14 15:59:35">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-2-%E5%8D%8F%E7%A8%8B%E4%B8%8E%E5%BC%82%E6%AD%A5/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-2-协程与异步">Python爬虫-第四章-2-协程与异步</span>
+            <span class="post-date" title="2023-05-14 15:58:20">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/14/52-HAProxy-10%E7%A7%8D%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E8%B0%83%E5%BA%A6%E7%AE%97%E6%B3%95/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="52-HAProxy-10种负载均衡调度算法">52-HAProxy-10种负载均衡调度算法</span>
+            <span class="post-date" title="2023-05-14 15:56:12">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/14/55-Redis-%E7%BC%96%E8%AF%91%E9%83%A8%E7%BD%B2%E5%8F%8A%E6%95%B0%E6%8D%AE%E6%8C%81%E4%B9%85%E5%8C%96/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="55-Redis-编译部署及数据持久化">55-Redis-编译部署及数据持久化</span>
+            <span class="post-date" title="2023-05-14 15:54:02">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/14/56-Redis%E9%9B%86%E7%BE%A4-%E5%93%A8%E5%85%B5Sentinel%E6%90%AD%E5%BB%BA%E5%AE%9E%E7%8E%B0%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E9%AB%98%E5%8F%AF%E7%94%A8/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="56-Redis集群-哨兵Sentinel搭建实现负载均衡高可用">56-Redis集群-哨兵Sentinel搭建实现负载均衡高可用</span>
+            <span class="post-date" title="2023-05-14 15:41:50">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/14/998-%E6%90%AD%E5%BB%BA%E4%B8%80%E5%8F%B0%E7%A7%81%E7%94%A8%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%A8%E8%BF%87%E7%A8%8B/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="998-搭建一台私用服务器全过程">998-搭建一台私用服务器全过程</span>
+            <span class="post-date" title="2023-05-14 15:36:20">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/%20Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-3-%E5%A4%9A%E7%BA%BF%E7%A8%8B%E5%A4%9A%E8%BF%9B%E7%A8%8B%E6%8F%90%E5%8D%87%E4%BB%BB%E5%8A%A1%E6%89%A7%E8%A1%8C%E6%95%88%E7%8E%87/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-3-多线程多进程提升任务执行效率">Python爬虫-第四章-3-多线程多进程提升任务执行效率</span>
+            <span class="post-date" title="2023-05-14 15:35:16">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/%20Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-4-%E5%88%A9%E7%94%A8%E7%BA%BF%E7%A8%8B%E6%B1%A0%E5%92%8C%E8%BF%9B%E7%A8%8B%E6%B1%A0%E9%AB%98%E6%95%88%E7%88%AC%E5%8F%96%E5%8C%97%E4%BA%AC%E6%9F%90%E5%8F%91%E8%8F%9C%E5%9C%B0%E6%95%B0%E6%8D%AE/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-4-利用线程池和进程池高效爬取北京某发菜地数据">Python爬虫-第四章-4-利用线程池和进程池高效爬取北京某发菜地数据</span>
+            <span class="post-date" title="2023-05-14 15:34:07">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/13/%20Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-5-%E9%AB%98%E6%95%88%E6%8A%93%E5%8F%96%E8%A7%86%E9%A2%91%E7%BD%91%E7%AB%99%E8%A7%86%E9%A2%91%E8%B5%84%E6%BA%90%E8%87%B3%E6%9C%AC%E5%9C%B0/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-5-高效抓取视频网站视频资源至本地">Python爬虫-第四章-5-高效抓取视频网站视频资源至本地</span>
+            <span class="post-date" title="2023-05-13 20:13:14">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/13/%20Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%BA%94%E7%AB%A0-1-%E8%B6%85%E7%BA%A7%E9%B9%B0%E6%8F%92%E4%BB%B6%E5%AE%9E%E7%8E%B0%E8%87%AA%E5%8A%A8%E5%A1%AB%E5%86%99%E8%AF%86%E5%88%AB%E7%A0%81%E5%B9%B6%E7%99%BB%E5%BD%9512306%E7%BD%91%E7%AB%99/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第五章-1-超级鹰插件实现自动填写识别码并登录12306网站">Python爬虫-第五章-1-超级鹰插件实现自动填写识别码并登录12306网站</span>
+            <span class="post-date" title="2023-05-13 19:54:30">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/13/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%BA%94%E7%AB%A0-2-%E7%88%AC%E5%8F%96%E6%9F%90%E7%BD%91%E7%AB%99%E5%9B%BE%E5%BA%93/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第五章-2-爬取某网站图库">Python爬虫-第五章-2-爬取某网站图库</span>
+            <span class="post-date" title="2023-05-13 19:52:47">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/66-CICD%E6%8C%81%E7%BB%AD%E9%9B%86%E6%88%90%E5%B7%A5%E5%85%B7-Jenkins%E5%A3%B0%E6%98%8E%E5%BC%8FPipeline%E9%83%A8%E7%BD%B2JAVA%E7%A8%8B%E5%BA%8F%E7%94%9F%E4%BA%A7%E6%A1%88%E4%BE%8B(%E5%8C%85%E5%90%ABDocker%E6%A1%88%E4%BE%8B)/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="66-CICD持续集成工具-Jenkins声明式Pipeline部署JAVA程序生产案例(包含Docker案例)">66-CICD持续集成工具-Jenkins声明式Pipeline部署JAVA程序生产案例(包含Docker案例)</span>
+            <span class="post-date" title="2023-05-13 19:49:20">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/997-%E6%89%A9%E5%B1%95KVM%E8%99%9A%E6%8B%9F%E6%9C%BA%E9%80%BB%E8%BE%91%E5%8D%B7/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="67-日志分析系统ELK-ELK架构简述">67-日志分析系统ELK-ELK架构简述</span>
+            <span class="post-date" title="2023-05-13 19:47:57">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/67-%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90%E7%B3%BB%E7%BB%9FELK-ELK%E6%9E%B6%E6%9E%84%E7%AE%80%E8%BF%B0/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="67-日志分析系统ELK-ELK架构简述">67-日志分析系统ELK-ELK架构简述</span>
+            <span class="post-date" title="2023-05-13 19:46:06">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/68-%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90%E7%B3%BB%E7%BB%9FELK-Elasticsearch%E5%8D%95%E7%82%B9%E9%83%A8%E7%BD%B2%E5%92%8C%E9%85%8D%E7%BD%AE%E4%BC%98%E5%8C%96%EF%BC%88%E5%90%AB%E5%9F%BA%E4%BA%8EDocker%E5%8D%95%E7%82%B9%E9%83%A8%E7%BD%B2%E6%A1%88%E4%BE%8B%EF%BC%89/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="68-日志分析系统ELK-Elasticsearch单点部署和配置优化（含基于Docker单点部署案例）">68-日志分析系统ELK-Elasticsearch单点部署和配置优化（含基于Docker单点部署案例）</span>
+            <span class="post-date" title="2023-05-13 19:44:06">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/13/78-%E4%BA%91%E5%8E%9F%E7%94%9F%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-Kubernetes%E9%9B%86%E7%BE%A4%E8%8A%82%E7%82%B9%E6%A8%AA%E5%90%91%E4%BC%B8%E7%BC%A9%E5%8F%8A%E6%A0%B8%E5%BF%83%E7%BB%84%E4%BB%B6%E7%89%88%E6%9C%AC%E5%8D%87%E7%BA%A7/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="78-云原生操作系统-Kubernetes集群节点横向伸缩及核心组件版本升级">78-云原生操作系统-Kubernetes集群节点横向伸缩及核心组件版本升级</span>
+            <span class="post-date" title="2023-05-13 17:37:37">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/13/79-%E4%BA%91%E5%8E%9F%E7%94%9F%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-Kubectl%E5%91%BD%E4%BB%A4%E4%BB%A5%E5%8F%8AEtcd%E5%9F%BA%E4%BA%8E%E5%BF%AB%E7%85%A7%E7%9A%84%E6%95%B0%E6%8D%AE%E5%A4%87%E4%BB%BD%E4%B8%8E%E6%81%A2%E5%A4%8D/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="79-云原生操作系统-Kubectl命令以及Etcd基于快照的数据备份与恢复">79-云原生操作系统-Kubectl命令以及Etcd基于快照的数据备份与恢复</span>
+            <span class="post-date" title="2023-05-13 17:34:14">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All PMP管理 "
+           href="/2023/05/13/%E9%A2%84%E6%B5%8B%E5%9E%8B%E9%A1%B9%E7%9B%AE%E7%AE%A1%E7%90%86-6-%E9%A1%B9%E7%9B%AE%E8%BF%9B%E5%BA%A6%E7%AE%A1%E7%90%86%E2%85%A1/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="预测型项目管理-6-项目进度管理Ⅱ">预测型项目管理-6-项目进度管理Ⅱ</span>
+            <span class="post-date" title="2023-05-13 17:32:31">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/13/84-%E4%BA%91%E5%8E%9F%E7%94%9F%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-%E5%9F%BA%E4%BA%8Enerdctl%20+%20buildkitd%E6%9E%84%E5%BB%BA%E5%AE%B9%E5%99%A8%E9%95%9C%E5%83%8F20230513/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="84-云原生操作系统-基于nerdctl + buildkitd构建容器镜像">84-云原生操作系统-基于nerdctl + buildkitd构建容器镜像</span>
+            <span class="post-date" title="2023-05-13 17:22:54">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/13/86-%E4%BA%91%E5%8E%9F%E7%94%9F%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-Zookeeper%E9%9B%86%E7%BE%A4%E5%8F%8A%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%8A%A8%E6%80%81%E6%B3%A8%E5%86%8C%E5%92%8C%E5%8F%91%E7%8E%B0%E4%B8%9A%E5%8A%A1%E5%AE%B9%E5%99%A8%E5%8C%96%E6%A1%88%E4%BE%8B/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="86-云原生操作系统-Zookeeper集群及微服务动态注册和发现业务容器化案例">86-云原生操作系统-Zookeeper集群及微服务动态注册和发现业务容器化案例</span>
+            <span class="post-date" title="2023-05-13 17:13:23">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/13/87-%E4%BA%91%E5%8E%9F%E7%94%9F%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-Redis%E5%8D%95%E6%9C%BA%E5%92%8C%E9%9B%86%E7%BE%A4%E4%B8%9A%E5%8A%A1%E5%AE%B9%E5%99%A8%E5%8C%96%E6%A1%88%E4%BE%8B/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="87-云原生操作系统-Redis单机和集群业务容器化案例">87-云原生操作系统-Redis单机和集群业务容器化案例</span>
+            <span class="post-date" title="2023-05-13 17:08:49">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/997-%E4%BD%BF%E7%94%A8ChatGPT%E5%81%9A%E8%BF%90%E7%BB%B4%E5%BA%94%E7%94%A8%E5%B7%A5%E5%85%B7%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E8%A7%A3%E7%AD%94/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="997-使用ChatGPT做运维应用工具常见问题解答">997-使用ChatGPT做运维应用工具常见问题解答</span>
+            <span class="post-date" title="2023-05-13 15:49:52">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/%E5%A4%A7%E5%9E%8B%E4%BA%92%E8%81%94%E7%BD%91%E5%BE%AE%E6%9C%8D%E5%8A%A1%E6%9E%B6%E6%9E%84%E5%9B%BE/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="大型互联网微服务架构图">大型互联网微服务架构图</span>
+            <span class="post-date" title="2023-05-13 15:47:16">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/%E4%BA%91%E8%AE%A1%E7%AE%97%E6%9E%B6%E6%9E%84%E5%9B%BE/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="云计算架构图">云计算架构图</span>
+            <span class="post-date" title="2023-05-13 15:24:25">2023/05/13</span>
+        </a>
+        
+        <div id="no-item-tips">
+
+        </div>
+    </nav>
+    <div id="outline-list">
+    </div>
+</div>
+
+    </div>
+    <div class="hide-list">
+        <div class="semicircle" data-title="切换全屏 快捷键 s">
+            <div class="brackets first"><</div>
+            <div class="brackets">&gt;</div>
+        </div>
+    </div>
+</aside>
+<div id="post">
+    <div class="pjax">
+        <article id="post-86-云原生操作系统-Zookeeper集群及微服务动态注册和发现业务容器化案例" class="article article-type-post" itemscope itemprop="blogPost">
+    
+        <h1 class="article-title">86-云原生操作系统-Zookeeper集群及微服务动态注册和发现业务容器化案例</h1>
+    
+    <div class="article-meta">
+        
+        
+        
+        <span class="book">
+            <i class="iconfont icon-category"></i>
+            
+            
+            <a  data-rel="云原生">云原生</a>
+            
+        </span>
+        
+        
+    </div>
+    <div class="article-meta">
+        
+            Created At : <time class="date" title='Updated At: 2023-05-13 17:23:59'>2023-05-13 17:13</time>
+        
+    </div>
+    <div class="article-meta">
+        
+        
+        <span id="busuanzi_container_page_pv">
+            Views 👀 :<span id="busuanzi_value_page_pv">
+                <span class="count-comment">
+                    <span class="spinner">
+                      <div class="cube1"></div>
+                      <div class="cube2"></div>
+                    </span>
+                </span>
+            </span>
+        </span>
+        
+        
+    </div>
+    
+    <div class="toc-ref">
+    
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Define-some-default-values-that-can-be-overridden-by-system-properties"><span class="toc-text">Define some default values that can be overridden by system properties</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-text"></span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#ZooKeeper-Logging-Configuration"><span class="toc-text">ZooKeeper Logging Configuration</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#-1"><span class="toc-text"></span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Format-is-%E2%80%9C"><span class="toc-text">Format is “ (, )+</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#DEFAULT-console-appender-only"><span class="toc-text">DEFAULT: console appender only</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Example-with-rolling-log-file"><span class="toc-text">Example with rolling log file</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Example-with-rolling-log-file-and-tracing"><span class="toc-text">Example with rolling log file and tracing</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#-2"><span class="toc-text"></span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Log-INFO-level-and-above-messages-to-the-console"><span class="toc-text">Log INFO level and above messages to the console</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#-3"><span class="toc-text"></span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#-4"><span class="toc-text"></span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Add-ROLLINGFILE-to-rootLogger-to-get-log-file-output"><span class="toc-text">Add ROLLINGFILE to rootLogger to get log file output</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Log-DEBUG-level-and-above-messages-to-a-log-file"><span class="toc-text">Log DEBUG level and above messages to a log file</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Max-log-file-size-of-10MB"><span class="toc-text">Max log file size of 10MB</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#uncomment-the-next-line-to-limit-number-of-backup-files"><span class="toc-text">uncomment the next line to limit number of backup files</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#-5"><span class="toc-text"></span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Add-TRACEFILE-to-rootLogger-to-get-log-file-output"><span class="toc-text">Add TRACEFILE to rootLogger to get log file output</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Log-DEBUG-level-and-above-messages-to-a-log-file-1"><span class="toc-text">Log DEBUG level and above messages to a log file</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Notice-we-are-including-log4j%E2%80%99s-NDC-here-x"><span class="toc-text">Notice we are including log4j’s NDC here (%x)</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Download-Zookeeper"><span class="toc-text">Download Zookeeper</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#x2F-etc-x2F-exports-the-access-control-list-for-filesystems-which-may-be-exported"><span class="toc-text">&#x2F;etc&#x2F;exports: the access control list for filesystems which may be exported</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#to-NFS-clients-See-exports-5"><span class="toc-text">to NFS clients.  See exports(5).</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#-6"><span class="toc-text"></span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Example-for-NFSv2-and-NFSv3"><span class="toc-text">Example for NFSv2 and NFSv3:</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#x2F-srv-x2F-homes-hostname1-rw-sync-no-subtree-check-hostname2-ro-sync-no-subtree-check"><span class="toc-text">&#x2F;srv&#x2F;homes       hostname1(rw,sync,no_subtree_check) hostname2(ro,sync,no_subtree_check)</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#-7"><span class="toc-text"></span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Example-for-NFSv4"><span class="toc-text">Example for NFSv4:</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#x2F-srv-x2F-nfs4-gss-x2F-krb5i-rw-sync-fsid-x3D-0-crossmnt-no-subtree-check"><span class="toc-text">&#x2F;srv&#x2F;nfs4        gss&#x2F;krb5i(rw,sync,fsid&#x3D;0,crossmnt,no_subtree_check)</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#x2F-srv-x2F-nfs4-x2F-homes-gss-x2F-krb5i-rw-sync-no-subtree-check"><span class="toc-text">&#x2F;srv&#x2F;nfs4&#x2F;homes  gss&#x2F;krb5i(rw,sync,no_subtree_check)</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#-8"><span class="toc-text"></span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%87%86%E5%A4%87PV%E6%95%B0%E6%8D%AE%E5%8D%B7-%E5%B0%86%E5%AD%98%E5%82%A8%E8%AE%BE%E5%A4%87%E6%98%A0%E5%B0%84%E4%B8%BApv%E5%8D%B7-root-K8s-ansible-pv-cat-zookeeper-persistentvolume-yaml"><span class="toc-text">#准备PV数据卷 - 将存储设备映射为pv卷[root@K8s-ansible pv]#cat zookeeper-persistentvolume.yaml </span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%88%9B%E5%BB%BAPVC%E7%BB%99%E4%B8%9A%E5%8A%A1pod%E5%AD%98%E5%82%A8%E7%94%A8-root-K8s-ansible-pv-cat-zookeeper-persistentvolumeclaim-yaml"><span class="toc-text">#创建PVC给业务pod存储用[root@K8s-ansible pv]#cat zookeeper-persistentvolumeclaim.yaml </span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#apiVersion-v1kind-PersistentVolumeClaimmetadata-name-zookeeper-datadir-pvc-1-namespace-mooreyxiaspec-accessModes-ReadWriteOnce-%E8%AE%BE%E5%AE%9A%E8%AF%BB%E5%86%99%E6%A8%A1%E5%BC%8F-volumeName-zookeeper-datadir-pv-1-resources-requests-storage-10Gi-%E8%AE%BE%E5%AE%9A%E5%AD%98%E5%82%A8%E4%BD%BF%E7%94%A8%E4%B8%8A%E9%99%90"><span class="toc-text">apiVersion: v1kind: PersistentVolumeClaimmetadata:  name: zookeeper-datadir-pvc-1  namespace: mooreyxiaspec:  accessModes:    - ReadWriteOnce #设定读写模式  volumeName: zookeeper-datadir-pv-1  resources:    requests:      storage: 10Gi #设定存储使用上限</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#apiVersion-v1kind-PersistentVolumeClaimmetadata-name-zookeeper-datadir-pvc-2-namespace-mooreyxiaspec-accessModes-ReadWriteOnce-volumeName-zookeeper-datadir-pv-2-resources-requests-storage-10Gi"><span class="toc-text">apiVersion: v1kind: PersistentVolumeClaimmetadata:  name: zookeeper-datadir-pvc-2  namespace: mooreyxiaspec:  accessModes:    - ReadWriteOnce  volumeName: zookeeper-datadir-pv-2  resources:    requests:      storage: 10Gi</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%88%9B%E5%BB%BApvc-root-K8s-ansible-pv-kubectl-apply-f-zookeeper-persistentvolumeclaim-yamlpersistentvolumeclaim-x2F-zookeeper-datadir-pvc-1-createdpersistentvolumeclaim-x2F-zookeeper-datadir-pvc-2-createdpersistentvolumeclaim-x2F-zookeeper-datadir-pvc-3-created-%E7%A1%AE%E8%AE%A4pvc-pv%E6%98%BE%E7%A4%BABound-root-K8s-ansible-pv-kubectl-get-pvc-n-mooreyxiaNAME-STATUS-VOLUME-CAPACITY-ACCESS-MODES-STORAGECLASS-AGEzookeeper-datadir-pvc-1-Bound-zookeeper-datadir-pv-1-20Gi-RWO-30szookeeper-datadir-pvc-2-Bound-zookeeper-datadir-pv-2-20Gi-RWO-30szookeeper-datadir-pvc-3-Bound-zookeeper-datadir-pv-3-20Gi-RWO-30s%E2%80%A2-%E8%BF%90%E8%A1%8Czookeeper%E9%9B%86%E7%BE%A4-%E5%87%86%E5%A4%87kubernetes%E5%AF%B9%E8%B1%A1%E6%8E%A7%E5%88%B6%E5%99%A8%E8%84%9A%E6%9C%AC-%E4%BD%BF%E7%94%A8NodePort%E6%98%AF%E9%9B%86%E7%BE%A4%E5%A4%96%E5%8F%AF%E7%94%A8-%E7%94%B1%E4%BA%8Ezookeeper%E9%9B%86%E7%BE%A4%E8%87%AA%E5%B8%A6%E6%95%B0%E6%8D%AE%E5%90%8C%E6%AD%A5%EF%BC%8C%E5%8F%AA%E9%9C%80%E8%A6%81%E4%BD%BF%E5%BE%97zookeeper-pod%E7%9A%84service%E4%BA%92%E7%9B%B8%E8%AE%BF%E9%97%AE%E5%8D%B3%E5%8F%AF%E8%87%AA%E5%8A%A8%E5%90%8C%E6%AD%A5%E6%95%B0%E6%8D%AE-%E6%89%80%E4%BB%A5%E5%8F%AF%E4%BB%A5%E4%B8%8D%E4%BD%BF%E7%94%A8statefulSet-root-K8s-ansible-zookeeper-cat-zookeeper1-yamlapiVersion-v1kind-Servicemetadata-name-zookeeper-namespace-mooreyxiaspec-ports-name-client-port-2181-%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E5%85%A5%E5%8F%A3-selector-app-zookeeper-%E8%BD%AE%E8%AF%A2%E8%BD%AC%E5%8F%91%E8%87%B3zookeeper1-3%E7%9A%84service"><span class="toc-text">#创建pvc[root@K8s-ansible pv]#kubectl apply -f zookeeper-persistentvolumeclaim.yamlpersistentvolumeclaim&#x2F;zookeeper-datadir-pvc-1 createdpersistentvolumeclaim&#x2F;zookeeper-datadir-pvc-2 createdpersistentvolumeclaim&#x2F;zookeeper-datadir-pvc-3 created#确认pvc - pv显示Bound[root@K8s-ansible pv]#kubectl get pvc -n mooreyxiaNAME                      STATUS   VOLUME                   CAPACITY   ACCESS MODES   STORAGECLASS   AGEzookeeper-datadir-pvc-1   Bound    zookeeper-datadir-pv-1   20Gi       RWO                           30szookeeper-datadir-pvc-2   Bound    zookeeper-datadir-pv-2   20Gi       RWO                           30szookeeper-datadir-pvc-3   Bound    zookeeper-datadir-pv-3   20Gi       RWO                           30s• 运行zookeeper集群#准备kubernetes对象控制器脚本 - 使用NodePort是集群外可用#由于zookeeper集群自带数据同步，只需要使得zookeeper-pod的service互相访问即可自动同步数据,所以可以不使用statefulSet[root@K8s-ansible zookeeper]#cat zookeeper1.yamlapiVersion: v1kind: Servicemetadata:  name: zookeeper  namespace: mooreyxiaspec:  ports:    - name: client      port: 2181 #负载均衡入口  selector:    app: zookeeper #轮询转发至zookeeper1-3的service</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#apiVersion-v1kind-Servicemetadata-name-zookeeper1-namespace-mooreyxiaspec-type-NodePort-ports-name-client-port-2181-nodePort-32181-name-followers-port-2888-name-election-port-3888-selector-app-zookeeper-server-id-%E2%80%9C1%E2%80%9D"><span class="toc-text">apiVersion: v1kind: Servicemetadata:  name: zookeeper1  namespace: mooreyxiaspec:  type: NodePort  ports:    - name: client      port: 2181      nodePort: 32181    - name: followers      port: 2888    - name: election      port: 3888  selector:    app: zookeeper    server-id: “1”</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#apiVersion-v1kind-Servicemetadata-name-zookeeper2-namespace-mooreyxiaspec-type-NodePort-ports-name-client-port-2181-nodePort-32182-name-followers-port-2888-name-election-port-3888-selector-app-zookeeper-server-id-%E2%80%9C2%E2%80%9D"><span class="toc-text">apiVersion: v1kind: Servicemetadata:  name: zookeeper2  namespace: mooreyxiaspec:  type: NodePort  ports:    - name: client      port: 2181      nodePort: 32182    - name: followers      port: 2888    - name: election      port: 3888  selector:    app: zookeeper    server-id: “2”</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#apiVersion-v1kind-Servicemetadata-name-zookeeper3-namespace-mooreyxiaspec-type-NodePort-ports-name-client-port-2181-nodePort-32183-name-followers-port-2888-name-election-port-3888-selector-app-zookeeper-server-id-%E2%80%9C3%E2%80%9D"><span class="toc-text">apiVersion: v1kind: Servicemetadata:  name: zookeeper3  namespace: mooreyxiaspec:  type: NodePort  ports:    - name: client      port: 2181      nodePort: 32183    - name: followers      port: 2888    - name: election      port: 3888  selector:    app: zookeeper    server-id: “3”</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#kind-Deployment-apiVersion-extensions-x2F-v1beta1apiVersion-apps-x2F-v1metadata-name-zookeeper1-namespace-mooreyxiaspec-replicas-1-selector-matchLabels-app-zookeeper-template-metadata-labels-app-zookeeper-server-id-%E2%80%9C1%E2%80%9D-spec-volumes-name-data-emptyDir-name-wal-emptyDir-medium-Memory-containers-name-server-image-K8s-harbor01-mooreyxia-com-x2F-demo-x2F-zookeeper-v3-4-14-imagePullPolicy-Always-env-%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6%E4%B8%AD%E7%94%A8%E5%88%B0%E7%9A%84%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F-name-MYID-value-%E2%80%9C1%E2%80%9D-name-SERVERS-value-%E2%80%9Czookeeper1-zookeeper2-zookeeper3%E2%80%9D-%E6%AF%8F%E4%B8%AAservers%E5%90%8E%E9%9D%A2%E9%83%BD%E6%9C%89%E4%B8%80%E4%B8%AAzookeeper-name-JVMFLAGS-value-%E2%80%9C-Xmx2G%E2%80%9D-ports-containerPort-2181-containerPort-2888-containerPort-3888-volumeMounts-mountPath-%E2%80%9C-x2F-zookeeper-x2F-data%E2%80%9D-name-zookeeper-datadir-pvc-1-volumes-name-zookeeper-datadir-pvc-1-persistentVolumeClaim-claimName-zookeeper-datadir-pvc-1"><span class="toc-text">kind: Deployment#apiVersion: extensions&#x2F;v1beta1apiVersion: apps&#x2F;v1metadata:  name: zookeeper1  namespace: mooreyxiaspec:  replicas: 1  selector:    matchLabels:      app: zookeeper  template:    metadata:      labels:        app: zookeeper        server-id: “1”    spec:      volumes:        - name: data          emptyDir: {}        - name: wal          emptyDir:            medium: Memory      containers:        - name: server          image: K8s-harbor01.mooreyxia.com&#x2F;demo&#x2F;zookeeper:v3.4.14          imagePullPolicy: Always          env:#配置文件中用到的环境变量            - name: MYID              value: “1”            - name: SERVERS              value: “zookeeper1,zookeeper2,zookeeper3” #每个servers后面都有一个zookeeper            - name: JVMFLAGS              value: “-Xmx2G”          ports:            - containerPort: 2181            - containerPort: 2888            - containerPort: 3888          volumeMounts:          - mountPath: “&#x2F;zookeeper&#x2F;data”            name: zookeeper-datadir-pvc-1      volumes:        - name: zookeeper-datadir-pvc-1          persistentVolumeClaim:            claimName: zookeeper-datadir-pvc-1</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#kind-Deployment-apiVersion-extensions-x2F-v1beta1apiVersion-apps-x2F-v1metadata-name-zookeeper2-namespace-mooreyxiaspec-replicas-1-selector-matchLabels-app-zookeeper-template-metadata-labels-app-zookeeper-server-id-%E2%80%9C2%E2%80%9D-spec-volumes-name-data-emptyDir-name-wal-emptyDir-medium-Memory-containers-name-server-image-K8s-harbor01-mooreyxia-com-x2F-demo-x2F-zookeeper-v3-4-14-imagePullPolicy-Always-env-name-MYID-value-%E2%80%9C2%E2%80%9D-name-SERVERS-value-%E2%80%9Czookeeper1-zookeeper2-zookeeper3%E2%80%9D-name-JVMFLAGS-value-%E2%80%9C-Xmx2G%E2%80%9D-ports-containerPort-2181-containerPort-2888-containerPort-3888-volumeMounts-mountPath-%E2%80%9C-x2F-zookeeper-x2F-data%E2%80%9D-name-zookeeper-datadir-pvc-2-volumes-name-zookeeper-datadir-pvc-2-persistentVolumeClaim-claimName-zookeeper-datadir-pvc-2"><span class="toc-text">kind: Deployment#apiVersion: extensions&#x2F;v1beta1apiVersion: apps&#x2F;v1metadata:  name: zookeeper2  namespace: mooreyxiaspec:  replicas: 1  selector:    matchLabels:      app: zookeeper  template:    metadata:      labels:        app: zookeeper        server-id: “2”    spec:      volumes:        - name: data          emptyDir: {}        - name: wal          emptyDir:            medium: Memory      containers:        - name: server          image: K8s-harbor01.mooreyxia.com&#x2F;demo&#x2F;zookeeper:v3.4.14          imagePullPolicy: Always          env:            - name: MYID              value: “2”            - name: SERVERS              value: “zookeeper1,zookeeper2,zookeeper3”            - name: JVMFLAGS              value: “-Xmx2G”          ports:            - containerPort: 2181            - containerPort: 2888            - containerPort: 3888          volumeMounts:          - mountPath: “&#x2F;zookeeper&#x2F;data”            name: zookeeper-datadir-pvc-2      volumes:        - name: zookeeper-datadir-pvc-2          persistentVolumeClaim:            claimName: zookeeper-datadir-pvc-2</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Copyright-1999-2011-Alibaba-Group"><span class="toc-text">Copyright 1999-2011 Alibaba Group.</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#-9"><span class="toc-text"></span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Licensed-under-the-Apache-License-Version-2-0-the-%E2%80%9CLicense%E2%80%9D"><span class="toc-text">Licensed under the Apache License, Version 2.0 (the “License”);</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#you-may-not-use-this-file-except-in-compliance-with-the-License"><span class="toc-text">you may not use this file except in compliance with the License.</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#You-may-obtain-a-copy-of-the-License-at"><span class="toc-text">You may obtain a copy of the License at</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#-10"><span class="toc-text"></span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#http-www-apache-org-licenses-LICENSE-2-0"><span class="toc-text">http:&#x2F;&#x2F;www.apache.org&#x2F;licenses&#x2F;LICENSE-2.0</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#-11"><span class="toc-text"></span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Unless-required-by-applicable-law-or-agreed-to-in-writing-software"><span class="toc-text">Unless required by applicable law or agreed to in writing, software</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#distributed-under-the-License-is-distributed-on-an-%E2%80%9CAS-IS%E2%80%9D-BASIS"><span class="toc-text">distributed under the License is distributed on an “AS IS” BASIS,</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#WITHOUT-WARRANTIES-OR-CONDITIONS-OF-ANY-KIND-either-express-or-implied"><span class="toc-text">WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#See-the-License-for-the-specific-language-governing-permissions-and"><span class="toc-text">See the License for the specific language governing permissions and</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#limitations-under-the-License"><span class="toc-text">limitations under the License.</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#-12"><span class="toc-text"></span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Kubernetes-managed-hosts-file"><span class="toc-text">Kubernetes-managed hosts file.</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Copyright-1999-2011-Alibaba-Group-1"><span class="toc-text">Copyright 1999-2011 Alibaba Group.</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#-13"><span class="toc-text"></span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Licensed-under-the-Apache-License-Version-2-0-the-%E2%80%9CLicense%E2%80%9D-1"><span class="toc-text">Licensed under the Apache License, Version 2.0 (the “License”);</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#you-may-not-use-this-file-except-in-compliance-with-the-License-1"><span class="toc-text">you may not use this file except in compliance with the License.</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#You-may-obtain-a-copy-of-the-License-at-1"><span class="toc-text">You may obtain a copy of the License at</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#-14"><span class="toc-text"></span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#http-www-apache-org-licenses-LICENSE-2-0-1"><span class="toc-text">http:&#x2F;&#x2F;www.apache.org&#x2F;licenses&#x2F;LICENSE-2.0</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#-15"><span class="toc-text"></span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Unless-required-by-applicable-law-or-agreed-to-in-writing-software-1"><span class="toc-text">Unless required by applicable law or agreed to in writing, software</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#distributed-under-the-License-is-distributed-on-an-%E2%80%9CAS-IS%E2%80%9D-BASIS-1"><span class="toc-text">distributed under the License is distributed on an “AS IS” BASIS,</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#WITHOUT-WARRANTIES-OR-CONDITIONS-OF-ANY-KIND-either-express-or-implied-1"><span class="toc-text">WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#See-the-License-for-the-specific-language-governing-permissions-and-1"><span class="toc-text">See the License for the specific language governing permissions and</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#limitations-under-the-License-1"><span class="toc-text">limitations under the License.</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#-16"><span class="toc-text"></span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Kubernetes-managed-hosts-file-1"><span class="toc-text">Kubernetes-managed hosts file.</span></a></li></ol>
+    
+<style>
+    .left-col .switch-btn,
+    .left-col .switch-area {
+        display: none;
+    }
+    .toc-level-3 i,
+    .toc-level-3 ol {
+        display: none !important;
+    }
+</style>
+</div>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>• 案例业务逻辑<br><img src="/../img/66ec55148ef37bd987f986d2f867d6bf36867a.png"><br>• 实现步骤<br>• 构建zookeeper镜像<br>#准备构建镜像的文件<br>[root@K8s-ansible zookeeper]#chmod a+x <em>.sh<br>[root@K8s-ansible zookeeper]#ll<br>total 36900<br>drwxr-xr-x  4 root root     4096 Apr  9 13:47 .&#x2F;<br>drwxr-xr-x 11 root root     4096 Apr  9 02:59 ..&#x2F;<br>-rw-r–r–  1 root root     1758 Apr  9 13:11 Dockerfile<br>-rw-r–r–  1 root root    63587 Apr  9 02:59 KEYS<br>drwxr-xr-x  2 root root     4096 Apr  9 02:59 bin&#x2F;<br>-rwxr-xr-x  1 root root      264 Apr  9 02:59 build-command.sh</em><br>drwxr-xr-x  2 root root     4096 Apr  9 02:59 conf&#x2F;<br>-rwxr-xr-x  1 root root      278 Apr  9 13:47 entrypoint.sh*<br>-rw-r–r–  1 root root       91 Apr  9 02:59 repositories<br>-rw-r–r–  1 root root     2270 Apr  9 02:59 zookeeper-3.12-Dockerfile.tar.gz<br>-rw-r–r–  1 root root 37676320 Apr  9 02:59 zookeeper-3.4.14.tar.gz<br>-rw-r–r–  1 root root      836 Apr  9 02:59 zookeeper-3.4.14.tar.gz.asc</p>
+<p>#配置镜像源<br>[root@K8s-ansible zookeeper]#cat repositories<br><a target="_blank" rel="noopener" href="http://mirrors.aliyun.com/alpine/v3.6/main">http://mirrors.aliyun.com/alpine/v3.6/main</a><br><a target="_blank" rel="noopener" href="http://mirrors.aliyun.com/alpine/v3.6/community">http://mirrors.aliyun.com/alpine/v3.6/community</a></p>
+<p>#准备jdk镜像 - 只有31M<br>[root@K8s-ansible zookeeper]#docker pull elevy&#x2F;slim_java:8<br>8: Pulling from elevy&#x2F;slim_java<br>88286f41530e: Pull complete<br>7141511c4dad: Pull complete<br>fd529fe251b3: Pull complete<br>Digest: sha256:044e42fb89cda51e83701349a9b79e8117300f4841511ed853f73caf7fc98a51<br>Status: Downloaded newer image for elevy&#x2F;slim_java:8<br>docker.io&#x2F;elevy&#x2F;slim_java:8<br>#上传到harbor<br>[root@K8s-ansible zookeeper]#docker tag elevy&#x2F;slim_java:8 K8s-harbor01.mooreyxia.com&#x2F;baseimages&#x2F;slim_java:8<br>[root@K8s-ansible zookeeper]#docker push K8s-harbor01.mooreyxia.com&#x2F;baseimages&#x2F;slim_java:8<br>The push refers to repository [K8s-harbor01.mooreyxia.com&#x2F;baseimages&#x2F;slim_java]<br>e053edd72ca6: Pushed<br>aba783efb1a4: Pushed<br>5bef08742407: Pushed<br>8: digest: sha256:817d0af5d4f16c29509b8397784f5d4ec3accb1bfde4e474244ed3be7f41a604 size: 952</p>
+<p>#准备zookeeper配置文件 - 单点相同的配置<br>[root@K8s-ansible zookeeper]#cat conf&#x2F;zoo.cfg<br>tickTime&#x3D;2000<br>initLimit&#x3D;10<br>syncLimit&#x3D;5<br>dataDir&#x3D;&#x2F;zookeeper&#x2F;data<br>dataLogDir&#x3D;&#x2F;zookeeper&#x2F;wal<br>#snapCount&#x3D;100000<br>autopurge.purgeInterval&#x3D;1<br>clientPort&#x3D;2181<br>quorumListenOnAllIPs&#x3D;true</p>
+<p>#准备zookeeper集群配置 - 生成zookeeper的myid并且暴露2888:3888端口<br>[root@K8s-ansible zookeeper]#cat entrypoint.sh<br>#!&#x2F;bin&#x2F;bash</p>
+<p>echo ${MYID:-1} &gt; &#x2F;zookeeper&#x2F;data&#x2F;myid</p>
+<p>if [ -n “$SERVERS” ]; then<br>    IFS&#x3D;, read -a servers &lt;&lt;&lt;”$SERVERS”<br>    for i in “${!servers[@]}”; do<br>        printf “\nserver.%i&#x3D;%s:2888:3888” “$((1 + $i))” “${servers[$i]}” &gt;&gt; &#x2F;zookeeper&#x2F;conf&#x2F;zoo.cfg<br>        #输出 server.1~3&#x3D;zookeeper1-3:2888:3888<br>    done<br>fi</p>
+<p>cd &#x2F;zookeeper<br>exec “$@”</p>
+<p>#zookeeper - log4j日志配置<br>[root@K8s-ansible zookeeper]#cat conf&#x2F;log4j.properties </p>
+<h1 id="Define-some-default-values-that-can-be-overridden-by-system-properties"><a href="#Define-some-default-values-that-can-be-overridden-by-system-properties" class="headerlink" title="Define some default values that can be overridden by system properties"></a>Define some default values that can be overridden by system properties</h1><p>zookeeper.root.logger&#x3D;INFO, CONSOLE, ROLLINGFILE<br>zookeeper.console.threshold&#x3D;INFO<br>zookeeper.log.dir&#x3D;&#x2F;zookeeper&#x2F;log<br>zookeeper.log.file&#x3D;zookeeper.log<br>zookeeper.log.threshold&#x3D;INFO<br>zookeeper.tracelog.dir&#x3D;&#x2F;zookeeper&#x2F;log<br>zookeeper.tracelog.file&#x3D;zookeeper_trace.log</p>
+<h1 id=""><a href="#" class="headerlink" title=""></a></h1><h1 id="ZooKeeper-Logging-Configuration"><a href="#ZooKeeper-Logging-Configuration" class="headerlink" title="ZooKeeper Logging Configuration"></a>ZooKeeper Logging Configuration</h1><h1 id="-1"><a href="#-1" class="headerlink" title=""></a></h1><h1 id="Format-is-“"><a href="#Format-is-“" class="headerlink" title="Format is “ (, )+"></a>Format is “<default threshold> (, <appender>)+</h1><h1 id="DEFAULT-console-appender-only"><a href="#DEFAULT-console-appender-only" class="headerlink" title="DEFAULT: console appender only"></a>DEFAULT: console appender only</h1><p>log4j.rootLogger&#x3D;${zookeeper.root.logger}</p>
+<h1 id="Example-with-rolling-log-file"><a href="#Example-with-rolling-log-file" class="headerlink" title="Example with rolling log file"></a>Example with rolling log file</h1><p>#log4j.rootLogger&#x3D;DEBUG, CONSOLE, ROLLINGFILE</p>
+<h1 id="Example-with-rolling-log-file-and-tracing"><a href="#Example-with-rolling-log-file-and-tracing" class="headerlink" title="Example with rolling log file and tracing"></a>Example with rolling log file and tracing</h1><p>#log4j.rootLogger&#x3D;TRACE, CONSOLE, ROLLINGFILE, TRACEFILE</p>
+<h1 id="-2"><a href="#-2" class="headerlink" title=""></a></h1><h1 id="Log-INFO-level-and-above-messages-to-the-console"><a href="#Log-INFO-level-and-above-messages-to-the-console" class="headerlink" title="Log INFO level and above messages to the console"></a>Log INFO level and above messages to the console</h1><h1 id="-3"><a href="#-3" class="headerlink" title=""></a></h1><p>log4j.appender.CONSOLE&#x3D;org.apache.log4j.ConsoleAppender<br>log4j.appender.CONSOLE.Threshold&#x3D;${zookeeper.console.threshold}<br>log4j.appender.CONSOLE.layout&#x3D;org.apache.log4j.PatternLayout<br>log4j.appender.CONSOLE.layout.Cnotallow&#x3D;%d{ISO8601} [myid:%X{myid}] - %-5p [%t:%C{1}@%L] - %m%n</p>
+<h1 id="-4"><a href="#-4" class="headerlink" title=""></a></h1><h1 id="Add-ROLLINGFILE-to-rootLogger-to-get-log-file-output"><a href="#Add-ROLLINGFILE-to-rootLogger-to-get-log-file-output" class="headerlink" title="Add ROLLINGFILE to rootLogger to get log file output"></a>Add ROLLINGFILE to rootLogger to get log file output</h1><h1 id="Log-DEBUG-level-and-above-messages-to-a-log-file"><a href="#Log-DEBUG-level-and-above-messages-to-a-log-file" class="headerlink" title="Log DEBUG level and above messages to a log file"></a>Log DEBUG level and above messages to a log file</h1><p>log4j.appender.ROLLINGFILE&#x3D;org.apache.log4j.RollingFileAppender<br>log4j.appender.ROLLINGFILE.Threshold&#x3D;${zookeeper.log.threshold}<br>log4j.appender.ROLLINGFILE.File&#x3D;${zookeeper.log.dir}&#x2F;${zookeeper.log.file}</p>
+<h1 id="Max-log-file-size-of-10MB"><a href="#Max-log-file-size-of-10MB" class="headerlink" title="Max log file size of 10MB"></a>Max log file size of 10MB</h1><p>log4j.appender.ROLLINGFILE.MaxFileSize&#x3D;10MB</p>
+<h1 id="uncomment-the-next-line-to-limit-number-of-backup-files"><a href="#uncomment-the-next-line-to-limit-number-of-backup-files" class="headerlink" title="uncomment the next line to limit number of backup files"></a>uncomment the next line to limit number of backup files</h1><p>log4j.appender.ROLLINGFILE.MaxBackupIndex&#x3D;5</p>
+<p>log4j.appender.ROLLINGFILE.layout&#x3D;org.apache.log4j.PatternLayout<br>log4j.appender.ROLLINGFILE.layout.Cnotallow&#x3D;%d{ISO8601} [myid:%X{myid}] - %-5p [%t:%C{1}@%L] - %m%n</p>
+<h1 id="-5"><a href="#-5" class="headerlink" title=""></a></h1><h1 id="Add-TRACEFILE-to-rootLogger-to-get-log-file-output"><a href="#Add-TRACEFILE-to-rootLogger-to-get-log-file-output" class="headerlink" title="Add TRACEFILE to rootLogger to get log file output"></a>Add TRACEFILE to rootLogger to get log file output</h1><h1 id="Log-DEBUG-level-and-above-messages-to-a-log-file-1"><a href="#Log-DEBUG-level-and-above-messages-to-a-log-file-1" class="headerlink" title="Log DEBUG level and above messages to a log file"></a>Log DEBUG level and above messages to a log file</h1><p>log4j.appender.TRACEFILE&#x3D;org.apache.log4j.FileAppender<br>log4j.appender.TRACEFILE.Threshold&#x3D;TRACE<br>log4j.appender.TRACEFILE.File&#x3D;${zookeeper.tracelog.dir}&#x2F;${zookeeper.tracelog.file}</p>
+<p>log4j.appender.TRACEFILE.layout&#x3D;org.apache.log4j.PatternLayout</p>
+<h3 id="Notice-we-are-including-log4j’s-NDC-here-x"><a href="#Notice-we-are-including-log4j’s-NDC-here-x" class="headerlink" title="Notice we are including log4j’s NDC here (%x)"></a>Notice we are including log4j’s NDC here (%x)</h3><p>log4j.appender.TRACEFILE.layout.Cnotallow&#x3D;%d{ISO8601} [myid:%X{myid}] - %-5p [%t:%C{1}@%L][%x] - %m%n</p>
+<p>#准备镜像构建文件<br>[root@K8s-ansible zookeeper]#cat Dockerfile<br>#FROM harbor-linux38.local.com&#x2F;linux38&#x2F;slim_java:8<br>FROM K8s-harbor01.mooreyxia.com&#x2F;baseimages&#x2F;slim_java:8 #准备一个jdk到harbor</p>
+<p>ENV ZK_VERSION 3.4.14 #zookeeper版本<br>ADD repositories &#x2F;etc&#x2F;apk&#x2F;repositories #用alpine做系统镜像，提前配置镜像源</p>
+<h1 id="Download-Zookeeper"><a href="#Download-Zookeeper" class="headerlink" title="Download Zookeeper"></a>Download Zookeeper</h1><p>COPY zookeeper-3.4.14.tar.gz &#x2F;tmp&#x2F;zk.tgz<br>COPY zookeeper-3.4.14.tar.gz.asc &#x2F;tmp&#x2F;zk.tgz.asc<br>COPY KEYS &#x2F;tmp&#x2F;KEYS<br>RUN apk add –no-cache –virtual .build-deps <br>      ca-certificates   <br>      gnupg             <br>      tar               <br>      wget &amp;&amp;           <br>    #<br>    # Install dependencies<br>    apk add –no-cache  <br>      bash &amp;&amp;           <br>    #<br>    #<br>    # Verify the signature<br>    export GNUPGHOME&#x3D;”$(mktemp -d)” &amp;&amp; <br>    gpg -q –batch –import &#x2F;tmp&#x2F;KEYS &amp;&amp; <br>    gpg -q –batch –no-auto-key-retrieve –verify &#x2F;tmp&#x2F;zk.tgz.asc &#x2F;tmp&#x2F;zk.tgz &amp;&amp; <br>    #<br>    # Set up directories<br>    #<br>    mkdir -p &#x2F;zookeeper&#x2F;data &#x2F;zookeeper&#x2F;wal &#x2F;zookeeper&#x2F;log &amp;&amp; <br>    #<br>    # Install<br>    tar -x -C &#x2F;zookeeper –strip-compnotallow&#x3D;1 –no-same-owner -f &#x2F;tmp&#x2F;zk.tgz &amp;&amp; <br>    #<br>    # Slim down<br>    cd &#x2F;zookeeper &amp;&amp; <br>    cp dist-maven&#x2F;zookeeper-${ZK_VERSION}.jar . &amp;&amp; <br>    rm -rf <br>      <em>.txt <br>      <em>.xml <br>      bin&#x2F;README.txt <br>      bin&#x2F;</em>.cmd <br>      conf&#x2F;</em> <br>      contrib <br>      dist-maven <br>      docs <br>      lib&#x2F;<em>.txt <br>      lib&#x2F;cobertura <br>      lib&#x2F;jdiff <br>      recipes <br>      src <br>      zookeeper-</em>.asc <br>      zookeeper-<em>.md5 <br>      zookeeper-</em>.sha1 &amp;&amp; <br>    #<br>    # Clean up<br>    apk del .build-deps &amp;&amp; <br>    rm -rf &#x2F;tmp&#x2F;* “$GNUPGHOME”</p>
+<p>COPY conf &#x2F;zookeeper&#x2F;conf&#x2F;<br>COPY bin&#x2F;zkReady.sh &#x2F;zookeeper&#x2F;bin&#x2F;<br>COPY entrypoint.sh &#x2F;</p>
+<p>ENV PATH&#x3D;&#x2F;zookeeper&#x2F;bin:${PATH} <br>    ZOO_LOG_DIR&#x3D;&#x2F;zookeeper&#x2F;log <br>    ZOO_LOG4J_PROP&#x3D;”INFO, CONSOLE, ROLLINGFILE” <br>    JMXPORT&#x3D;9010</p>
+<p>ENTRYPOINT [ “&#x2F;entrypoint.sh” ]</p>
+<p>CMD [ “zkServer.sh”, “start-foreground” ]</p>
+<p>EXPOSE 2181 2888 3888 9010</p>
+<p>#构建镜像并上传harbor<br>[root@K8s-ansible zookeeper]#cat build-command.sh<br>#!&#x2F;bin&#x2F;bash<br>TAG&#x3D;$1<br>docker build -t K8s-harbor01.mooreyxia.com&#x2F;demo&#x2F;zookeeper:${TAG} .<br>sleep 1<br>docker push  K8s-harbor01.mooreyxia.com&#x2F;demo&#x2F;zookeeper:${TAG}</p>
+<p>[root@K8s-ansible zookeeper]#bash build-command.sh v3.4.14<br>…<br>Successfully built 4be1c51f39dd<br>Successfully tagged K8s-harbor01.mooreyxia.com&#x2F;demo&#x2F;zookeeper:v3.4.14<br>The push refers to repository [K8s-harbor01.mooreyxia.com&#x2F;demo&#x2F;zookeeper]<br>e562b485e113: Pushed<br>471c0a089ec7: Pushed<br>e9c1d174b408: Pushed<br>bd3506eb3fca: Pushed<br>479b1f22723a: Pushed<br>0fdd215d56a7: Pushed<br>240cfb0dce70: Pushed<br>2c1db90485e1: Pushed<br>e053edd72ca6: Mounted from baseimages&#x2F;slim_java<br>aba783efb1a4: Mounted from baseimages&#x2F;slim_java<br>5bef08742407: Mounted from baseimages&#x2F;slim_java<br>v3.4.14: digest: sha256:b6e3fe808f5740371d02b7755b0dc610fad5cea0eb127fe550c0fff33d81e54c size: 2621• 测试zookeeper镜像 - 此处省略，生产要确保镜像可用<br>• 创建PV&#x2F;PVC<br>#准备存储设备，这里用NFS<br>[root@K8s-haproxy01 ~]#mkdir -p &#x2F;data&#x2F;k8sdata&#x2F;mooreyxia&#x2F;zookeeper-datadir-1<br>[root@K8s-haproxy01 ~]#mkdir -p &#x2F;data&#x2F;k8sdata&#x2F;mooreyxia&#x2F;zookeeper-datadir-2<br>[root@K8s-haproxy01 ~]#mkdir -p &#x2F;data&#x2F;k8sdata&#x2F;mooreyxia&#x2F;zookeeper-datadir-3<br>[root@K8s-haproxy01 ~]#cat &#x2F;etc&#x2F;exports </p>
+<h1 id="x2F-etc-x2F-exports-the-access-control-list-for-filesystems-which-may-be-exported"><a href="#x2F-etc-x2F-exports-the-access-control-list-for-filesystems-which-may-be-exported" class="headerlink" title="&#x2F;etc&#x2F;exports: the access control list for filesystems which may be exported"></a>&#x2F;etc&#x2F;exports: the access control list for filesystems which may be exported</h1><h1 id="to-NFS-clients-See-exports-5"><a href="#to-NFS-clients-See-exports-5" class="headerlink" title="to NFS clients.  See exports(5)."></a>to NFS clients.  See exports(5).</h1><h1 id="-6"><a href="#-6" class="headerlink" title=""></a></h1><h1 id="Example-for-NFSv2-and-NFSv3"><a href="#Example-for-NFSv2-and-NFSv3" class="headerlink" title="Example for NFSv2 and NFSv3:"></a>Example for NFSv2 and NFSv3:</h1><h1 id="x2F-srv-x2F-homes-hostname1-rw-sync-no-subtree-check-hostname2-ro-sync-no-subtree-check"><a href="#x2F-srv-x2F-homes-hostname1-rw-sync-no-subtree-check-hostname2-ro-sync-no-subtree-check" class="headerlink" title="&#x2F;srv&#x2F;homes       hostname1(rw,sync,no_subtree_check) hostname2(ro,sync,no_subtree_check)"></a>&#x2F;srv&#x2F;homes       hostname1(rw,sync,no_subtree_check) hostname2(ro,sync,no_subtree_check)</h1><h1 id="-7"><a href="#-7" class="headerlink" title=""></a></h1><h1 id="Example-for-NFSv4"><a href="#Example-for-NFSv4" class="headerlink" title="Example for NFSv4:"></a>Example for NFSv4:</h1><h1 id="x2F-srv-x2F-nfs4-gss-x2F-krb5i-rw-sync-fsid-x3D-0-crossmnt-no-subtree-check"><a href="#x2F-srv-x2F-nfs4-gss-x2F-krb5i-rw-sync-fsid-x3D-0-crossmnt-no-subtree-check" class="headerlink" title="&#x2F;srv&#x2F;nfs4        gss&#x2F;krb5i(rw,sync,fsid&#x3D;0,crossmnt,no_subtree_check)"></a>&#x2F;srv&#x2F;nfs4        gss&#x2F;krb5i(rw,sync,fsid&#x3D;0,crossmnt,no_subtree_check)</h1><h1 id="x2F-srv-x2F-nfs4-x2F-homes-gss-x2F-krb5i-rw-sync-no-subtree-check"><a href="#x2F-srv-x2F-nfs4-x2F-homes-gss-x2F-krb5i-rw-sync-no-subtree-check" class="headerlink" title="&#x2F;srv&#x2F;nfs4&#x2F;homes  gss&#x2F;krb5i(rw,sync,no_subtree_check)"></a>&#x2F;srv&#x2F;nfs4&#x2F;homes  gss&#x2F;krb5i(rw,sync,no_subtree_check)</h1><h1 id="-8"><a href="#-8" class="headerlink" title=""></a></h1><p>&#x2F;data&#x2F;k8sdata *(rw,no_root_squash)<br>&#x2F;data&#x2F;volumes <em>(rw,no_root_squash)<br>[root@K8s-haproxy01 ~]#exportfs -avs<br>exportfs: &#x2F;etc&#x2F;exports [2]: Neither ‘subtree_check’ or ‘no_subtree_check’ specified for export “</em>:&#x2F;data&#x2F;k8sdata”.<br>  Assuming default behaviour (‘no_subtree_check’).<br>  NOTE: this default has changed since nfs-utils version 1.0.x</p>
+<p>exportfs: &#x2F;etc&#x2F;exports [3]: Neither ‘subtree_check’ or ‘no_subtree_check’ specified for export “*:&#x2F;data&#x2F;volumes”.<br>  Assuming default behaviour (‘no_subtree_check’).<br>  NOTE: this default has changed since nfs-utils version 1.0.x</p>
+<p>exporting *:&#x2F;data&#x2F;volumes<br>exporting *:&#x2F;data&#x2F;k8sdata</p>
+<h2 id="准备PV数据卷-将存储设备映射为pv卷-root-K8s-ansible-pv-cat-zookeeper-persistentvolume-yaml"><a href="#准备PV数据卷-将存储设备映射为pv卷-root-K8s-ansible-pv-cat-zookeeper-persistentvolume-yaml" class="headerlink" title="#准备PV数据卷 - 将存储设备映射为pv卷[root@K8s-ansible pv]#cat zookeeper-persistentvolume.yaml "></a>#准备PV数据卷 - 将存储设备映射为pv卷<br>[root@K8s-ansible pv]#cat zookeeper-persistentvolume.yaml </h2><p>apiVersion: v1<br>kind: PersistentVolume<br>metadata:<br>  name: zookeeper-datadir-pv-1<br>spec:<br>  capacity:<br>    storage: 20Gi<br>  accessModes:<br>    - ReadWriteOnce<br>  nfs:<br>    server: 192.168.11.203<br>    path: &#x2F;data&#x2F;k8sdata&#x2F;mooreyxia&#x2F;zookeeper-datadir-1 </p>
+<hr>
+<p>apiVersion: v1<br>kind: PersistentVolume<br>metadata:<br>  name: zookeeper-datadir-pv-2<br>spec:<br>  capacity:<br>    storage: 20Gi<br>  accessModes:<br>    - ReadWriteOnce<br>  nfs:<br>    server: 192.168.11.203<br>    path: &#x2F;data&#x2F;k8sdata&#x2F;mooreyxia&#x2F;zookeeper-datadir-2 </p>
+<hr>
+<p>apiVersion: v1<br>kind: PersistentVolume<br>metadata:<br>  name: zookeeper-datadir-pv-3<br>spec:<br>  capacity:<br>    storage: 20Gi<br>  accessModes:<br>    - ReadWriteOnce<br>  nfs:<br>    server: 192.168.11.203<br>    path: &#x2F;data&#x2F;k8sdata&#x2F;mooreyxia&#x2F;zookeeper-datadir-3 </p>
+<p>#创建PV<br>[root@K8s-ansible pv]#kubectl apply -f zookeeper-persistentvolume.yaml<br>persistentvolume&#x2F;zookeeper-datadir-pv-1 created<br>persistentvolume&#x2F;zookeeper-datadir-pv-2 created<br>persistentvolume&#x2F;zookeeper-datadir-pv-3 created<br>#确认PV是否可用 - Available<br>[root@K8s-ansible pv]#kubectl get pv<br>NAME                                       CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS      CLAIM                                 STORAGECLASS            REASON   AGE<br>pvc-b5ae1f9c-8569-4645-8398-0571b6defa6c   500Mi      RWX            Retain           Bound       myserver&#x2F;myserver-myapp-dynamic-pvc   mooreyxia-nfs-storage            4d9h<br>zookeeper-datadir-pv-1                     20Gi       RWO            Retain           Available                                                                          46s<br>zookeeper-datadir-pv-2                     20Gi       RWO            Retain           Available                                                                          46s<br>zookeeper-datadir-pv-3                     20Gi       RWO            Retain           Available                                                                          46s</p>
+<h2 id="创建PVC给业务pod存储用-root-K8s-ansible-pv-cat-zookeeper-persistentvolumeclaim-yaml"><a href="#创建PVC给业务pod存储用-root-K8s-ansible-pv-cat-zookeeper-persistentvolumeclaim-yaml" class="headerlink" title="#创建PVC给业务pod存储用[root@K8s-ansible pv]#cat zookeeper-persistentvolumeclaim.yaml "></a>#创建PVC给业务pod存储用<br>[root@K8s-ansible pv]#cat zookeeper-persistentvolumeclaim.yaml </h2><h2 id="apiVersion-v1kind-PersistentVolumeClaimmetadata-name-zookeeper-datadir-pvc-1-namespace-mooreyxiaspec-accessModes-ReadWriteOnce-设定读写模式-volumeName-zookeeper-datadir-pv-1-resources-requests-storage-10Gi-设定存储使用上限"><a href="#apiVersion-v1kind-PersistentVolumeClaimmetadata-name-zookeeper-datadir-pvc-1-namespace-mooreyxiaspec-accessModes-ReadWriteOnce-设定读写模式-volumeName-zookeeper-datadir-pv-1-resources-requests-storage-10Gi-设定存储使用上限" class="headerlink" title="apiVersion: v1kind: PersistentVolumeClaimmetadata:  name: zookeeper-datadir-pvc-1  namespace: mooreyxiaspec:  accessModes:    - ReadWriteOnce #设定读写模式  volumeName: zookeeper-datadir-pv-1  resources:    requests:      storage: 10Gi #设定存储使用上限"></a>apiVersion: v1<br>kind: PersistentVolumeClaim<br>metadata:<br>  name: zookeeper-datadir-pvc-1<br>  namespace: mooreyxia<br>spec:<br>  accessModes:<br>    - ReadWriteOnce #设定读写模式<br>  volumeName: zookeeper-datadir-pv-1<br>  resources:<br>    requests:<br>      storage: 10Gi #设定存储使用上限</h2><h2 id="apiVersion-v1kind-PersistentVolumeClaimmetadata-name-zookeeper-datadir-pvc-2-namespace-mooreyxiaspec-accessModes-ReadWriteOnce-volumeName-zookeeper-datadir-pv-2-resources-requests-storage-10Gi"><a href="#apiVersion-v1kind-PersistentVolumeClaimmetadata-name-zookeeper-datadir-pvc-2-namespace-mooreyxiaspec-accessModes-ReadWriteOnce-volumeName-zookeeper-datadir-pv-2-resources-requests-storage-10Gi" class="headerlink" title="apiVersion: v1kind: PersistentVolumeClaimmetadata:  name: zookeeper-datadir-pvc-2  namespace: mooreyxiaspec:  accessModes:    - ReadWriteOnce  volumeName: zookeeper-datadir-pv-2  resources:    requests:      storage: 10Gi"></a>apiVersion: v1<br>kind: PersistentVolumeClaim<br>metadata:<br>  name: zookeeper-datadir-pvc-2<br>  namespace: mooreyxia<br>spec:<br>  accessModes:<br>    - ReadWriteOnce<br>  volumeName: zookeeper-datadir-pv-2<br>  resources:<br>    requests:<br>      storage: 10Gi</h2><p>apiVersion: v1<br>kind: PersistentVolumeClaim<br>metadata:<br>  name: zookeeper-datadir-pvc-3<br>  namespace: mooreyxia<br>spec:<br>  accessModes:<br>    - ReadWriteOnce<br>  volumeName: zookeeper-datadir-pv-3<br>  resources:<br>    requests:<br>      storage: 10Gi</p>
+<h2 id="创建pvc-root-K8s-ansible-pv-kubectl-apply-f-zookeeper-persistentvolumeclaim-yamlpersistentvolumeclaim-x2F-zookeeper-datadir-pvc-1-createdpersistentvolumeclaim-x2F-zookeeper-datadir-pvc-2-createdpersistentvolumeclaim-x2F-zookeeper-datadir-pvc-3-created-确认pvc-pv显示Bound-root-K8s-ansible-pv-kubectl-get-pvc-n-mooreyxiaNAME-STATUS-VOLUME-CAPACITY-ACCESS-MODES-STORAGECLASS-AGEzookeeper-datadir-pvc-1-Bound-zookeeper-datadir-pv-1-20Gi-RWO-30szookeeper-datadir-pvc-2-Bound-zookeeper-datadir-pv-2-20Gi-RWO-30szookeeper-datadir-pvc-3-Bound-zookeeper-datadir-pv-3-20Gi-RWO-30s•-运行zookeeper集群-准备kubernetes对象控制器脚本-使用NodePort是集群外可用-由于zookeeper集群自带数据同步，只需要使得zookeeper-pod的service互相访问即可自动同步数据-所以可以不使用statefulSet-root-K8s-ansible-zookeeper-cat-zookeeper1-yamlapiVersion-v1kind-Servicemetadata-name-zookeeper-namespace-mooreyxiaspec-ports-name-client-port-2181-负载均衡入口-selector-app-zookeeper-轮询转发至zookeeper1-3的service"><a href="#创建pvc-root-K8s-ansible-pv-kubectl-apply-f-zookeeper-persistentvolumeclaim-yamlpersistentvolumeclaim-x2F-zookeeper-datadir-pvc-1-createdpersistentvolumeclaim-x2F-zookeeper-datadir-pvc-2-createdpersistentvolumeclaim-x2F-zookeeper-datadir-pvc-3-created-确认pvc-pv显示Bound-root-K8s-ansible-pv-kubectl-get-pvc-n-mooreyxiaNAME-STATUS-VOLUME-CAPACITY-ACCESS-MODES-STORAGECLASS-AGEzookeeper-datadir-pvc-1-Bound-zookeeper-datadir-pv-1-20Gi-RWO-30szookeeper-datadir-pvc-2-Bound-zookeeper-datadir-pv-2-20Gi-RWO-30szookeeper-datadir-pvc-3-Bound-zookeeper-datadir-pv-3-20Gi-RWO-30s•-运行zookeeper集群-准备kubernetes对象控制器脚本-使用NodePort是集群外可用-由于zookeeper集群自带数据同步，只需要使得zookeeper-pod的service互相访问即可自动同步数据-所以可以不使用statefulSet-root-K8s-ansible-zookeeper-cat-zookeeper1-yamlapiVersion-v1kind-Servicemetadata-name-zookeeper-namespace-mooreyxiaspec-ports-name-client-port-2181-负载均衡入口-selector-app-zookeeper-轮询转发至zookeeper1-3的service" class="headerlink" title="#创建pvc[root@K8s-ansible pv]#kubectl apply -f zookeeper-persistentvolumeclaim.yamlpersistentvolumeclaim&#x2F;zookeeper-datadir-pvc-1 createdpersistentvolumeclaim&#x2F;zookeeper-datadir-pvc-2 createdpersistentvolumeclaim&#x2F;zookeeper-datadir-pvc-3 created#确认pvc - pv显示Bound[root@K8s-ansible pv]#kubectl get pvc -n mooreyxiaNAME                      STATUS   VOLUME                   CAPACITY   ACCESS MODES   STORAGECLASS   AGEzookeeper-datadir-pvc-1   Bound    zookeeper-datadir-pv-1   20Gi       RWO                           30szookeeper-datadir-pvc-2   Bound    zookeeper-datadir-pv-2   20Gi       RWO                           30szookeeper-datadir-pvc-3   Bound    zookeeper-datadir-pv-3   20Gi       RWO                           30s• 运行zookeeper集群#准备kubernetes对象控制器脚本 - 使用NodePort是集群外可用#由于zookeeper集群自带数据同步，只需要使得zookeeper-pod的service互相访问即可自动同步数据,所以可以不使用statefulSet[root@K8s-ansible zookeeper]#cat zookeeper1.yamlapiVersion: v1kind: Servicemetadata:  name: zookeeper  namespace: mooreyxiaspec:  ports:    - name: client      port: 2181 #负载均衡入口  selector:    app: zookeeper #轮询转发至zookeeper1-3的service"></a>#创建pvc<br>[root@K8s-ansible pv]#kubectl apply -f zookeeper-persistentvolumeclaim.yaml<br>persistentvolumeclaim&#x2F;zookeeper-datadir-pvc-1 created<br>persistentvolumeclaim&#x2F;zookeeper-datadir-pvc-2 created<br>persistentvolumeclaim&#x2F;zookeeper-datadir-pvc-3 created<br>#确认pvc - pv显示Bound<br>[root@K8s-ansible pv]#kubectl get pvc -n mooreyxia<br>NAME                      STATUS   VOLUME                   CAPACITY   ACCESS MODES   STORAGECLASS   AGE<br>zookeeper-datadir-pvc-1   Bound    zookeeper-datadir-pv-1   20Gi       RWO                           30s<br>zookeeper-datadir-pvc-2   Bound    zookeeper-datadir-pv-2   20Gi       RWO                           30s<br>zookeeper-datadir-pvc-3   Bound    zookeeper-datadir-pv-3   20Gi       RWO                           30s• 运行zookeeper集群<br>#准备kubernetes对象控制器脚本 - 使用NodePort是集群外可用<br>#由于zookeeper集群自带数据同步，只需要使得zookeeper-pod的service互相访问即可自动同步数据,所以可以不使用statefulSet<br>[root@K8s-ansible zookeeper]#cat zookeeper1.yaml<br>apiVersion: v1<br>kind: Service<br>metadata:<br>  name: zookeeper<br>  namespace: mooreyxia<br>spec:<br>  ports:<br>    - name: client<br>      port: 2181 #负载均衡入口<br>  selector:<br>    app: zookeeper #轮询转发至zookeeper1-3的service</h2><h2 id="apiVersion-v1kind-Servicemetadata-name-zookeeper1-namespace-mooreyxiaspec-type-NodePort-ports-name-client-port-2181-nodePort-32181-name-followers-port-2888-name-election-port-3888-selector-app-zookeeper-server-id-“1”"><a href="#apiVersion-v1kind-Servicemetadata-name-zookeeper1-namespace-mooreyxiaspec-type-NodePort-ports-name-client-port-2181-nodePort-32181-name-followers-port-2888-name-election-port-3888-selector-app-zookeeper-server-id-“1”" class="headerlink" title="apiVersion: v1kind: Servicemetadata:  name: zookeeper1  namespace: mooreyxiaspec:  type: NodePort  ports:    - name: client      port: 2181      nodePort: 32181    - name: followers      port: 2888    - name: election      port: 3888  selector:    app: zookeeper    server-id: “1”"></a>apiVersion: v1<br>kind: Service<br>metadata:<br>  name: zookeeper1<br>  namespace: mooreyxia<br>spec:<br>  type: NodePort<br>  ports:<br>    - name: client<br>      port: 2181<br>      nodePort: 32181<br>    - name: followers<br>      port: 2888<br>    - name: election<br>      port: 3888<br>  selector:<br>    app: zookeeper<br>    server-id: “1”</h2><h2 id="apiVersion-v1kind-Servicemetadata-name-zookeeper2-namespace-mooreyxiaspec-type-NodePort-ports-name-client-port-2181-nodePort-32182-name-followers-port-2888-name-election-port-3888-selector-app-zookeeper-server-id-“2”"><a href="#apiVersion-v1kind-Servicemetadata-name-zookeeper2-namespace-mooreyxiaspec-type-NodePort-ports-name-client-port-2181-nodePort-32182-name-followers-port-2888-name-election-port-3888-selector-app-zookeeper-server-id-“2”" class="headerlink" title="apiVersion: v1kind: Servicemetadata:  name: zookeeper2  namespace: mooreyxiaspec:  type: NodePort  ports:    - name: client      port: 2181      nodePort: 32182    - name: followers      port: 2888    - name: election      port: 3888  selector:    app: zookeeper    server-id: “2”"></a>apiVersion: v1<br>kind: Service<br>metadata:<br>  name: zookeeper2<br>  namespace: mooreyxia<br>spec:<br>  type: NodePort<br>  ports:<br>    - name: client<br>      port: 2181<br>      nodePort: 32182<br>    - name: followers<br>      port: 2888<br>    - name: election<br>      port: 3888<br>  selector:<br>    app: zookeeper<br>    server-id: “2”</h2><h2 id="apiVersion-v1kind-Servicemetadata-name-zookeeper3-namespace-mooreyxiaspec-type-NodePort-ports-name-client-port-2181-nodePort-32183-name-followers-port-2888-name-election-port-3888-selector-app-zookeeper-server-id-“3”"><a href="#apiVersion-v1kind-Servicemetadata-name-zookeeper3-namespace-mooreyxiaspec-type-NodePort-ports-name-client-port-2181-nodePort-32183-name-followers-port-2888-name-election-port-3888-selector-app-zookeeper-server-id-“3”" class="headerlink" title="apiVersion: v1kind: Servicemetadata:  name: zookeeper3  namespace: mooreyxiaspec:  type: NodePort  ports:    - name: client      port: 2181      nodePort: 32183    - name: followers      port: 2888    - name: election      port: 3888  selector:    app: zookeeper    server-id: “3”"></a>apiVersion: v1<br>kind: Service<br>metadata:<br>  name: zookeeper3<br>  namespace: mooreyxia<br>spec:<br>  type: NodePort<br>  ports:<br>    - name: client<br>      port: 2181<br>      nodePort: 32183<br>    - name: followers<br>      port: 2888<br>    - name: election<br>      port: 3888<br>  selector:<br>    app: zookeeper<br>    server-id: “3”</h2><h2 id="kind-Deployment-apiVersion-extensions-x2F-v1beta1apiVersion-apps-x2F-v1metadata-name-zookeeper1-namespace-mooreyxiaspec-replicas-1-selector-matchLabels-app-zookeeper-template-metadata-labels-app-zookeeper-server-id-“1”-spec-volumes-name-data-emptyDir-name-wal-emptyDir-medium-Memory-containers-name-server-image-K8s-harbor01-mooreyxia-com-x2F-demo-x2F-zookeeper-v3-4-14-imagePullPolicy-Always-env-配置文件中用到的环境变量-name-MYID-value-“1”-name-SERVERS-value-“zookeeper1-zookeeper2-zookeeper3”-每个servers后面都有一个zookeeper-name-JVMFLAGS-value-“-Xmx2G”-ports-containerPort-2181-containerPort-2888-containerPort-3888-volumeMounts-mountPath-“-x2F-zookeeper-x2F-data”-name-zookeeper-datadir-pvc-1-volumes-name-zookeeper-datadir-pvc-1-persistentVolumeClaim-claimName-zookeeper-datadir-pvc-1"><a href="#kind-Deployment-apiVersion-extensions-x2F-v1beta1apiVersion-apps-x2F-v1metadata-name-zookeeper1-namespace-mooreyxiaspec-replicas-1-selector-matchLabels-app-zookeeper-template-metadata-labels-app-zookeeper-server-id-“1”-spec-volumes-name-data-emptyDir-name-wal-emptyDir-medium-Memory-containers-name-server-image-K8s-harbor01-mooreyxia-com-x2F-demo-x2F-zookeeper-v3-4-14-imagePullPolicy-Always-env-配置文件中用到的环境变量-name-MYID-value-“1”-name-SERVERS-value-“zookeeper1-zookeeper2-zookeeper3”-每个servers后面都有一个zookeeper-name-JVMFLAGS-value-“-Xmx2G”-ports-containerPort-2181-containerPort-2888-containerPort-3888-volumeMounts-mountPath-“-x2F-zookeeper-x2F-data”-name-zookeeper-datadir-pvc-1-volumes-name-zookeeper-datadir-pvc-1-persistentVolumeClaim-claimName-zookeeper-datadir-pvc-1" class="headerlink" title="kind: Deployment#apiVersion: extensions&#x2F;v1beta1apiVersion: apps&#x2F;v1metadata:  name: zookeeper1  namespace: mooreyxiaspec:  replicas: 1  selector:    matchLabels:      app: zookeeper  template:    metadata:      labels:        app: zookeeper        server-id: “1”    spec:      volumes:        - name: data          emptyDir: {}        - name: wal          emptyDir:            medium: Memory      containers:        - name: server          image: K8s-harbor01.mooreyxia.com&#x2F;demo&#x2F;zookeeper:v3.4.14          imagePullPolicy: Always          env:#配置文件中用到的环境变量            - name: MYID              value: “1”            - name: SERVERS              value: “zookeeper1,zookeeper2,zookeeper3” #每个servers后面都有一个zookeeper            - name: JVMFLAGS              value: “-Xmx2G”          ports:            - containerPort: 2181            - containerPort: 2888            - containerPort: 3888          volumeMounts:          - mountPath: “&#x2F;zookeeper&#x2F;data”            name: zookeeper-datadir-pvc-1      volumes:        - name: zookeeper-datadir-pvc-1          persistentVolumeClaim:            claimName: zookeeper-datadir-pvc-1"></a>kind: Deployment<br>#apiVersion: extensions&#x2F;v1beta1<br>apiVersion: apps&#x2F;v1<br>metadata:<br>  name: zookeeper1<br>  namespace: mooreyxia<br>spec:<br>  replicas: 1<br>  selector:<br>    matchLabels:<br>      app: zookeeper<br>  template:<br>    metadata:<br>      labels:<br>        app: zookeeper<br>        server-id: “1”<br>    spec:<br>      volumes:<br>        - name: data<br>          emptyDir: {}<br>        - name: wal<br>          emptyDir:<br>            medium: Memory<br>      containers:<br>        - name: server<br>          image: K8s-harbor01.mooreyxia.com&#x2F;demo&#x2F;zookeeper:v3.4.14<br>          imagePullPolicy: Always<br>          env:#配置文件中用到的环境变量<br>            - name: MYID<br>              value: “1”<br>            - name: SERVERS<br>              value: “zookeeper1,zookeeper2,zookeeper3” #每个servers后面都有一个zookeeper<br>            - name: JVMFLAGS<br>              value: “-Xmx2G”<br>          ports:<br>            - containerPort: 2181<br>            - containerPort: 2888<br>            - containerPort: 3888<br>          volumeMounts:<br>          - mountPath: “&#x2F;zookeeper&#x2F;data”<br>            name: zookeeper-datadir-pvc-1<br>      volumes:<br>        - name: zookeeper-datadir-pvc-1<br>          persistentVolumeClaim:<br>            claimName: zookeeper-datadir-pvc-1</h2><h2 id="kind-Deployment-apiVersion-extensions-x2F-v1beta1apiVersion-apps-x2F-v1metadata-name-zookeeper2-namespace-mooreyxiaspec-replicas-1-selector-matchLabels-app-zookeeper-template-metadata-labels-app-zookeeper-server-id-“2”-spec-volumes-name-data-emptyDir-name-wal-emptyDir-medium-Memory-containers-name-server-image-K8s-harbor01-mooreyxia-com-x2F-demo-x2F-zookeeper-v3-4-14-imagePullPolicy-Always-env-name-MYID-value-“2”-name-SERVERS-value-“zookeeper1-zookeeper2-zookeeper3”-name-JVMFLAGS-value-“-Xmx2G”-ports-containerPort-2181-containerPort-2888-containerPort-3888-volumeMounts-mountPath-“-x2F-zookeeper-x2F-data”-name-zookeeper-datadir-pvc-2-volumes-name-zookeeper-datadir-pvc-2-persistentVolumeClaim-claimName-zookeeper-datadir-pvc-2"><a href="#kind-Deployment-apiVersion-extensions-x2F-v1beta1apiVersion-apps-x2F-v1metadata-name-zookeeper2-namespace-mooreyxiaspec-replicas-1-selector-matchLabels-app-zookeeper-template-metadata-labels-app-zookeeper-server-id-“2”-spec-volumes-name-data-emptyDir-name-wal-emptyDir-medium-Memory-containers-name-server-image-K8s-harbor01-mooreyxia-com-x2F-demo-x2F-zookeeper-v3-4-14-imagePullPolicy-Always-env-name-MYID-value-“2”-name-SERVERS-value-“zookeeper1-zookeeper2-zookeeper3”-name-JVMFLAGS-value-“-Xmx2G”-ports-containerPort-2181-containerPort-2888-containerPort-3888-volumeMounts-mountPath-“-x2F-zookeeper-x2F-data”-name-zookeeper-datadir-pvc-2-volumes-name-zookeeper-datadir-pvc-2-persistentVolumeClaim-claimName-zookeeper-datadir-pvc-2" class="headerlink" title="kind: Deployment#apiVersion: extensions&#x2F;v1beta1apiVersion: apps&#x2F;v1metadata:  name: zookeeper2  namespace: mooreyxiaspec:  replicas: 1  selector:    matchLabels:      app: zookeeper  template:    metadata:      labels:        app: zookeeper        server-id: “2”    spec:      volumes:        - name: data          emptyDir: {}        - name: wal          emptyDir:            medium: Memory      containers:        - name: server          image: K8s-harbor01.mooreyxia.com&#x2F;demo&#x2F;zookeeper:v3.4.14          imagePullPolicy: Always          env:            - name: MYID              value: “2”            - name: SERVERS              value: “zookeeper1,zookeeper2,zookeeper3”            - name: JVMFLAGS              value: “-Xmx2G”          ports:            - containerPort: 2181            - containerPort: 2888            - containerPort: 3888          volumeMounts:          - mountPath: “&#x2F;zookeeper&#x2F;data”            name: zookeeper-datadir-pvc-2      volumes:        - name: zookeeper-datadir-pvc-2          persistentVolumeClaim:            claimName: zookeeper-datadir-pvc-2"></a>kind: Deployment<br>#apiVersion: extensions&#x2F;v1beta1<br>apiVersion: apps&#x2F;v1<br>metadata:<br>  name: zookeeper2<br>  namespace: mooreyxia<br>spec:<br>  replicas: 1<br>  selector:<br>    matchLabels:<br>      app: zookeeper<br>  template:<br>    metadata:<br>      labels:<br>        app: zookeeper<br>        server-id: “2”<br>    spec:<br>      volumes:<br>        - name: data<br>          emptyDir: {}<br>        - name: wal<br>          emptyDir:<br>            medium: Memory<br>      containers:<br>        - name: server<br>          image: K8s-harbor01.mooreyxia.com&#x2F;demo&#x2F;zookeeper:v3.4.14<br>          imagePullPolicy: Always<br>          env:<br>            - name: MYID<br>              value: “2”<br>            - name: SERVERS<br>              value: “zookeeper1,zookeeper2,zookeeper3”<br>            - name: JVMFLAGS<br>              value: “-Xmx2G”<br>          ports:<br>            - containerPort: 2181<br>            - containerPort: 2888<br>            - containerPort: 3888<br>          volumeMounts:<br>          - mountPath: “&#x2F;zookeeper&#x2F;data”<br>            name: zookeeper-datadir-pvc-2<br>      volumes:<br>        - name: zookeeper-datadir-pvc-2<br>          persistentVolumeClaim:<br>            claimName: zookeeper-datadir-pvc-2</h2><p>kind: Deployment<br>#apiVersion: extensions&#x2F;v1beta1<br>apiVersion: apps&#x2F;v1<br>metadata:<br>  name: zookeeper3<br>  namespace: mooreyxia<br>spec:<br>  replicas: 1<br>  selector:<br>    matchLabels:<br>      app: zookeeper<br>  template:<br>    metadata:<br>      labels:<br>        app: zookeeper<br>        server-id: “3”<br>    spec:<br>      volumes:<br>        - name: data<br>          emptyDir: {}<br>        - name: wal<br>          emptyDir:<br>            medium: Memory<br>      containers:<br>        - name: server<br>          image: K8s-harbor01.mooreyxia.com&#x2F;demo&#x2F;zookeeper:v3.4.14<br>          imagePullPolicy: Always<br>          env:<br>            - name: MYID<br>              value: “3”<br>            - name: SERVERS<br>              value: “zookeeper1,zookeeper2,zookeeper3”<br>            - name: JVMFLAGS<br>              value: “-Xmx2G”<br>          ports:<br>            - containerPort: 2181<br>            - containerPort: 2888<br>            - containerPort: 3888<br>          volumeMounts:<br>          - mountPath: “&#x2F;zookeeper&#x2F;data”<br>            name: zookeeper-datadir-pvc-3<br>      volumes:<br>        - name: zookeeper-datadir-pvc-3<br>          persistentVolumeClaim:<br>           claimName: zookeeper-datadir-pvc-3</p>
+<p>#创建zookeeper-pod<br>[root@K8s-ansible zookeeper]#kubectl apply -f zookeeper1.yaml<br>service&#x2F;zookeeper created<br>service&#x2F;zookeeper1 created<br>service&#x2F;zookeeper2 created<br>service&#x2F;zookeeper3 created<br>deployment.apps&#x2F;zookeeper1 created<br>deployment.apps&#x2F;zookeeper2 created<br>deployment.apps&#x2F;zookeeper3 created</p>
+<p>#确认zookeeper-pod运行情况<br>[root@K8s-ansible zookeeper]#kubectl get pod -n mooreyxia|grep zookeeper<br>zookeeper1-67db986b9f-lxhlf                         1&#x2F;1     Running   1 (3m2s ago)    3m28s<br>zookeeper2-6786d47d66-7kvql                         1&#x2F;1     Running   1 (2m45s ago)   3m28s<br>zookeeper3-56b4f54865-xd2k8                         1&#x2F;1     Running   1 (2m59s ago)   3m28s</p>
+<p>#确认kubelet收集的报告 - describe<br>[root@K8s-ansible zookeeper]#kubectl describe pod zookeeper1-67db986b9f-lxhlf -n mooreyxia<br>Name:             zookeeper1-67db986b9f-lxhlf<br>Namespace:        mooreyxia<br>Priority:         0<br>Service Account:  default<br>Node:             192.168.11.215&#x2F;192.168.11.215<br>Start Time:       Sun, 09 Apr 2023 14:39:40 +0000<br>Labels:           app&#x3D;zookeeper<br>                  pod-template-hash&#x3D;67db986b9f<br>                  server-id&#x3D;1<br>Annotations:      <none><br>Status:           Running<br>IP:               10.200.67.33<br>IPs:<br>  IP:           10.200.67.33<br>Controlled By:  ReplicaSet&#x2F;zookeeper1-67db986b9f<br>Containers:<br>  server:<br>    Container ID:   containerd:&#x2F;&#x2F;79b0be34ddb9df62727282da761f80b7c4ec0ce37cf53bec1c8e5a2e0adc1613<br>    Image:          K8s-harbor01.mooreyxia.com&#x2F;demo&#x2F;zookeeper:v3.4.14<br>    Image ID:       K8s-harbor01.mooreyxia.com&#x2F;demo&#x2F;zookeeper@sha256:b6e3fe808f5740371d02b7755b0dc610fad5cea0eb127fe550c0fff33d81e54c<br>    Ports:          2181&#x2F;TCP, 2888&#x2F;TCP, 3888&#x2F;TCP<br>    Host Ports:     0&#x2F;TCP, 0&#x2F;TCP, 0&#x2F;TCP<br>    State:          Running<br>      Started:      Sun, 09 Apr 2023 14:40:13 +0000<br>    Last State:     Terminated<br>      Reason:       Error<br>      Exit Code:    1<br>      Started:      Sun, 09 Apr 2023 14:40:04 +0000<br>      Finished:     Sun, 09 Apr 2023 14:40:06 +0000<br>    Ready:          True<br>    Restart Count:  1<br>    Environment:<br>      MYID:      1<br>      SERVERS:   zookeeper1,zookeeper2,zookeeper3<br>      JVMFLAGS:  -Xmx2G<br>    Mounts:<br>      &#x2F;var&#x2F;run&#x2F;secrets&#x2F;kubernetes.io&#x2F;serviceaccount from kube-api-access-hd9r7 (ro)<br>      &#x2F;zookeeper&#x2F;data from zookeeper-datadir-pvc-1 (rw)<br>Conditions:<br>  Type              Status<br>  Initialized       True<br>  Ready             True<br>  ContainersReady   True<br>  PodScheduled      True<br>Volumes:<br>  zookeeper-datadir-pvc-1:<br>    Type:       PersistentVolumeClaim (a reference to a PersistentVolumeClaim in the same namespace)<br>    ClaimName:  zookeeper-datadir-pvc-1<br>    ReadOnly:   false<br>  kube-api-access-hd9r7:<br>    Type:                    Projected (a volume that contains injected data from multiple sources)<br>    TokenExpirationSeconds:  3607<br>    ConfigMapName:           kube-root-ca.crt<br>    ConfigMapOptional:       <nil><br>    DownwardAPI:             true<br>QoS Class:                   BestEffort<br>Node-Selectors:              <none><br>Tolerations:                 node.kubernetes.io&#x2F;not-ready:NoExecute op&#x3D;Exists for 300s<br>                             node.kubernetes.io&#x2F;unreachable:NoExecute op&#x3D;Exists for 300s<br>Events:<br>  Type    Reason     Age                    From               Message</p>
+<hr>
+<p>  Normal  Scheduled  4m13s                  default-scheduler  Successfully assigned mooreyxia&#x2F;zookeeper1-67db986b9f-lxhlf to 192.168.11.215<br>  Normal  Pulled     3m49s                  kubelet            Successfully pulled image “K8s-harbor01.mooreyxia.com&#x2F;demo&#x2F;zookeeper:v3.4.14” in 21.024280603s (21.025309321s including waiting)<br>  Normal  Pulling    3m42s (x2 over 4m10s)  kubelet            Pulling image “K8s-harbor01.mooreyxia.com&#x2F;demo&#x2F;zookeeper:v3.4.14”<br>  Normal  Pulled     3m41s                  kubelet            Successfully pulled image “K8s-harbor01.mooreyxia.com&#x2F;demo&#x2F;zookeeper:v3.4.14” in 1.169990499s (1.170009649s including waiting)<br>  Normal  Created    3m40s (x2 over 3m49s)  kubelet            Created container server<br>  Normal  Started    3m40s (x2 over 3m48s)  kubelet            Started container server</p>
+<p>#确认log日志没有错误<br>[root@K8s-ansible zookeeper]#kubectl logs zookeeper1-67db986b9f-lxhlf -n mooreyxia<br>ZooKeeper JMX enabled by default<br>ZooKeeper remote JMX Port set to 9010<br>ZooKeeper remote JMX authenticate set to false<br>ZooKeeper remote JMX ssl set to false<br>ZooKeeper remote JMX log4j set to true<br>Using config: &#x2F;zookeeper&#x2F;bin&#x2F;..&#x2F;conf&#x2F;zoo.cfg<br>…• 验证集群状态<br>#确认zookeeper-pod处于集群中 - 查看多个确保主从状态<br>[root@K8s-ansible zookeeper]#kubectl exec -it zookeeper1-67db986b9f-lxhlf bash -n mooreyxia<br>kubectl exec [POD] [COMMAND] is DEPRECATED and will be removed in a future version. Use kubectl exec [POD] – [COMMAND] instead.<br>bash-4.3# &#x2F;zookeeper&#x2F;bin&#x2F;zkServer.sh status<br>ZooKeeper JMX enabled by default<br>ZooKeeper remote JMX Port set to 9010<br>ZooKeeper remote JMX authenticate set to false<br>ZooKeeper remote JMX ssl set to false<br>ZooKeeper remote JMX log4j set to true<br>Using config: &#x2F;zookeeper&#x2F;bin&#x2F;..&#x2F;conf&#x2F;zoo.cfg<br>Mode: follower #是follower身份 如果是state-alone,则表示单机模式</p>
+<p>#查看配置<br>bash-4.3# cat &#x2F;zookeeper&#x2F;conf&#x2F;zoo.cfg<br>tickTime&#x3D;2000<br>initLimit&#x3D;10<br>syncLimit&#x3D;5<br>dataDir&#x3D;&#x2F;zookeeper&#x2F;data<br>dataLogDir&#x3D;&#x2F;zookeeper&#x2F;wal<br>#snapCount&#x3D;100000<br>autopurge.purgeInterval&#x3D;1<br>clientPort&#x3D;2181<br>quorumListenOnAllIPs&#x3D;true<br>server.1&#x3D;zookeeper1:2888:3888 #这里是通过程序生成的集群配置<br>server.2&#x3D;zookeeper2:2888:3888<br>server.3&#x3D;zookeeper3:2888:3888</p>
+<p>[root@K8s-ansible zookeeper]#kubectl exec -it zookeeper2-6786d47d66-7kvql bash -n mooreyxia<br>kubectl exec [POD] [COMMAND] is DEPRECATED and will be removed in a future version. Use kubectl exec [POD] – [COMMAND] instead.<br>bash-4.3# &#x2F;zookeeper&#x2F;bin&#x2F;zkServer.sh status<br>ZooKeeper JMX enabled by default<br>ZooKeeper remote JMX Port set to 9010<br>ZooKeeper remote JMX authenticate set to false<br>ZooKeeper remote JMX ssl set to false<br>ZooKeeper remote JMX log4j set to true<br>Using config: &#x2F;zookeeper&#x2F;bin&#x2F;..&#x2F;conf&#x2F;zoo.cfg<br>Mode: follower #是follower身份<br>bash-4.3# exit<br>exit</p>
+<p>[root@K8s-ansible zookeeper]#kubectl exec -it zookeeper3-56b4f54865-xd2k8 bash -n mooreyxia<br>kubectl exec [POD] [COMMAND] is DEPRECATED and will be removed in a future version. Use kubectl exec [POD] – [COMMAND] instead.<br>bash-4.3# &#x2F;zookeeper&#x2F;bin&#x2F;zkServer.sh status<br>ZooKeeper JMX enabled by default<br>ZooKeeper remote JMX Port set to 9010<br>ZooKeeper remote JMX authenticate set to false<br>ZooKeeper remote JMX ssl set to false<br>ZooKeeper remote JMX log4j set to true<br>Using config: &#x2F;zookeeper&#x2F;bin&#x2F;..&#x2F;conf&#x2F;zoo.cfg<br>Mode: leader #是leader身份</p>
+<p>#尝试连接到zookeeper中<br>#可连接至zookeeper 集群中的任意一台zookeeper 节点进行以下操作,zkCli.sh 默认连接本机，连接成功后即可进行数据更新<br>#zookeeper操作详情可参考我的zookeeper专题博客<br>bash-4.3# zkCli.sh -server 192.168.11.211:32181<br>Connecting to 192.168.11.211:32181<br>2023-04-09 15:03:57,442 [myid:] - INFO  [main:Environment@100] - Client environment:zookeeper.versinotallow&#x3D;3.4.14-4c25d480e66aadd371de8bd2fd8da255ac140bcf, built on 03&#x2F;06&#x2F;2019 16:18 GMT<br>2023-04-09 15:03:57,447 [myid:] - INFO  [main:Environment@100] - Client environment:host.name&#x3D;zookeeper3-56b4f54865-xd2k8<br>2023-04-09 15:03:57,447 [myid:] - INFO  [main:Environment@100] - Client environment:java.versinotallow&#x3D;1.8.0_144<br>2023-04-09 15:03:57,451 [myid:] - INFO  [main:Environment@100] - Client environment:java.vendor&#x3D;Oracle Corporation<br>2023-04-09 15:03:57,452 [myid:] - INFO  [main:Environment@100] - Client environment:java.home&#x3D;&#x2F;usr&#x2F;lib&#x2F;jvm&#x2F;java-8-oracle<br>2023-04-09 15:03:57,453 [myid:] - INFO  [main:Environment@100] - Client environment:java.class.path&#x3D;&#x2F;zookeeper&#x2F;bin&#x2F;..&#x2F;zookeeper-server&#x2F;target&#x2F;classes:&#x2F;zookeeper&#x2F;bin&#x2F;..&#x2F;build&#x2F;classes:&#x2F;zookeeper&#x2F;bin&#x2F;..&#x2F;zookeeper-server&#x2F;target&#x2F;lib&#x2F;<em>.jar:&#x2F;zookeeper&#x2F;bin&#x2F;..&#x2F;build&#x2F;lib&#x2F;</em>.jar:&#x2F;zookeeper&#x2F;bin&#x2F;..&#x2F;lib&#x2F;slf4j-log4j12-1.7.25.jar:&#x2F;zookeeper&#x2F;bin&#x2F;..&#x2F;lib&#x2F;slf4j-api-1.7.25.jar:&#x2F;zookeeper&#x2F;bin&#x2F;..&#x2F;lib&#x2F;netty-3.10.6.Final.jar:&#x2F;zookeeper&#x2F;bin&#x2F;..&#x2F;lib&#x2F;log4j-1.2.17.jar:&#x2F;zookeeper&#x2F;bin&#x2F;..&#x2F;lib&#x2F;jline-0.9.94.jar:&#x2F;zookeeper&#x2F;bin&#x2F;..&#x2F;lib&#x2F;audience-annotations-0.5.0.jar:&#x2F;zookeeper&#x2F;bin&#x2F;..&#x2F;zookeeper-3.4.14.jar:&#x2F;zookeeper&#x2F;bin&#x2F;..&#x2F;zookeeper-server&#x2F;src&#x2F;main&#x2F;resources&#x2F;lib&#x2F;*.jar:&#x2F;zookeeper&#x2F;bin&#x2F;..&#x2F;conf:<br>2023-04-09 15:03:57,453 [myid:] - INFO  [main:Environment@100] - Client environment:java.library.path&#x3D;&#x2F;usr&#x2F;java&#x2F;packages&#x2F;lib&#x2F;amd64:&#x2F;usr&#x2F;lib64:&#x2F;lib64:&#x2F;lib:&#x2F;usr&#x2F;lib<br>2023-04-09 15:03:57,454 [myid:] - INFO  [main:Environment@100] - Client environment:java.io.tmpdir&#x3D;&#x2F;tmp<br>2023-04-09 15:03:57,454 [myid:] - INFO  [main:Environment@100] - Client environment:java.compiler&#x3D;<NA><br>2023-04-09 15:03:57,455 [myid:] - INFO  [main:Environment@100] - Client environment:os.name&#x3D;Linux<br>2023-04-09 15:03:57,455 [myid:] - INFO  [main:Environment@100] - Client environment:os.arch&#x3D;amd64<br>2023-04-09 15:03:57,456 [myid:] - INFO  [main:Environment@100] - Client environment:os.versinotallow&#x3D;5.15.0-69-generic<br>2023-04-09 15:03:57,456 [myid:] - INFO  [main:Environment@100] - Client environment:user.name&#x3D;root<br>2023-04-09 15:03:57,457 [myid:] - INFO  [main:Environment@100] - Client environment:user.home&#x3D;&#x2F;root<br>2023-04-09 15:03:57,457 [myid:] - INFO  [main:Environment@100] - Client environment:user.dir&#x3D;&#x2F;<br>2023-04-09 15:03:57,459 [myid:] - INFO  [main:ZooKeeper@442] - Initiating client connection, cnotallow&#x3D;192.168.11.211:32181 sessinotallow&#x3D;30000 watcher&#x3D;org.apache.zookeeper.ZooKeeperMain$MyWatcher@1de0aca6<br>Welcome to ZooKeeper!可以尝试下线zooker集群中的一个pod,禁用harbor，使得k8s无法自动创建，然后观察zookeeper的选举情况，此处省略<br>基于Zookeeper案例实现微服务动态注册和发现案例<br>通过注册中心的的服务发现，可以时生产者和消费者直接通信，省去多重路由的性能损耗<br>• 架构<br><img src="/../img/05ed12331ac10c051008307348168b77bc22c7.png"><br>• 部署<br>[root@K8s-ansible dubbo]#ls<br>consumer  dubboadmin  provider</p>
+<hr>
+<p>#建立生产者pod - 属于被调用方<br>[root@K8s-ansible provider]#chmod a+x <em>.sh<br>[root@K8s-ansible provider]#ll<br>total 10068<br>drwxr-xr-x 3 root root     4096 Apr  9 02:59 .&#x2F;<br>drwxr-xr-x 5 root root     4096 Apr  9 02:59 ..&#x2F;<br>-rw-r–r– 1 root root      394 Apr  9 02:59 Dockerfile<br>-rwxr-xr-x 1 root root      147 Apr  9 02:59 build-command.sh</em><br>drwxr-xr-x 5 root root     4096 Apr  9 02:59 dubbo-demo-provider-2.1.5&#x2F;<br>-rw-r–r– 1 root root 10281793 Apr  9 02:59 dubbo-demo-provider-2.1.5-assembly.tar.gz<br>-rwxr-xr-x 1 root root      312 Apr  9 02:59 run_java.sh*</p>
+<p>#配置注册中心地址<br>[root@K8s-ansible provider]#cat dubbo-demo-provider-2.1.5&#x2F;conf&#x2F;dubbo.properties<br>##</p>
+<h1 id="Copyright-1999-2011-Alibaba-Group"><a href="#Copyright-1999-2011-Alibaba-Group" class="headerlink" title="Copyright 1999-2011 Alibaba Group."></a>Copyright 1999-2011 Alibaba Group.</h1><h1 id="-9"><a href="#-9" class="headerlink" title=""></a></h1><h1 id="Licensed-under-the-Apache-License-Version-2-0-the-“License”"><a href="#Licensed-under-the-Apache-License-Version-2-0-the-“License”" class="headerlink" title="Licensed under the Apache License, Version 2.0 (the “License”);"></a>Licensed under the Apache License, Version 2.0 (the “License”);</h1><h1 id="you-may-not-use-this-file-except-in-compliance-with-the-License"><a href="#you-may-not-use-this-file-except-in-compliance-with-the-License" class="headerlink" title="you may not use this file except in compliance with the License."></a>you may not use this file except in compliance with the License.</h1><h1 id="You-may-obtain-a-copy-of-the-License-at"><a href="#You-may-obtain-a-copy-of-the-License-at" class="headerlink" title="You may obtain a copy of the License at"></a>You may obtain a copy of the License at</h1><h1 id="-10"><a href="#-10" class="headerlink" title=""></a></h1><h1 id="http-www-apache-org-licenses-LICENSE-2-0"><a href="#http-www-apache-org-licenses-LICENSE-2-0" class="headerlink" title="http://www.apache.org/licenses/LICENSE-2.0"></a><a target="_blank" rel="noopener" href="http://www.apache.org/licenses/LICENSE-2.0">http://www.apache.org/licenses/LICENSE-2.0</a></h1><h1 id="-11"><a href="#-11" class="headerlink" title=""></a></h1><h1 id="Unless-required-by-applicable-law-or-agreed-to-in-writing-software"><a href="#Unless-required-by-applicable-law-or-agreed-to-in-writing-software" class="headerlink" title="Unless required by applicable law or agreed to in writing, software"></a>Unless required by applicable law or agreed to in writing, software</h1><h1 id="distributed-under-the-License-is-distributed-on-an-“AS-IS”-BASIS"><a href="#distributed-under-the-License-is-distributed-on-an-“AS-IS”-BASIS" class="headerlink" title="distributed under the License is distributed on an “AS IS” BASIS,"></a>distributed under the License is distributed on an “AS IS” BASIS,</h1><h1 id="WITHOUT-WARRANTIES-OR-CONDITIONS-OF-ANY-KIND-either-express-or-implied"><a href="#WITHOUT-WARRANTIES-OR-CONDITIONS-OF-ANY-KIND-either-express-or-implied" class="headerlink" title="WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied."></a>WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</h1><h1 id="See-the-License-for-the-specific-language-governing-permissions-and"><a href="#See-the-License-for-the-specific-language-governing-permissions-and" class="headerlink" title="See the License for the specific language governing permissions and"></a>See the License for the specific language governing permissions and</h1><h1 id="limitations-under-the-License"><a href="#limitations-under-the-License" class="headerlink" title="limitations under the License."></a>limitations under the License.</h1><h2 id="-12"><a href="#-12" class="headerlink" title=""></a></h2><p>dubbo.container&#x3D;log4j,spring<br>dubbo.application.name&#x3D;demo-provider<br>dubbo.application.owner&#x3D;<br>#dubbo.registry.address&#x3D;multicast:&#x2F;&#x2F;224.5.6.7:1234<br>dubbo.registry.address&#x3D;zookeeper:&#x2F;&#x2F;zookeeper1.mooreyxia.svc.mooreyxia.local:2181 | zookeeper:&#x2F;&#x2F;zookeeper2.mooreyxia.svc.mooreyxia.local:2181 | zookeeper:&#x2F;&#x2F;zookeeper3.mooreyxia.svc.mooreyxia.local:2181<br>#dubbo.registry.address&#x3D;redis:&#x2F;&#x2F;127.0.0.1:6379<br>#dubbo.registry.address&#x3D;dubbo:&#x2F;&#x2F;127.0.0.1:9090<br>dubbo.monitor.protocol&#x3D;registry<br>dubbo.protocol.name&#x3D;dubbo<br>dubbo.protocol.port&#x3D;20880<br>dubbo.log4j.file&#x3D;logs&#x2F;dubbo-demo-provider.log<br>dubbo.log4j.level&#x3D;WARN</p>
+<p>#配置以普通用户身份执行微服务程序等容器启动初始化 - 一般对接开发<br>[root@K8s-ansible provider]#cat run_java.sh<br>#!&#x2F;bin&#x2F;bash<br>#echo “nameserver 223.6.6.6” &gt; &#x2F;etc&#x2F;resolv.conf<br>#&#x2F;usr&#x2F;share&#x2F;filebeat&#x2F;bin&#x2F;filebeat -c &#x2F;etc&#x2F;filebeat&#x2F;filebeat.yml -path.home &#x2F;usr&#x2F;share&#x2F;filebeat -path.config &#x2F;etc&#x2F;filebeat -path.data &#x2F;var&#x2F;lib&#x2F;filebeat -path.logs &#x2F;var&#x2F;log&#x2F;filebeat  &amp; #日志收集<br>su - nginx -c “&#x2F;apps&#x2F;dubbo&#x2F;provider&#x2F;bin&#x2F;start.sh”<br>tail -f &#x2F;etc&#x2F;hosts</p>
+<p>#创建镜像构建文件<br>[root@K8s-ansible provider]#cat Dockerfile<br>#Dubbo provider<br>FROM K8s-harbor01.mooreyxia.com&#x2F;pub-images&#x2F;jdk-base:v8.212 </p>
+<p>MAINTAINER mooreyxia “<a href="mailto:&#109;&#111;&#111;&#114;&#101;&#x79;&#120;&#x69;&#97;&#x40;&#x67;&#x6d;&#x61;&#105;&#108;&#46;&#99;&#x6f;&#109;">&#109;&#111;&#111;&#114;&#101;&#x79;&#120;&#x69;&#97;&#x40;&#x67;&#x6d;&#x61;&#105;&#108;&#46;&#99;&#x6f;&#109;</a>“</p>
+<p>RUN yum install file nc -y<br>RUN mkdir -p &#x2F;apps&#x2F;dubbo&#x2F;provider<br>ADD dubbo-demo-provider-2.1.5&#x2F;  &#x2F;apps&#x2F;dubbo&#x2F;provider<br>ADD run_java.sh &#x2F;apps&#x2F;dubbo&#x2F;provider&#x2F;bin<br>RUN chown nginx.nginx &#x2F;apps -R<br>RUN chmod a+x &#x2F;apps&#x2F;dubbo&#x2F;provider&#x2F;bin&#x2F;*.sh</p>
+<p>CMD [“&#x2F;apps&#x2F;dubbo&#x2F;provider&#x2F;bin&#x2F;run_java.sh”]</p>
+<p>#构建镜像<br>[root@K8s-ansible provider]#cat build-command.sh<br>#!&#x2F;bin&#x2F;bash<br>docker build -t K8s-harbor01.mooreyxia.com&#x2F;demo&#x2F;dubbo-demo-provider:v1  .<br>sleep 3<br>docker push K8s-harbor01.mooreyxia.com&#x2F;demo&#x2F;dubbo-demo-provider:v1</p>
+<p>[root@K8s-ansible provider]#cat build-command.sh<br>…<br>Successfully built 25969b9f3d5f<br>Successfully tagged K8s-harbor01.mooreyxia.com&#x2F;demo&#x2F;dubbo-demo-provider:v1<br>The push refers to repository [K8s-harbor01.mooreyxia.com&#x2F;demo&#x2F;dubbo-demo-provider]<br>a6ba7fd57813: Pushed<br>7a0993c02ccb: Pushed<br>0aeeefa42f36: Pushed<br>cd041af3dfe9: Pushed<br>bbb88cfbaf1c: Pushed<br>b2721595266e: Pushed<br>72519bae3e48: Mounted from demo&#x2F;jenkins<br>f4ab7af29087: Mounted from demo&#x2F;jenkins<br>e183bde7d2a2: Mounted from demo&#x2F;jenkins<br>3e6fa9b75f89: Mounted from demo&#x2F;wordpress-php-5.6<br>cf71274b159a: Mounted from demo&#x2F;wordpress-php-5.6<br>174f56854903: Mounted from demo&#x2F;wordpress-php-5.6<br>v1: digest: sha256:14df394956652fb417f126d4bf514df40899a20d7517491c86a725ec9152c86e size: 2840</p>
+<p>#创建生产者pod资源配置文件<br>[root@K8s-ansible provider]#cat provider.yaml<br>kind: Deployment<br>apiVersion: apps&#x2F;v1<br>metadata:<br>  labels:<br>    app: mooreyxia-provider<br>  name: mooreyxia-provider-deployment<br>  namespace: mooreyxia<br>spec:<br>  replicas: 1<br>  selector:<br>    matchLabels:<br>      app: mooreyxia-provider<br>  template:<br>    metadata:<br>      labels:<br>        app: mooreyxia-provider<br>    spec:<br>      containers:<br>      - name: mooreyxia-provider-container<br>        image: K8s-harbor01.mooreyxia.com&#x2F;demo&#x2F;dubbo-demo-provider:v1<br>        #command: [“&#x2F;apps&#x2F;tomcat&#x2F;bin&#x2F;run_tomcat.sh”]<br>        #imagePullPolicy: IfNotPresent<br>        imagePullPolicy: Always<br>        ports:<br>        - containerPort: 20880<br>          protocol: TCP<br>          name: http</p>
+<hr>
+<p>kind: Service<br>apiVersion: v1<br>metadata:<br>  labels:<br>    app: mooreyxia-provider<br>  name: mooreyxia-provider-spec<br>  namespace: mooreyxia<br>spec:<br>  type: NodePort<br>  ports:</p>
+<ul>
+<li>name: http<br>port: 80<br>protocol: TCP<br>targetPort: 20880<br>#nodePort: 30001</li>
+</ul>
+<p>  selector:<br>    app: mooreyxia-provider</p>
+<p>[root@K8s-ansible provider]#kubectl apply -f provider.yaml<br>deployment.apps&#x2F;mooreyxia-provider-deployment created<br>service&#x2F;mooreyxia-provider-spec created</p>
+<p>#确认pod运行<br>[root@K8s-ansible provider]#kubectl describe pod mooreyxia-provider-deployment-7c48f8f8f6-qgqjd -n mooreyxia<br>Name:             mooreyxia-provider-deployment-7c48f8f8f6-qgqjd<br>Namespace:        mooreyxia<br>Priority:         0<br>Service Account:  default<br>Node:             192.168.11.216&#x2F;192.168.11.216<br>Start Time:       Fri, 14 Apr 2023 10:02:37 +0000<br>Labels:           app&#x3D;mooreyxia-provider<br>                  pod-template-hash&#x3D;7c48f8f8f6<br>Annotations:      <none><br>Status:           Running<br>IP:               10.200.128.143<br>IPs:<br>  IP:           10.200.128.143<br>Controlled By:  ReplicaSet&#x2F;mooreyxia-provider-deployment-7c48f8f8f6<br>Containers:<br>  mooreyxia-provider-container:<br>    Container ID:   containerd:&#x2F;&#x2F;e018ee97ed44628f26138582fa551e01179d643e1c60fb4e6e1d7c9d32f840ba<br>    Image:          K8s-harbor01.mooreyxia.com&#x2F;demo&#x2F;dubbo-demo-provider:v1<br>    Image ID:       K8s-harbor01.mooreyxia.com&#x2F;demo&#x2F;dubbo-demo-provider@sha256:14df394956652fb417f126d4bf514df40899a20d7517491c86a725ec9152c86e<br>    Port:           20880&#x2F;TCP<br>    Host Port:      0&#x2F;TCP<br>    State:          Running<br>      Started:      Fri, 14 Apr 2023 10:02:52 +0000<br>    Ready:          True<br>    Restart Count:  0<br>    Environment:    <none><br>    Mounts:<br>      &#x2F;var&#x2F;run&#x2F;secrets&#x2F;kubernetes.io&#x2F;serviceaccount from kube-api-access-cdqts (ro)<br>Conditions:<br>  Type              Status<br>  Initialized       True<br>  Ready             True<br>  ContainersReady   True<br>  PodScheduled      True<br>Volumes:<br>  kube-api-access-cdqts:<br>    Type:                    Projected (a volume that contains injected data from multiple sources)<br>    TokenExpirationSeconds:  3607<br>    ConfigMapName:           kube-root-ca.crt<br>    ConfigMapOptional:       <nil><br>    DownwardAPI:             true<br>QoS Class:                   BestEffort<br>Node-Selectors:              <none><br>Tolerations:                 node.kubernetes.io&#x2F;not-ready:NoExecute op&#x3D;Exists for 300s<br>                             node.kubernetes.io&#x2F;unreachable:NoExecute op&#x3D;Exists for 300s<br>Events:<br>  Type    Reason     Age   From               Message</p>
+<hr>
+<p>  Normal  Scheduled  87s   default-scheduler  Successfully assigned mooreyxia&#x2F;mooreyxia-provider-deployment-7c48f8f8f6-qgqjd to 192.168.11.216<br>  Normal  Pulling    85s   kubelet            Pulling image “K8s-harbor01.mooreyxia.com&#x2F;demo&#x2F;dubbo-demo-provider:v1”<br>  Normal  Pulled     72s   kubelet            Successfully pulled image “K8s-harbor01.mooreyxia.com&#x2F;demo&#x2F;dubbo-demo-provider:v1” in 12.465074683s (12.465103358s including waiting)<br>  Normal  Created    72s   kubelet            Created container mooreyxia-provider-container<br>  Normal  Started    72s   kubelet            Started container mooreyxia-provider-container</p>
+<p>#确认是否已经将provider注册到注册中心<br>[root@K8s-ansible provider]#kubectl logs  mooreyxia-provider-deployment-7c48f8f8f6-qgqjd -n mooreyxia<br>Ncat: Connection refused.<br>Ncat: Connection refused.<br>Ncat: Connection refused.<br>Ncat: Idle timeout expired (1000 ms).#需要等待一会<br>…<br>Starting the demo-provider ……………………………………………………..OK!<br>PID: 56<br>STDOUT: logs&#x2F;stdout.log</p>
+<h1 id="Kubernetes-managed-hosts-file"><a href="#Kubernetes-managed-hosts-file" class="headerlink" title="Kubernetes-managed hosts file."></a>Kubernetes-managed hosts file.</h1><p>127.0.0.1	localhost<br>::1	localhost ip6-localhost ip6-loopback<br>fe00::0	ip6-localnet<br>fe00::0	ip6-mcastprefix<br>fe00::1	ip6-allnodes<br>fe00::2	ip6-allrouters<br>10.200.128.143	mooreyxia-provider-deployment-7c48f8f8f6-qgqjd #这里就时注册中心的生产者地址</p>
+<p>[root@K8s-ansible provider]#kubectl get pod -n mooreyxia -o wide<br>NAME                                             READY   STATUS    RESTARTS        AGE     IP               NODE             NOMINATED NODE   READINESS GATES<br>mooreyxia-provider-deployment-7c48f8f8f6-qgqjd   1&#x2F;1     Running   0               4m55s   10.200.128.143   192.168.11.216   <none>           <none></p>
+<hr>
+<p>#建立消费者pod - 属于调用方</p>
+<p>[root@K8s-ansible consumer]#chmod a+x <em>.sh<br>[root@K8s-ansible consumer]#ll<br>total 10068<br>drwxr-xr-x 3 root root     4096 Apr  9 02:59 .&#x2F;<br>drwxr-xr-x 5 root root     4096 Apr  9 02:59 ..&#x2F;<br>-rw-r–r– 1 root root      391 Apr  9 02:59 Dockerfile<br>-rwxr-xr-x 1 root root      147 Apr  9 02:59 build-command.sh</em><br>drwxr-xr-x 5 root root     4096 Apr  9 02:59 dubbo-demo-consumer-2.1.5&#x2F;<br>-rw-r–r– 1 root root 10282529 Apr  9 02:59 dubbo-demo-consumer-2.1.5-assembly.tar.gz<br>-rwxr-xr-x 1 root root      312 Apr  9 02:59 run_java.sh*</p>
+<p>#配置注册中心地址<br>[root@K8s-ansible consumer]#cat dubbo-demo-consumer-2.1.5&#x2F;conf&#x2F;dubbo.properties<br>##</p>
+<h1 id="Copyright-1999-2011-Alibaba-Group-1"><a href="#Copyright-1999-2011-Alibaba-Group-1" class="headerlink" title="Copyright 1999-2011 Alibaba Group."></a>Copyright 1999-2011 Alibaba Group.</h1><h1 id="-13"><a href="#-13" class="headerlink" title=""></a></h1><h1 id="Licensed-under-the-Apache-License-Version-2-0-the-“License”-1"><a href="#Licensed-under-the-Apache-License-Version-2-0-the-“License”-1" class="headerlink" title="Licensed under the Apache License, Version 2.0 (the “License”);"></a>Licensed under the Apache License, Version 2.0 (the “License”);</h1><h1 id="you-may-not-use-this-file-except-in-compliance-with-the-License-1"><a href="#you-may-not-use-this-file-except-in-compliance-with-the-License-1" class="headerlink" title="you may not use this file except in compliance with the License."></a>you may not use this file except in compliance with the License.</h1><h1 id="You-may-obtain-a-copy-of-the-License-at-1"><a href="#You-may-obtain-a-copy-of-the-License-at-1" class="headerlink" title="You may obtain a copy of the License at"></a>You may obtain a copy of the License at</h1><h1 id="-14"><a href="#-14" class="headerlink" title=""></a></h1><h1 id="http-www-apache-org-licenses-LICENSE-2-0-1"><a href="#http-www-apache-org-licenses-LICENSE-2-0-1" class="headerlink" title="http://www.apache.org/licenses/LICENSE-2.0"></a><a target="_blank" rel="noopener" href="http://www.apache.org/licenses/LICENSE-2.0">http://www.apache.org/licenses/LICENSE-2.0</a></h1><h1 id="-15"><a href="#-15" class="headerlink" title=""></a></h1><h1 id="Unless-required-by-applicable-law-or-agreed-to-in-writing-software-1"><a href="#Unless-required-by-applicable-law-or-agreed-to-in-writing-software-1" class="headerlink" title="Unless required by applicable law or agreed to in writing, software"></a>Unless required by applicable law or agreed to in writing, software</h1><h1 id="distributed-under-the-License-is-distributed-on-an-“AS-IS”-BASIS-1"><a href="#distributed-under-the-License-is-distributed-on-an-“AS-IS”-BASIS-1" class="headerlink" title="distributed under the License is distributed on an “AS IS” BASIS,"></a>distributed under the License is distributed on an “AS IS” BASIS,</h1><h1 id="WITHOUT-WARRANTIES-OR-CONDITIONS-OF-ANY-KIND-either-express-or-implied-1"><a href="#WITHOUT-WARRANTIES-OR-CONDITIONS-OF-ANY-KIND-either-express-or-implied-1" class="headerlink" title="WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied."></a>WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</h1><h1 id="See-the-License-for-the-specific-language-governing-permissions-and-1"><a href="#See-the-License-for-the-specific-language-governing-permissions-and-1" class="headerlink" title="See the License for the specific language governing permissions and"></a>See the License for the specific language governing permissions and</h1><h1 id="limitations-under-the-License-1"><a href="#limitations-under-the-License-1" class="headerlink" title="limitations under the License."></a>limitations under the License.</h1><h2 id="-16"><a href="#-16" class="headerlink" title=""></a></h2><p>dubbo.container&#x3D;log4j,spring<br>dubbo.application.name&#x3D;demo-consumer<br>dubbo.application.owner&#x3D;<br>#dubbo.registry.address&#x3D;multicast:&#x2F;&#x2F;224.5.6.7:1234<br>dubbo.registry.address&#x3D;zookeeper:&#x2F;&#x2F;zookeeper1.mooreyxia.svc.mooreyxia.local:2181 | zookeeper:&#x2F;&#x2F;zookeeper2.mooreyxia.svc.mooreyxia.local:2181 | zookeeper:&#x2F;&#x2F;zookeeper3.mooreyxia.svc.mooreyxia.local:2181<br>#dubbo.registry.address&#x3D;redis:&#x2F;&#x2F;127.0.0.1:6379<br>#dubbo.registry.address&#x3D;dubbo:&#x2F;&#x2F;127.0.0.1:9090<br>dubbo.monitor.protocol&#x3D;registry<br>dubbo.log4j.file&#x3D;logs&#x2F;dubbo-demo-consumer.log<br>dubbo.log4j.level&#x3D;WARN</p>
+<p>#配置以普通用户身份执行微服务程序等容器启动初始化 - 一般对接开发<br>[root@K8s-ansible consumer]#cat run_java.sh<br>#!&#x2F;bin&#x2F;bash<br>#echo “nameserver 223.6.6.6” &gt; &#x2F;etc&#x2F;resolv.conf<br>#&#x2F;usr&#x2F;share&#x2F;filebeat&#x2F;bin&#x2F;filebeat -c &#x2F;etc&#x2F;filebeat&#x2F;filebeat.yml -path.home &#x2F;usr&#x2F;share&#x2F;filebeat -path.config &#x2F;etc&#x2F;filebeat -path.data &#x2F;var&#x2F;lib&#x2F;filebeat -path.logs &#x2F;var&#x2F;log&#x2F;filebeat  &amp;<br>su - nginx -c “&#x2F;apps&#x2F;dubbo&#x2F;consumer&#x2F;bin&#x2F;start.sh”<br>tail -f &#x2F;etc&#x2F;hosts</p>
+<p>#创建Dockerfile<br>[root@K8s-ansible consumer]#cat Dockerfile<br>#Dubbo consumer<br>FROM K8s-harbor01.mooreyxia.com&#x2F;pub-images&#x2F;jdk-base:v8.212 </p>
+<p>MAINTAINER mooreyxia “<a href="mailto:&#109;&#x6f;&#111;&#x72;&#x65;&#121;&#x78;&#x69;&#97;&#64;&#103;&#109;&#x61;&#x69;&#x6c;&#46;&#99;&#x6f;&#109;">&#109;&#x6f;&#111;&#x72;&#x65;&#121;&#x78;&#x69;&#97;&#64;&#103;&#109;&#x61;&#x69;&#x6c;&#46;&#99;&#x6f;&#109;</a>“</p>
+<p>RUN yum install file -y<br>RUN mkdir -p &#x2F;apps&#x2F;dubbo&#x2F;consumer<br>ADD dubbo-demo-consumer-2.1.5  &#x2F;apps&#x2F;dubbo&#x2F;consumer<br>ADD run_java.sh &#x2F;apps&#x2F;dubbo&#x2F;consumer&#x2F;bin<br>RUN chown nginx.nginx &#x2F;apps -R<br>RUN chmod a+x &#x2F;apps&#x2F;dubbo&#x2F;consumer&#x2F;bin&#x2F;*.sh</p>
+<p>CMD [“&#x2F;apps&#x2F;dubbo&#x2F;consumer&#x2F;bin&#x2F;run_java.sh”]</p>
+<p>#构建镜像<br>[root@K8s-ansible consumer]#cat build-command.sh<br>#!&#x2F;bin&#x2F;bash<br>docker build -t K8s-harbor01.mooreyxia.com&#x2F;demo&#x2F;dubbo-demo-consumer:v1  .<br>sleep 3<br>docker push K8s-harbor01.mooreyxia.com&#x2F;demo&#x2F;dubbo-demo-consumer:v1</p>
+<p>[root@K8s-ansible consumer]#bash build-command.sh<br>…<br>Successfully built 5fd047b0f7e3<br>Successfully tagged K8s-harbor01.mooreyxia.com&#x2F;demo&#x2F;dubbo-demo-consumer:v1<br>The push refers to repository [K8s-harbor01.mooreyxia.com&#x2F;demo&#x2F;dubbo-demo-consumer]<br>f66b48fd3e5b: Pushed<br>1d1883bcbc39: Pushed<br>929a57fa7e60: Pushed<br>74b0aa07d1f8: Pushed<br>0f89367341a5: Pushed<br>2fb84ff7450d: Pushed<br>72519bae3e48: Mounted from demo&#x2F;dubbo-demo-provider<br>f4ab7af29087: Mounted from demo&#x2F;dubbo-demo-provider<br>e183bde7d2a2: Mounted from demo&#x2F;dubbo-demo-provider<br>3e6fa9b75f89: Mounted from demo&#x2F;dubbo-demo-provider<br>cf71274b159a: Mounted from demo&#x2F;dubbo-demo-provider<br>174f56854903: Mounted from demo&#x2F;dubbo-demo-provider<br>v1: digest: sha256:3517a18092594599db71a4fb4e8e655c8c64201cc413cbeb9eb44b52c168a747 size: 2840</p>
+<p>#创建生产者pod资源配置文件<br>[root@K8s-ansible consumer]#cat consumer.yaml<br>kind: Deployment<br>apiVersion: apps&#x2F;v1<br>metadata:<br>  labels:<br>    app: mooreyxia-consumer<br>  name: mooreyxia-consumer-deployment<br>  namespace: mooreyxia<br>spec:<br>  replicas: 1<br>  selector:<br>    matchLabels:<br>      app: mooreyxia-consumer<br>  template:<br>    metadata:<br>      labels:<br>        app: mooreyxia-consumer<br>    spec:<br>      containers:<br>      - name: mooreyxia-consumer-container<br>        image: K8s-harbor01.mooreyxia.com&#x2F;demo&#x2F;dubbo-demo-consumer:v1<br>        #command: [“&#x2F;apps&#x2F;tomcat&#x2F;bin&#x2F;run_tomcat.sh”]<br>        #imagePullPolicy: IfNotPresent<br>        imagePullPolicy: Always<br>        ports:<br>        - containerPort: 80<br>          protocol: TCP<br>          name: http</p>
+<hr>
+<p>kind: Service<br>apiVersion: v1<br>metadata:<br>  labels:<br>    app: mooreyxia-consumer<br>  name: mooreyxia-consumer-server<br>  namespace: mooreyxia<br>spec:<br>  type: NodePort<br>  ports:</p>
+<ul>
+<li>name: http<br>port: 80<br>protocol: TCP<br>targetPort: 80<br>#nodePort: 30001</li>
+</ul>
+<p>  selector:<br>    app: mooreyxia-consumer</p>
+<p>[root@K8s-ansible consumer]#kubectl apply -f consumer.yaml<br>deployment.apps&#x2F;mooreyxia-consumer-deployment created<br>service&#x2F;mooreyxia-consumer-server created</p>
+<p>#确认pod运行<br>[root@K8s-ansible consumer]#kubectl describe pods mooreyxia-consumer-deployment-7cb8c9f59f-d48dq -n mooreyxia<br>Name:             mooreyxia-consumer-deployment-7cb8c9f59f-d48dq<br>Namespace:        mooreyxia<br>Priority:         0<br>Service Account:  default<br>Node:             192.168.11.215&#x2F;192.168.11.215<br>Start Time:       Fri, 14 Apr 2023 10:23:15 +0000<br>Labels:           app&#x3D;mooreyxia-consumer<br>                  pod-template-hash&#x3D;7cb8c9f59f<br>Annotations:      <none><br>Status:           Running<br>IP:               10.200.67.2<br>IPs:<br>  IP:           10.200.67.2<br>Controlled By:  ReplicaSet&#x2F;mooreyxia-consumer-deployment-7cb8c9f59f<br>Containers:<br>  mooreyxia-consumer-container:<br>    Container ID:   containerd:&#x2F;&#x2F;91bc4ed12925e7fe7d8494d71d1f14b17eda67058a26c3079b3a4d63c3c9f854<br>    Image:          K8s-harbor01.mooreyxia.com&#x2F;demo&#x2F;dubbo-demo-consumer:v1<br>    Image ID:       K8s-harbor01.mooreyxia.com&#x2F;demo&#x2F;dubbo-demo-consumer@sha256:3517a18092594599db71a4fb4e8e655c8c64201cc413cbeb9eb44b52c168a747<br>    Port:           80&#x2F;TCP<br>    Host Port:      0&#x2F;TCP<br>    State:          Running<br>      Started:      Fri, 14 Apr 2023 10:23:31 +0000<br>    Ready:          True<br>    Restart Count:  0<br>    Environment:    <none><br>    Mounts:<br>      &#x2F;var&#x2F;run&#x2F;secrets&#x2F;kubernetes.io&#x2F;serviceaccount from kube-api-access-8pqv6 (ro)<br>Conditions:<br>  Type              Status<br>  Initialized       True<br>  Ready             True<br>  ContainersReady   True<br>  PodScheduled      True<br>Volumes:<br>  kube-api-access-8pqv6:<br>    Type:                    Projected (a volume that contains injected data from multiple sources)<br>    TokenExpirationSeconds:  3607<br>    ConfigMapName:           kube-root-ca.crt<br>    ConfigMapOptional:       <nil><br>    DownwardAPI:             true<br>QoS Class:                   BestEffort<br>Node-Selectors:              <none><br>Tolerations:                 node.kubernetes.io&#x2F;not-ready:NoExecute op&#x3D;Exists for 300s<br>                             node.kubernetes.io&#x2F;unreachable:NoExecute op&#x3D;Exists for 300s<br>Events:<br>  Type    Reason     Age   From               Message</p>
+<hr>
+<p>  Normal  Scheduled  43s   default-scheduler  Successfully assigned mooreyxia&#x2F;mooreyxia-consumer-deployment-7cb8c9f59f-d48dq to 192.168.11.215<br>  Normal  Pulling    41s   kubelet            Pulling image “K8s-harbor01.mooreyxia.com&#x2F;demo&#x2F;dubbo-demo-consumer:v1”<br>  Normal  Pulled     28s   kubelet            Successfully pulled image “K8s-harbor01.mooreyxia.com&#x2F;demo&#x2F;dubbo-demo-consumer:v1” in 13.161238916s (13.16126404s including waiting)<br>  Normal  Created    28s   kubelet            Created container mooreyxia-consumer-container<br>  Normal  Started    27s   kubelet            Started container mooreyxia-consumer-container</p>
+<p>#确认是否已经将provider注册到注册中心<br>[root@K8s-ansible consumer]#kubectl logs mooreyxia-consumer-deployment-7cb8c9f59f-d48dq -n mooreyxia<br>Starting the demo-consumer ….OK!<br>PID: 52<br>STDOUT: logs&#x2F;stdout.log</p>
+<h1 id="Kubernetes-managed-hosts-file-1"><a href="#Kubernetes-managed-hosts-file-1" class="headerlink" title="Kubernetes-managed hosts file."></a>Kubernetes-managed hosts file.</h1><p>127.0.0.1	localhost<br>::1	localhost ip6-localhost ip6-loopback<br>fe00::0	ip6-localnet<br>fe00::0	ip6-mcastprefix<br>fe00::1	ip6-allnodes<br>fe00::2	ip6-allrouters<br>10.200.67.2	mooreyxia-consumer-deployment-7cb8c9f59f-d48dq<br>• 确认生产者是否接收到消费者连接请求<br><img src="/../img/f1ede0043891729f6e716992c5dd518f304261.png"><br><img src="/../img/c59f1a447fae214aa24301179decad1e7bbd61.png"><br><img src="/../img/374b98d93e17d6b5d6e33974e9ce22936181d7.png"><br>这样在生产环境中利用注册中心的服务发现机制就可以跳过前后端地址对接配置各种服务对应的生产者消费者关系即可通信。<br>详细使用请参考专题博客《57-Zookeeper集群和kafka消息队列集群》<br>我是moore,大家一起加油！！！</p>
+
+      
+       <hr><span style="font-style: italic;color: gray;"> 转载请注明来源，欢迎对文章中的引用来源进行考证，欢迎指出任何有错误或不够清晰的表达。可以在下面评论区评论，也可以邮件至 jaytp@qq.com </span>
+    </div>
+</article>
+
+
+<p>
+    <a  class="dashang" onclick="dashangToggle()">💰</a>
+</p>
+
+
+
+
+
+
+    
+
+
+
+
+    </div>
+    <div class="copyright">
+        <p class="footer-entry">
+    ©2016-2020 Yelog
+</p>
+<p class="footer-entry">Built with <a href="https://hexo.io/" target="_blank">Hexo</a> and <a href="https://github.com/yelog/hexo-theme-3-hexo" target="_blank">3-hexo</a> theme</p>
+
+    </div>
+    <div class="full-toc">
+        <button class="full" data-title="切换全屏 快捷键 s"><span class="min "></span></button>
+<a class="" id="rocket" ></a>
+
+    </div>
+</div>
+
+<div class="hide_box" onclick="dashangToggle()"></div>
+<div class="shang_box">
+    <a class="shang_close"  onclick="dashangToggle()">×</a>
+    <div class="shang_tit">
+        <p>Help us with donation</p>
+    </div>
+    <div class="shang_payimg">
+        <div class="pay_img">
+            <img src="/img/alipay.jpg" class="alipay" title="扫码支持">
+            <img src="/img/weixin.jpg" class="weixin" title="扫码支持">
+        </div>
+    </div>
+    <div class="shang_payselect">
+        <span><label><input type="radio" name="pay" checked value="alipay">alipay</label></span><span><label><input type="radio" name="pay" value="weixin">weixin</label></span>
+    </div>
+</div>
+
+
+</body>
+<script src="/js/jquery.pjax.js?v=1.1.0" ></script>
+
+<script src="/js/script.js?v=1.1.0" ></script>
+<script>
+    var img_resize = 'default';
+    function initArticle() {
+        /*渲染对应的表格样式*/
+        
+            $("#post .pjax table").addClass("green_title");
+        
+
+        /*渲染打赏样式*/
+        
+        $("input[name=pay]").on("click", function () {
+            if($("input[name=pay]:checked").val()=="weixin"){
+                $(".shang_box .shang_payimg .pay_img").addClass("weixin_img");
+            } else {
+                $(".shang_box .shang_payimg .pay_img").removeClass("weixin_img");
+            }
+        })
+        
+
+        /*高亮代码块行号*/
+        
+
+        /*访问数量*/
+        
+        $.getScript("//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js");
+        
+
+        /*代码高亮，行号对齐*/
+        $('.pre-numbering').css('line-height',$('.has-numbering').css('line-height'));
+
+        
+        
+    }
+
+    /*打赏页面隐藏与展示*/
+    
+    function dashangToggle() {
+        $(".shang_box").fadeToggle();
+        $(".hide_box").fadeToggle();
+    }
+    
+
+</script>
+
+<!--加入行号的高亮代码块样式-->
+
+<!--自定义样式设置-->
+<style>
+    
+    
+    .nav {
+        width: 542px;
+    }
+    .nav.fullscreen {
+        margin-left: -542px;
+    }
+    .nav-left {
+        width: 120px;
+    }
+    
+    
+    @media screen and (max-width: 1468px) {
+        .nav {
+            width: 492px;
+        }
+        .nav.fullscreen {
+            margin-left: -492px;
+        }
+        .nav-left {
+            width: 100px;
+        }
+    }
+    
+    
+    @media screen and (max-width: 1024px) {
+        .nav {
+            width: 492px;
+            margin-left: -492px
+        }
+        .nav.fullscreen {
+            margin-left: 0;
+        }
+    }
+    
+    @media screen and (max-width: 426px) {
+        .nav {
+            width: 100%;
+        }
+        .nav-left {
+            width: 100%;
+        }
+    }
+    
+    
+    .nav-right .title-list nav a .post-title, .nav-right .title-list #local-search-result a .post-title {
+        color: #383636;
+    }
+    
+    
+    .nav-right .title-list nav a .post-date, .nav-right .title-list #local-search-result a .post-date {
+        color: #5e5e5f;
+    }
+    
+    
+    .nav-right nav a.hover, #local-search-result a.hover{
+        background-color: #e2e0e0;
+    }
+    
+    
+
+    /*列表样式*/
+    
+
+    /* 背景图样式 */
+    
+    
+
+
+    /*引用块样式*/
+    
+
+    /*文章列表背景图*/
+    
+
+    
+</style>
+
+
+
+
+
+
+
+</html>

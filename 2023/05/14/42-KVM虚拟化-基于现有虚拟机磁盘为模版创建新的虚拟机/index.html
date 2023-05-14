@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>42-KVM虚拟化-基于现有虚拟机磁盘为模版创建新的虚拟机 | Hexo</title>
+  <meta name="keywords" content="">
+  <meta name="description" content="42-KVM虚拟化-基于现有虚拟机磁盘为模版创建新的虚拟机 | Hexo">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="description" content="基于现有虚拟机磁盘为模版创建新的虚拟机使用 virt-install 创建虚拟机• 虽然使用virt-manager 可以方便的管理虚拟机,但如果需要批量进行虚拟机的创建管理,命令行工具virtinstall更加方便和适合案例：利用 qemu-img命令创建虚拟磁盘#注意: qemu-img create 一定要确认对应路径下没有此文件,如果存在将覆盖原文件  确认现有的虚拟磁盘文件[root@u">
+<meta property="og:type" content="article">
+<meta property="og:title" content="42-KVM虚拟化-基于现有虚拟机磁盘为模版创建新的虚拟机">
+<meta property="og:url" content="http://example.com/2023/05/14/42-KVM%E8%99%9A%E6%8B%9F%E5%8C%96-%E5%9F%BA%E4%BA%8E%E7%8E%B0%E6%9C%89%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%A3%81%E7%9B%98%E4%B8%BA%E6%A8%A1%E7%89%88%E5%88%9B%E5%BB%BA%E6%96%B0%E7%9A%84%E8%99%9A%E6%8B%9F%E6%9C%BA/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="基于现有虚拟机磁盘为模版创建新的虚拟机使用 virt-install 创建虚拟机• 虽然使用virt-manager 可以方便的管理虚拟机,但如果需要批量进行虚拟机的创建管理,命令行工具virtinstall更加方便和适合案例：利用 qemu-img命令创建虚拟磁盘#注意: qemu-img create 一定要确认对应路径下没有此文件,如果存在将覆盖原文件  确认现有的虚拟磁盘文件[root@u">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="http://example.com/img/092d6b54082e04ec1c20121058c692bc5844b5.png">
+<meta property="og:image" content="http://example.com/img/f8bada3025892d742fe1746c42ead86f562ddc.png">
+<meta property="article:published_time" content="2023-05-14T08:21:34.888Z">
+<meta property="article:modified_time" content="2023-05-14T08:23:40.552Z">
+<meta property="article:author" content="John Doe">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/img/092d6b54082e04ec1c20121058c692bc5844b5.png">
+
+
+<link rel="icon" href="/img/avatar.jpg">
+
+<link href="/css/style.css?v=1.1.0" rel="stylesheet">
+
+<link href="/css/hl_theme/atom-light.css?v=1.1.0" rel="stylesheet">
+
+<link href="//cdn.jsdelivr.net/npm/animate.css@4.1.0/animate.min.css" rel="stylesheet">
+
+<script src="//cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js"></script>
+<script src="/js/titleTip.js?v=1.1.0" ></script>
+
+<script src="//cdn.jsdelivr.net/npm/highlightjs@9.16.2/highlight.pack.min.js"></script>
+<script>
+    hljs.initHighlightingOnLoad();
+</script>
+
+<script src="//cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.min.js"></script>
+
+
+
+<script src="//cdn.jsdelivr.net/npm/jquery.cookie@1.4.1/jquery.cookie.min.js" ></script>
+
+<script src="/js/iconfont.js?v=1.1.0" ></script>
+
+<meta name="generator" content="Hexo 6.3.0"></head>
+<div style="display: none">
+  <input class="theme_disqus_on" value="false">
+  <input class="theme_preload_comment" value="">
+  <input class="theme_blog_path" value="">
+  <input id="theme_shortcut" value="true" />
+  <input id="theme_highlight_on" value="true" />
+  <input id="theme_code_copy" value="true" />
+</div>
+
+
+
+<body>
+<aside class="nav">
+    <div class="nav-left">
+        <a href="/"
+   class="avatar_target">
+    <img class="avatar"
+         src="/img/avatar.jpg"/>
+</a>
+<div class="author">
+    <span>John Doe</span>
+</div>
+
+<div class="icon">
+    
+        
+            <a title="rss"
+               href="/atom.xml"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-rss"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="github"
+               href="https://github.com/yelog"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-github"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="facebook"
+               href="https://www.facebook.com/faker.tops"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-facebook"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+    
+        
+    
+        
+            <a title="instagram"
+               href="https://www.facebook.com/faker.tops"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-instagram"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="reddit"
+               href="https://www.reddit.com/user/yelog/"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-reddit"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="weibo"
+               href="http://weibo.com/u/2307534817"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-weibo"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="jianshu"
+               href="https://www.jianshu.com/u/ff56736de7cf"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-jianshu"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="zhihu"
+               href="https://www.zhihu.com/people/jaytp/activities"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-zhihu"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+    
+        
+            <a title="oschina"
+               href="https://my.oschina.net/yelog"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-oschina"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+    
+        
+            <a title="email"
+               href="mailto:jaytp@qq.com"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-email"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="qq"
+               href="http://wpa.qq.com/msgrd?v=3&uin=872336115&site=qq&menu=yes"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-qq"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="kugou"
+               href="https://www.kugou.com/"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-kugou"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="neteasemusic"
+               href="https://music.163.com/#/user/home?id=88151013"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-neteasemusic"></use>
+                    </svg>
+                
+            </a>
+        
+    
+</div>
+
+
+
+
+<ul>
+    <li>
+        <div class="all active" data-rel="All">All
+            
+                <small>(36)</small>
+            
+        </div>
+    </li>
+    
+        
+            
+                <li>
+                    <div data-rel="SRE linux云计算">
+                        
+                        SRE linux云计算
+                        <small>(11)</small>
+                        
+                    </div>
+                    
+                </li>
+            
+        
+    
+        
+            
+                <li>
+                    <div data-rel="云原生">
+                        
+                        云原生
+                        <small>(10)</small>
+                        
+                    </div>
+                    
+                </li>
+            
+        
+    
+        
+            
+                <li>
+                    <div data-rel="PMP管理">
+                        
+                        PMP管理
+                        <small>(1)</small>
+                        
+                    </div>
+                    
+                </li>
+            
+        
+    
+        
+            
+                <li>
+                    <div data-rel="Python 爬虫">
+                        
+                        Python 爬虫
+                        <small>(14)</small>
+                        
+                    </div>
+                    
+                </li>
+            
+        
+    
+</ul>
+<div class="left-bottom">
+    <div class="menus">
+        
+            
+            
+            
+    </div>
+    <div>
+        
+            <a class="about  hasFriend  site_url"
+               
+               href="/about">About</a>
+        
+        <a style="width: 50%"
+                
+                                           class="friends">Friends</a>
+        
+    </div>
+</div>
+<input type="hidden" id="yelog_site_posts_number" value="36">
+
+<div style="display: none">
+    <span id="busuanzi_value_site_uv"></span>
+    <span id="busuanzi_value_site_pv"></span>
+</div>
+
+    </div>
+    <div class="nav-right">
+        <div class="friends-area">
+    <div class="friends-title">
+        Links
+        <i class="iconfont icon-left"></i>
+    </div>
+    <div class="friends-content">
+        <ul>
+            
+            <li><a target="_blank" href="http://yelog.org/">叶落阁</a></li>
+            
+        </ul>
+    </div>
+</div>
+        <div class="title-list">
+    <div class="right-top">
+        <div id="default-panel">
+            <i class="iconfont icon-search" data-title="搜索 快捷键 i"></i>
+            <div class="right-title">All</div>
+            <i class="iconfont icon-file-tree" data-title="切换到大纲视图 快捷键 w"></i>
+        </div>
+        <div id="search-panel">
+            <i class="iconfont icon-left" data-title="返回"></i>
+            <input id="local-search-input" autocomplete="off"/>
+            <label class="border-line" for="input"></label>
+            <i class="iconfont icon-case-sensitive" data-title="大小写敏感"></i>
+            <i class="iconfont icon-tag" data-title="标签"></i>
+        </div>
+        <div id="outline-panel" style="display: none">
+            <div class="right-title">大纲</div>
+            <i class="iconfont icon-list" data-title="切换到文章列表"></i>
+        </div>
+    </div>
+
+    <div class="tags-list">
+    <input id="tag-search" />
+    <div class="tag-wrapper">
+        
+    </div>
+
+</div>
+
+    
+    <nav id="title-list-nav">
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/14/42-KVM%E8%99%9A%E6%8B%9F%E5%8C%96-%E5%9F%BA%E4%BA%8E%E7%8E%B0%E6%9C%89%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%A3%81%E7%9B%98%E4%B8%BA%E6%A8%A1%E7%89%88%E5%88%9B%E5%BB%BA%E6%96%B0%E7%9A%84%E8%99%9A%E6%8B%9F%E6%9C%BA/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="42-KVM虚拟化-基于现有虚拟机磁盘为模版创建新的虚拟机">42-KVM虚拟化-基于现有虚拟机磁盘为模版创建新的虚拟机</span>
+            <span class="post-date" title="2023-05-14 16:21:34">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%B8%89%E7%AB%A0-2-requests%20%E8%BF%9B%E9%98%B6%E2%80%A2%20%E7%88%AC%E5%8F%96%E6%9F%90%E8%A7%86%E9%A2%91%E7%BD%91%E7%9B%B8%E5%85%B3%E8%A7%86%E9%A2%91/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第三章-2-requests 进阶• 爬取某视频网相关视频">Python爬虫-第三章-2-requests 进阶• 爬取某视频网相关视频</span>
+            <span class="post-date" title="2023-05-14 16:20:20">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/14/44-KVM%E8%99%9A%E6%8B%9F%E5%8C%96-%E5%AD%98%E5%82%A8%E7%AE%A1%E7%90%86%E5%92%8C%E7%A3%81%E7%9B%98%E6%89%A9%E5%AE%B9/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="44-KVM虚拟化-存储管理和磁盘扩容">44-KVM虚拟化-存储管理和磁盘扩容</span>
+            <span class="post-date" title="2023-05-14 16:18:30">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%B8%89%E7%AB%A0-3-%E5%88%A9%E7%94%A8re%E6%A8%A1%E5%9D%97%E7%88%AC%E5%8F%96%E6%9F%90%E7%BD%91%E7%94%B5%E5%BD%B1%E6%8E%92%E8%A1%8C%E6%A6%9C/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第三章-3-利用re模块爬取某网电影排行榜">Python爬虫-第三章-3-利用re模块爬取某网电影排行榜</span>
+            <span class="post-date" title="2023-05-14 16:16:51">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/14/46-Docker-Container%E5%AE%B9%E5%99%A8%E7%AE%A1%E7%90%86%E5%90%84%E7%A7%8D%E6%93%8D%E4%BD%9C/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="46-Docker-Container容器管理各种操作">46-Docker-Container容器管理各种操作</span>
+            <span class="post-date" title="2023-05-14 16:14:04">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/14/47-Docker-Dockerfile%E9%95%9C%E5%83%8F%E5%88%9B%E5%BB%BA%E8%87%AA%E5%8A%A8%E5%8C%96%E7%94%9F%E4%BA%A7%E6%A1%88%E4%BE%8B/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="47-Docker-Dockerfile镜像创建自动化生产案例">47-Docker-Dockerfile镜像创建自动化生产案例</span>
+            <span class="post-date" title="2023-05-14 16:09:19">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/14/48-Docker-%E5%A4%9A%E5%AE%B9%E5%99%A8%E6%95%B0%E6%8D%AE%E5%85%B1%E4%BA%AB%E5%8F%8A%E6%8C%81%E4%B9%85%E5%8C%96/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="48-Docker-多容器数据共享及持久化">48-Docker-多容器数据共享及持久化</span>
+            <span class="post-date" title="2023-05-14 16:06:48">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%B8%89%E7%AB%A0-4-%E5%88%A9%E7%94%A8BeautifulSoup%E6%A8%A1%E5%9D%97%E7%88%AC%E5%8F%96%E6%9F%90%E7%BD%91%E5%A3%81%E7%BA%B8%E5%9B%BE%E5%BA%93%E5%9B%BE%E7%89%87/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第三章-4-利用BeautifulSoup模块爬取某网壁纸图库图片">Python爬虫-第三章-4-利用BeautifulSoup模块爬取某网壁纸图库图片</span>
+            <span class="post-date" title="2023-05-14 16:05:34">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%B8%89%E7%AB%A0-5-%E5%88%A9%E7%94%A8xpath%E7%88%AC%E5%8F%96%E6%9F%90%E5%85%AB%E6%88%92%E7%BD%91%E7%9B%B8%E5%85%B3%E8%AF%8D%E8%AF%AD%E5%85%AC%E5%8F%B8%E7%9A%84%E4%BF%A1%E6%81%AF%E5%92%8C%E4%BB%B7%E6%A0%BC/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第三章-5-利用xpath爬取某八戒网相关词语公司的信息和价格">Python爬虫-第三章-5-利用xpath爬取某八戒网相关词语公司的信息和价格</span>
+            <span class="post-date" title="2023-05-14 16:04:16">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%B8%89%E7%AB%A0-6-%E6%8A%93%E5%8F%96%E6%9F%90%E4%BA%91%E9%9F%B3%E4%B9%90%E8%AF%84%E8%AE%BA%E6%95%B0%E6%8D%AE/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第三章-6-抓取某云音乐评论数据">Python爬虫-第三章-6-抓取某云音乐评论数据</span>
+            <span class="post-date" title="2023-05-14 16:03:15">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-1-%E5%A4%9A%E7%BA%BF%E7%A8%8B%E5%A4%9A%E8%BF%9B%E7%A8%8B%E5%B9%B6%E5%8F%91%E7%88%AC%E5%8F%96%E2%85%A0/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-1-多线程多进程并发爬取Ⅰ">Python爬虫-第四章-1-多线程多进程并发爬取Ⅰ</span>
+            <span class="post-date" title="2023-05-14 16:01:27">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-1-%E5%A4%9A%E7%BA%BF%E7%A8%8B%E5%A4%9A%E8%BF%9B%E7%A8%8B%E5%B9%B6%E5%8F%91%E7%88%AC%E5%8F%96%E2%85%A1/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-1-多线程多进程并发爬取Ⅱ">Python爬虫-第四章-1-多线程多进程并发爬取Ⅱ</span>
+            <span class="post-date" title="2023-05-14 16:00:37">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-1-%E5%A4%9A%E7%BA%BF%E7%A8%8B%E5%A4%9A%E8%BF%9B%E7%A8%8B%E5%B9%B6%E5%8F%91%E7%88%AC%E5%8F%96%E2%85%A2-%E7%88%AC%E5%8F%96%E6%9F%90%E8%8F%9C%E5%B8%82%E5%9C%BA%E6%89%B9%E5%8F%91%E4%BB%B7%E6%95%B0%E6%8D%AE/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-1-多线程多进程并发爬取Ⅲ-爬取某菜市场批发价数据">Python爬虫-第四章-1-多线程多进程并发爬取Ⅲ-爬取某菜市场批发价数据</span>
+            <span class="post-date" title="2023-05-14 15:59:35">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-2-%E5%8D%8F%E7%A8%8B%E4%B8%8E%E5%BC%82%E6%AD%A5/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-2-协程与异步">Python爬虫-第四章-2-协程与异步</span>
+            <span class="post-date" title="2023-05-14 15:58:20">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/14/52-HAProxy-10%E7%A7%8D%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E8%B0%83%E5%BA%A6%E7%AE%97%E6%B3%95/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="52-HAProxy-10种负载均衡调度算法">52-HAProxy-10种负载均衡调度算法</span>
+            <span class="post-date" title="2023-05-14 15:56:12">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/14/55-Redis-%E7%BC%96%E8%AF%91%E9%83%A8%E7%BD%B2%E5%8F%8A%E6%95%B0%E6%8D%AE%E6%8C%81%E4%B9%85%E5%8C%96/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="55-Redis-编译部署及数据持久化">55-Redis-编译部署及数据持久化</span>
+            <span class="post-date" title="2023-05-14 15:54:02">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/14/56-Redis%E9%9B%86%E7%BE%A4-%E5%93%A8%E5%85%B5Sentinel%E6%90%AD%E5%BB%BA%E5%AE%9E%E7%8E%B0%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E9%AB%98%E5%8F%AF%E7%94%A8/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="56-Redis集群-哨兵Sentinel搭建实现负载均衡高可用">56-Redis集群-哨兵Sentinel搭建实现负载均衡高可用</span>
+            <span class="post-date" title="2023-05-14 15:41:50">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/14/998-%E6%90%AD%E5%BB%BA%E4%B8%80%E5%8F%B0%E7%A7%81%E7%94%A8%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%A8%E8%BF%87%E7%A8%8B/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="998-搭建一台私用服务器全过程">998-搭建一台私用服务器全过程</span>
+            <span class="post-date" title="2023-05-14 15:36:20">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/%20Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-3-%E5%A4%9A%E7%BA%BF%E7%A8%8B%E5%A4%9A%E8%BF%9B%E7%A8%8B%E6%8F%90%E5%8D%87%E4%BB%BB%E5%8A%A1%E6%89%A7%E8%A1%8C%E6%95%88%E7%8E%87/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-3-多线程多进程提升任务执行效率">Python爬虫-第四章-3-多线程多进程提升任务执行效率</span>
+            <span class="post-date" title="2023-05-14 15:35:16">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/%20Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-4-%E5%88%A9%E7%94%A8%E7%BA%BF%E7%A8%8B%E6%B1%A0%E5%92%8C%E8%BF%9B%E7%A8%8B%E6%B1%A0%E9%AB%98%E6%95%88%E7%88%AC%E5%8F%96%E5%8C%97%E4%BA%AC%E6%9F%90%E5%8F%91%E8%8F%9C%E5%9C%B0%E6%95%B0%E6%8D%AE/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-4-利用线程池和进程池高效爬取北京某发菜地数据">Python爬虫-第四章-4-利用线程池和进程池高效爬取北京某发菜地数据</span>
+            <span class="post-date" title="2023-05-14 15:34:07">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/13/%20Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-5-%E9%AB%98%E6%95%88%E6%8A%93%E5%8F%96%E8%A7%86%E9%A2%91%E7%BD%91%E7%AB%99%E8%A7%86%E9%A2%91%E8%B5%84%E6%BA%90%E8%87%B3%E6%9C%AC%E5%9C%B0/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-5-高效抓取视频网站视频资源至本地">Python爬虫-第四章-5-高效抓取视频网站视频资源至本地</span>
+            <span class="post-date" title="2023-05-13 20:13:14">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/13/%20Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%BA%94%E7%AB%A0-1-%E8%B6%85%E7%BA%A7%E9%B9%B0%E6%8F%92%E4%BB%B6%E5%AE%9E%E7%8E%B0%E8%87%AA%E5%8A%A8%E5%A1%AB%E5%86%99%E8%AF%86%E5%88%AB%E7%A0%81%E5%B9%B6%E7%99%BB%E5%BD%9512306%E7%BD%91%E7%AB%99/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第五章-1-超级鹰插件实现自动填写识别码并登录12306网站">Python爬虫-第五章-1-超级鹰插件实现自动填写识别码并登录12306网站</span>
+            <span class="post-date" title="2023-05-13 19:54:30">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/13/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%BA%94%E7%AB%A0-2-%E7%88%AC%E5%8F%96%E6%9F%90%E7%BD%91%E7%AB%99%E5%9B%BE%E5%BA%93/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第五章-2-爬取某网站图库">Python爬虫-第五章-2-爬取某网站图库</span>
+            <span class="post-date" title="2023-05-13 19:52:47">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/66-CICD%E6%8C%81%E7%BB%AD%E9%9B%86%E6%88%90%E5%B7%A5%E5%85%B7-Jenkins%E5%A3%B0%E6%98%8E%E5%BC%8FPipeline%E9%83%A8%E7%BD%B2JAVA%E7%A8%8B%E5%BA%8F%E7%94%9F%E4%BA%A7%E6%A1%88%E4%BE%8B(%E5%8C%85%E5%90%ABDocker%E6%A1%88%E4%BE%8B)/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="66-CICD持续集成工具-Jenkins声明式Pipeline部署JAVA程序生产案例(包含Docker案例)">66-CICD持续集成工具-Jenkins声明式Pipeline部署JAVA程序生产案例(包含Docker案例)</span>
+            <span class="post-date" title="2023-05-13 19:49:20">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/997-%E6%89%A9%E5%B1%95KVM%E8%99%9A%E6%8B%9F%E6%9C%BA%E9%80%BB%E8%BE%91%E5%8D%B7/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="67-日志分析系统ELK-ELK架构简述">67-日志分析系统ELK-ELK架构简述</span>
+            <span class="post-date" title="2023-05-13 19:47:57">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/67-%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90%E7%B3%BB%E7%BB%9FELK-ELK%E6%9E%B6%E6%9E%84%E7%AE%80%E8%BF%B0/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="67-日志分析系统ELK-ELK架构简述">67-日志分析系统ELK-ELK架构简述</span>
+            <span class="post-date" title="2023-05-13 19:46:06">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/68-%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90%E7%B3%BB%E7%BB%9FELK-Elasticsearch%E5%8D%95%E7%82%B9%E9%83%A8%E7%BD%B2%E5%92%8C%E9%85%8D%E7%BD%AE%E4%BC%98%E5%8C%96%EF%BC%88%E5%90%AB%E5%9F%BA%E4%BA%8EDocker%E5%8D%95%E7%82%B9%E9%83%A8%E7%BD%B2%E6%A1%88%E4%BE%8B%EF%BC%89/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="68-日志分析系统ELK-Elasticsearch单点部署和配置优化（含基于Docker单点部署案例）">68-日志分析系统ELK-Elasticsearch单点部署和配置优化（含基于Docker单点部署案例）</span>
+            <span class="post-date" title="2023-05-13 19:44:06">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/13/78-%E4%BA%91%E5%8E%9F%E7%94%9F%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-Kubernetes%E9%9B%86%E7%BE%A4%E8%8A%82%E7%82%B9%E6%A8%AA%E5%90%91%E4%BC%B8%E7%BC%A9%E5%8F%8A%E6%A0%B8%E5%BF%83%E7%BB%84%E4%BB%B6%E7%89%88%E6%9C%AC%E5%8D%87%E7%BA%A7/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="78-云原生操作系统-Kubernetes集群节点横向伸缩及核心组件版本升级">78-云原生操作系统-Kubernetes集群节点横向伸缩及核心组件版本升级</span>
+            <span class="post-date" title="2023-05-13 17:37:37">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/13/79-%E4%BA%91%E5%8E%9F%E7%94%9F%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-Kubectl%E5%91%BD%E4%BB%A4%E4%BB%A5%E5%8F%8AEtcd%E5%9F%BA%E4%BA%8E%E5%BF%AB%E7%85%A7%E7%9A%84%E6%95%B0%E6%8D%AE%E5%A4%87%E4%BB%BD%E4%B8%8E%E6%81%A2%E5%A4%8D/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="79-云原生操作系统-Kubectl命令以及Etcd基于快照的数据备份与恢复">79-云原生操作系统-Kubectl命令以及Etcd基于快照的数据备份与恢复</span>
+            <span class="post-date" title="2023-05-13 17:34:14">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All PMP管理 "
+           href="/2023/05/13/%E9%A2%84%E6%B5%8B%E5%9E%8B%E9%A1%B9%E7%9B%AE%E7%AE%A1%E7%90%86-6-%E9%A1%B9%E7%9B%AE%E8%BF%9B%E5%BA%A6%E7%AE%A1%E7%90%86%E2%85%A1/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="预测型项目管理-6-项目进度管理Ⅱ">预测型项目管理-6-项目进度管理Ⅱ</span>
+            <span class="post-date" title="2023-05-13 17:32:31">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/13/84-%E4%BA%91%E5%8E%9F%E7%94%9F%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-%E5%9F%BA%E4%BA%8Enerdctl%20+%20buildkitd%E6%9E%84%E5%BB%BA%E5%AE%B9%E5%99%A8%E9%95%9C%E5%83%8F20230513/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="84-云原生操作系统-基于nerdctl + buildkitd构建容器镜像">84-云原生操作系统-基于nerdctl + buildkitd构建容器镜像</span>
+            <span class="post-date" title="2023-05-13 17:22:54">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/13/86-%E4%BA%91%E5%8E%9F%E7%94%9F%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-Zookeeper%E9%9B%86%E7%BE%A4%E5%8F%8A%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%8A%A8%E6%80%81%E6%B3%A8%E5%86%8C%E5%92%8C%E5%8F%91%E7%8E%B0%E4%B8%9A%E5%8A%A1%E5%AE%B9%E5%99%A8%E5%8C%96%E6%A1%88%E4%BE%8B/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="86-云原生操作系统-Zookeeper集群及微服务动态注册和发现业务容器化案例">86-云原生操作系统-Zookeeper集群及微服务动态注册和发现业务容器化案例</span>
+            <span class="post-date" title="2023-05-13 17:13:23">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/13/87-%E4%BA%91%E5%8E%9F%E7%94%9F%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-Redis%E5%8D%95%E6%9C%BA%E5%92%8C%E9%9B%86%E7%BE%A4%E4%B8%9A%E5%8A%A1%E5%AE%B9%E5%99%A8%E5%8C%96%E6%A1%88%E4%BE%8B/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="87-云原生操作系统-Redis单机和集群业务容器化案例">87-云原生操作系统-Redis单机和集群业务容器化案例</span>
+            <span class="post-date" title="2023-05-13 17:08:49">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/997-%E4%BD%BF%E7%94%A8ChatGPT%E5%81%9A%E8%BF%90%E7%BB%B4%E5%BA%94%E7%94%A8%E5%B7%A5%E5%85%B7%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E8%A7%A3%E7%AD%94/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="997-使用ChatGPT做运维应用工具常见问题解答">997-使用ChatGPT做运维应用工具常见问题解答</span>
+            <span class="post-date" title="2023-05-13 15:49:52">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/%E5%A4%A7%E5%9E%8B%E4%BA%92%E8%81%94%E7%BD%91%E5%BE%AE%E6%9C%8D%E5%8A%A1%E6%9E%B6%E6%9E%84%E5%9B%BE/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="大型互联网微服务架构图">大型互联网微服务架构图</span>
+            <span class="post-date" title="2023-05-13 15:47:16">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/%E4%BA%91%E8%AE%A1%E7%AE%97%E6%9E%B6%E6%9E%84%E5%9B%BE/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="云计算架构图">云计算架构图</span>
+            <span class="post-date" title="2023-05-13 15:24:25">2023/05/13</span>
+        </a>
+        
+        <div id="no-item-tips">
+
+        </div>
+    </nav>
+    <div id="outline-list">
+    </div>
+</div>
+
+    </div>
+    <div class="hide-list">
+        <div class="semicircle" data-title="切换全屏 快捷键 s">
+            <div class="brackets first"><</div>
+            <div class="brackets">&gt;</div>
+        </div>
+    </div>
+</aside>
+<div id="post">
+    <div class="pjax">
+        <article id="post-42-KVM虚拟化-基于现有虚拟机磁盘为模版创建新的虚拟机" class="article article-type-post" itemscope itemprop="blogPost">
+    
+        <h1 class="article-title">42-KVM虚拟化-基于现有虚拟机磁盘为模版创建新的虚拟机</h1>
+    
+    <div class="article-meta">
+        
+        
+        
+        <span class="book">
+            <i class="iconfont icon-category"></i>
+            
+            
+            <a  data-rel="云原生">云原生</a>
+            
+        </span>
+        
+        
+    </div>
+    <div class="article-meta">
+        
+            Created At : <time class="date" title='Updated At: 2023-05-14 16:23:40'>2023-05-14 16:21</time>
+        
+    </div>
+    <div class="article-meta">
+        
+        
+        <span id="busuanzi_container_page_pv">
+            Views 👀 :<span id="busuanzi_value_page_pv">
+                <span class="count-comment">
+                    <span class="spinner">
+                      <div class="cube1"></div>
+                      <div class="cube2"></div>
+                    </span>
+                </span>
+            </span>
+        </span>
+        
+        
+    </div>
+    
+    <div class="toc-ref">
+    
+        <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#Domain-is-still-running-Installation-may-be-in-progress-You-can-reconnect-to-the-console-to-complete-the-installation-process-root-ubuntu2204-images-virsh-list-Id-Name-State"><span class="toc-text">Domain is still running. Installation may be in progress.You can reconnect to the console to complete the installation process.[root@ubuntu2204 images]#virsh list Id   Name                State</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#This-file-controls-the-state-of-SELinux-on-the-system"><span class="toc-text">This file controls the state of SELinux on the system.</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#SELINUX-x3D-can-take-one-of-these-three-values"><span class="toc-text">SELINUX&#x3D; can take one of these three values:</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#enforcing-SELinux-security-policy-is-enforced"><span class="toc-text">enforcing - SELinux security policy is enforced.</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#permissive-SELinux-prints-warnings-instead-of-enforcing"><span class="toc-text">permissive - SELinux prints warnings instead of enforcing.</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#disabled-No-SELinux-policy-is-loaded"><span class="toc-text">disabled - No SELinux policy is loaded.</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#SELINUXTYPE-x3D-can-take-one-of-these-three-values"><span class="toc-text">SELINUXTYPE&#x3D; can take one of these three values:</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#targeted-Targeted-processes-are-protected"><span class="toc-text">targeted - Targeted processes are protected,</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#minimum-Modification-of-targeted-policy-Only-selected-processes-are-protected"><span class="toc-text">minimum - Modification of targeted policy. Only selected processes are protected.</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#mls-Multi-Level-Security-protection"><span class="toc-text">mls - Multi Level Security protection.</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Complete-%E8%87%B3%E6%AD%A4Rocky8-6%E8%99%9A%E6%8B%9F%E6%9C%BA%E6%A8%A1%E6%9D%BF%E5%AE%8C%E6%88%90-root-Rocky8-yum-repos-d-rebootConnection-to-192-168-122-14-closed-by-remote-host-Connection-to-192-168-122-14-closed-%E5%88%A9%E7%94%A8virt-clone%E5%85%8B%E9%9A%86%E6%96%B0%E7%9A%84%E8%99%9A%E6%8B%9F%E6%9C%BA-%E5%9F%BA%E4%BA%8E%E5%B7%B2%E6%9C%89%E7%9A%84%E8%99%9A%E6%8B%9F%E6%9C%BA%E5%85%8B%E9%9A%86%E7%94%9F%E6%88%90%E6%96%B0%E7%9A%84%E8%99%9A%E6%8B%9F%E6%9C%BA-root-ubuntu2204-images-virsh-list-%E2%80%93all-Id-Name-State"><span class="toc-text">Complete!#至此Rocky8.6虚拟机模板完成[root@Rocky8 yum.repos.d]# rebootConnection to 192.168.122.14 closed by remote host.Connection to 192.168.122.14 closed.利用virt-clone克隆新的虚拟机#基于已有的虚拟机克隆生成新的虚拟机[root@ubuntu2204 images]#virsh list –all Id   Name                State</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#o-rocky8-%E6%8C%87%E5%B7%B2%E5%AD%98%E5%9C%A8%E7%9A%84%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%9A%84%E5%90%8D%E7%A7%B0-f-x2F-var-x2F-lib-x2F-libvirt-x2F-images-x2F-rocky8-3-qcow2-%E6%96%B0%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%A3%81%E7%9B%98%E6%96%87%E4%BB%B6%E8%B7%AF%E5%BE%84%EF%BC%8C%E6%AD%A4%E6%96%87%E4%BB%B6%E8%87%AA%E5%8A%A8%E7%94%9F%E6%88%90%EF%BC%8C%E4%B8%8D%E9%9C%80%E8%A6%81%E4%BA%8B%E5%85%88%E5%88%9B%E5%BB%BA-n-rocky8-3-%E6%96%B0%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%9A%84%E5%90%8D%E7%A7%B0-root-ubuntu2204-images-virsh-list-%E2%80%93all-Id-Name-State"><span class="toc-text">-o rocky8 #指已存在的虚拟机的名称-f &#x2F;var&#x2F;lib&#x2F;libvirt&#x2F;images&#x2F;rocky8-3.qcow2 #新虚拟机磁盘文件路径，此文件自动生成，不需要事先创建-n rocky8-3 #新虚拟机的名称[root@ubuntu2204 images]#virsh list –all Id   Name                State</span></a></li></ol>
+    
+<style>
+    .left-col .switch-btn,
+    .left-col .switch-area {
+        display: none;
+    }
+    .toc-level-3 i,
+    .toc-level-3 ol {
+        display: none !important;
+    }
+</style>
+</div>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>基于现有虚拟机磁盘为模版创建新的虚拟机<br>使用 virt-install 创建虚拟机<br>• 虽然使用virt-manager 可以方便的管理虚拟机,但如果需要批量进行虚拟机的创建管理,命令行工具virtinstall更加方便和适合<br>案例：<br>利用 qemu-img命令创建虚拟磁盘<br>#注意: qemu-img create 一定要确认对应路径下没有此文件,如果存在将覆盖原文件</p>
+<ol>
+<li>确认现有的虚拟磁盘文件<br>[root@ubuntu2204 ~]#ll &#x2F;var&#x2F;lib&#x2F;libvirt&#x2F;images&#x2F;centos7-mooreyxia.qcow2 -h<br>-rw——- 1 libvirt-qemu kvm 11G Dec 30 22:03 &#x2F;var&#x2F;lib&#x2F;libvirt&#x2F;images&#x2F;centos7-mooreyxia.qcow2</li>
+<li>创建新的虚拟磁盘文件<br>[root@ubuntu2204 ~]#qemu-img create -f qcow2 &#x2F;var&#x2F;lib&#x2F;libvirt&#x2F;images&#x2F;centos7-mooreyxia2.qcow2 20G<br>Formatting ‘&#x2F;var&#x2F;lib&#x2F;libvirt&#x2F;images&#x2F;centos7-mooreyxia2.qcow2’, fmt&#x3D;qcow2 cluster_size&#x3D;65536 extended_l2&#x3D;off compression_type&#x3D;zlib size&#x3D;21474836480 lazy_refcounts&#x3D;off refcount_bits&#x3D;16</li>
+<li>查看虚拟磁盘文件占用空间<br>[root@ubuntu2204 ~]#ll &#x2F;var&#x2F;lib&#x2F;libvirt&#x2F;images&#x2F;centos7-mooreyxia* -h<br>-rw-r–r– 1 root         root 193K Dec 30 22:05 &#x2F;var&#x2F;lib&#x2F;libvirt&#x2F;images&#x2F;centos7-mooreyxia2.qcow2<br>-rw——- 1 libvirt-qemu kvm   11G Dec 30 22:03 &#x2F;var&#x2F;lib&#x2F;libvirt&#x2F;images&#x2F;centos7-mooreyxia.qcow2</li>
+</ol>
+<p>#发现虚拟磁盘占用的空间并不大只有193k,其实是一种稀疏格式的文件。类似下面这种：<br>[root@ubuntu2204 ~]#dd if&#x3D;&#x2F;dev&#x2F;zero of&#x3D;f1.img bs&#x3D;1G count&#x3D;0 seek&#x3D;1<br>0+0 records in<br>0+0 records out<br>0 bytes copied, 0.000133668 s, 0.0 kB&#x2F;s<br>[root@ubuntu2204 ~]#ll f1.img -h<br>-rw-r–r– 1 root root 1.0G Dec 30 22:08 f1.img<br>#占用实际空间也就一个字节<br>[root@ubuntu2204 ~]#du -sh f1.img<br>0  f1.img使用虚拟磁盘创建新的虚拟机模板<br>#利用 osinfo-query命令查看支持的OS版本<br>[root@ubuntu2204 ~]#apt install -y libosinfo-bin<br>[root@ubuntu2204 images]#osinfo-query os|grep -i rocky<br> rocky-unknown        | Rocky Linux Unknown                                | unknown  | <a target="_blank" rel="noopener" href="http://rockylinux.org/rocky/unknown">http://rockylinux.org/rocky/unknown</a><br> rocky8-unknown       | Rocky Linux 8 Unknown                              | 8-unknown | <a target="_blank" rel="noopener" href="http://rockylinux.org/rocky/8-unknown">http://rockylinux.org/rocky/8-unknown</a><br> rocky8.4             | Rocky Linux 8.4                                    | 8.4      | <a target="_blank" rel="noopener" href="http://rockylinux.org/rocky/8.4">http://rockylinux.org/rocky/8.4</a><br> rocky8.5             | Rocky Linux 8.5                                    | 8.5      | <a target="_blank" rel="noopener" href="http://rockylinux.org/rocky/8.5">http://rockylinux.org/rocky/8.5</a><br> rocky8.6             | Rocky Linux 8.6                                    | 8.6      | <a target="_blank" rel="noopener" href="http://rockylinux.org/rocky/8.6">http://rockylinux.org/rocky/8.6</a><br> rocky9-unknown       | Rocky Linux 9 Unknown                              | 9-unknown | <a target="_blank" rel="noopener" href="http://rockylinux.org/rocky/9-unknown">http://rockylinux.org/rocky/9-unknown</a><br> rocky9.0             | Rocky Linux 9.0                                    | 9.0      | <a target="_blank" rel="noopener" href="http://rockylinux.org/rocky/9.0">http://rockylinux.org/rocky/9.0</a>  </p>
+<p>#利用复制的qcow2虚拟磁盘创建虚拟机<br>[root@ubuntu2204 ~]#ll &#x2F;var&#x2F;lib&#x2F;libvirt&#x2F;images&#x2F;*<br>-rw-r–r– 1 root         root      196928 Dec 30 22:05 &#x2F;var&#x2F;lib&#x2F;libvirt&#x2F;images&#x2F;centos7-mooreyxia2.qcow2<br>-rw——- 1 libvirt-qemu kvm  10739318784 Dec 30 22:22 &#x2F;var&#x2F;lib&#x2F;libvirt&#x2F;images&#x2F;centos7-mooreyxia.qcow2<br>[root@ubuntu2204 ~]#cd &#x2F;var&#x2F;lib&#x2F;libvirt&#x2F;images&#x2F;<br>[root@ubuntu2204 images]#mv centos7-mooreyxia2.qcow2 rocky8.qcow2<br>#查看虚拟硬盘大小,注意到只要正在运行的虚拟对应的硬盘文件所有者和组为qemu,而虚拟机关机的为root<br>[root@ubuntu2204 images]#ll<br>total 1676904<br>drwx–x–x 2 root         root        4096 Dec 30 22:28 .&#x2F;<br>drwxr-xr-x 7 root         root        4096 Dec 29 23:01 ..&#x2F;<br>-rw——- 1 libvirt-qemu kvm  10739318784 Dec 30 22:22 centos7-mooreyxia.qcow2<br>-rw-r–r– 1 root         root      196928 Dec 30 22:05 rocky8.qcow2<br>[root@ubuntu2204 images]#ls &#x2F;data&#x2F;isos&#x2F;<br>CentOS-7-x86_64-Minimal-2207-02.iso  Rocky-x86_64-minimal.iso</p>
+<p>#创建默认NAT模式的虚拟机,并不自动打开virt-viewer连接console,需要手动打开virt-manager 连接,并手动安装系统<br>[root@ubuntu2204 images]#virt-install –virt-type kvm –name rocky8 –ram 2048 –vcpus 2 –cdrom&#x3D;&#x2F;data&#x2F;isos&#x2F;Rocky-x86_64-minimal.iso –disk path&#x3D;&#x2F;var&#x2F;lib&#x2F;libvirt&#x2F;images&#x2F;rocky8.qcow2 –network network&#x3D;default –graphics vnc,listen&#x3D;0.0.0.0 –noautoconsole –os-variant&#x3D;rocky8.6</p>
+<p>Starting install…<br>Creating domain…                                                                                                                                          |    0 B  00:00:00     </p>
+<h2 id="Domain-is-still-running-Installation-may-be-in-progress-You-can-reconnect-to-the-console-to-complete-the-installation-process-root-ubuntu2204-images-virsh-list-Id-Name-State"><a href="#Domain-is-still-running-Installation-may-be-in-progress-You-can-reconnect-to-the-console-to-complete-the-installation-process-root-ubuntu2204-images-virsh-list-Id-Name-State" class="headerlink" title="Domain is still running. Installation may be in progress.You can reconnect to the console to complete the installation process.[root@ubuntu2204 images]#virsh list Id   Name                State"></a>Domain is still running. Installation may be in progress.<br>You can reconnect to the console to complete the installation process.<br>[root@ubuntu2204 images]#virsh list<br> Id   Name                State</h2><p> 1    centos7-mooreyxia   running<br> 2    rocky8              running</p>
+<p>#一个虚拟机表现为一个进程<br>[root@ubuntu2204 images]#ps aux<br>…<br>libvirt+   28601  2.2  3.2 3799436 537036 ?      Sl   21:45   1:36 &#x2F;usr&#x2F;bin&#x2F;qemu-system-x86_64 -name guest&#x3D;centos7-mooreyxia,debug-threads&#x3D;on -S -object {“qom-type”:”secret”,”id”:<br>…<br>libvirt+   28950 60.9 13.2 4549116 2164032 ?     Sl   22:44   7:11 &#x2F;usr&#x2F;bin&#x2F;qemu-system-x86_64 -name guest&#x3D;rocky8,debug-threads&#x3D;on -S -object {“qom-type”:”secret”,”id”:”masterKey0<br>root       28956  0.0  0.0      0     0 ?        S    22:44   0:00 [kvm-nx-lpage-re]<br>root       28957  0.0  0.0      0     0 ?        S    22:44   0:00 [vhost-28950]<br>[root@ubuntu2204 images]#apt install -y psmisc<br>…<br>           ├─qemu-system-x86(28601)─┬─{qemu-system-x86}(28605)<br>           │                        ├─{qemu-system-x86}(28609)<br>           │                        ├─{qemu-system-x86}(28610)<br>           │                        ├─{qemu-system-x86}(28611)<br>           │                        └─{qemu-system-x86}(28613)<br>           ├─qemu-system-x86(28950)─┬─{qemu-system-x86}(28954)<br>           │                        ├─{qemu-system-x86}(28958)<br>           │                        ├─{qemu-system-x86}(28960)<br>           │                        ├─{qemu-system-x86}(28961)<br>           │                        ├─{qemu-system-x86}(28963)<br>           │                        ├─{qemu-system-x86}(29040)<br>           │                        └─{qemu-system-x86}(29075)<br><img src="/../img/092d6b54082e04ec1c20121058c692bc5844b5.png"><br><img src="/../img/f8bada3025892d742fe1746c42ead86f562ddc.png"></p>
+<p>#宿主机远程连接<br>[root@ubuntu2204 ~]#ssh 192.168.122.14<br>The authenticity of host ‘192.168.122.14 (192.168.122.14)’ can’t be established.<br>ED25519 key fingerprint is SHA256:zIUbzb+J5KknMgrYqJpK&#x2F;IgOfCfnojkR2mZoTm74j18.<br>This key is not known by any other names<br>Are you sure you want to continue connecting (yes&#x2F;no&#x2F;[fingerprint])? yes<br>Warning: Permanently added ‘192.168.122.14’ (ED25519) to the list of known hosts.<br><a href="mailto:&#114;&#x6f;&#111;&#116;&#x40;&#49;&#57;&#50;&#46;&#x31;&#54;&#56;&#46;&#x31;&#x32;&#50;&#46;&#x31;&#x34;">&#114;&#x6f;&#111;&#116;&#x40;&#49;&#57;&#50;&#46;&#x31;&#54;&#56;&#46;&#x31;&#x32;&#50;&#46;&#x31;&#x34;</a>‘s password:<br>Last login: Fri Dec 30 23:09:20 2022<br>[root@Rocky8 ~]# ip a<br>1: lo: &lt;LOOPBACK,UP,LOWER_UP&gt; mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000<br>    link&#x2F;loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00<br>    inet 127.0.0.1&#x2F;8 scope host lo<br>       valid_lft forever preferred_lft forever<br>    inet6 ::1&#x2F;128 scope host<br>       valid_lft forever preferred_lft forever<br>2: enp1s0: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1500 qdisc fq_codel state UP group default qlen 1000<br>    link&#x2F;ether 52:54:00:b4:c5:4b brd ff:ff:ff:ff:ff:ff<br>    inet 192.168.122.14&#x2F;24 brd 192.168.122.255 scope global dynamic noprefixroute enp1s0<br>       valid_lft 3427sec preferred_lft 3427sec<br>    inet6 fe80::5054:ff:feb4:c54b&#x2F;64 scope link noprefixroute<br>       valid_lft forever preferred_lft forever<br>#系统初始化<br>[root@Rocky8 ~]# getenforce<br>Enforcing<br>[root@Rocky8 ~]# vi &#x2F;etc&#x2F;selinux&#x2F;config<br>[root@Rocky8 ~]# cat &#x2F;etc&#x2F;selinux&#x2F;config </p>
+<h1 id="This-file-controls-the-state-of-SELinux-on-the-system"><a href="#This-file-controls-the-state-of-SELinux-on-the-system" class="headerlink" title="This file controls the state of SELinux on the system."></a>This file controls the state of SELinux on the system.</h1><h1 id="SELINUX-x3D-can-take-one-of-these-three-values"><a href="#SELINUX-x3D-can-take-one-of-these-three-values" class="headerlink" title="SELINUX&#x3D; can take one of these three values:"></a>SELINUX&#x3D; can take one of these three values:</h1><h1 id="enforcing-SELinux-security-policy-is-enforced"><a href="#enforcing-SELinux-security-policy-is-enforced" class="headerlink" title="enforcing - SELinux security policy is enforced."></a>enforcing - SELinux security policy is enforced.</h1><h1 id="permissive-SELinux-prints-warnings-instead-of-enforcing"><a href="#permissive-SELinux-prints-warnings-instead-of-enforcing" class="headerlink" title="permissive - SELinux prints warnings instead of enforcing."></a>permissive - SELinux prints warnings instead of enforcing.</h1><h1 id="disabled-No-SELinux-policy-is-loaded"><a href="#disabled-No-SELinux-policy-is-loaded" class="headerlink" title="disabled - No SELinux policy is loaded."></a>disabled - No SELinux policy is loaded.</h1><p>SELINUX&#x3D;disabled</p>
+<h1 id="SELINUXTYPE-x3D-can-take-one-of-these-three-values"><a href="#SELINUXTYPE-x3D-can-take-one-of-these-three-values" class="headerlink" title="SELINUXTYPE&#x3D; can take one of these three values:"></a>SELINUXTYPE&#x3D; can take one of these three values:</h1><h1 id="targeted-Targeted-processes-are-protected"><a href="#targeted-Targeted-processes-are-protected" class="headerlink" title="targeted - Targeted processes are protected,"></a>targeted - Targeted processes are protected,</h1><h1 id="minimum-Modification-of-targeted-policy-Only-selected-processes-are-protected"><a href="#minimum-Modification-of-targeted-policy-Only-selected-processes-are-protected" class="headerlink" title="minimum - Modification of targeted policy. Only selected processes are protected."></a>minimum - Modification of targeted policy. Only selected processes are protected.</h1><h1 id="mls-Multi-Level-Security-protection"><a href="#mls-Multi-Level-Security-protection" class="headerlink" title="mls - Multi Level Security protection."></a>mls - Multi Level Security protection.</h1><p>SELINUXTYPE&#x3D;targeted</p>
+<p>[root@Rocky8 ~]# systemctl status firewalld<br>● firewalld.service - firewalld - dynamic firewall daemon<br>   Loaded: loaded (&#x2F;usr&#x2F;lib&#x2F;systemd&#x2F;system&#x2F;firewalld.service; enabled; vendor preset: enabled)<br>   Active: active (running) since Fri 2022-12-30 23:08:14 CST; 7min ago<br>     Docs: man:firewalld(1)<br> Main PID: 904 (firewalld)<br>    Tasks: 2 (limit: 11352)<br>   Memory: 38.1M<br>   CGroup: &#x2F;system.slice&#x2F;firewalld.service<br>           └─904 &#x2F;usr&#x2F;libexec&#x2F;platform-python -s &#x2F;usr&#x2F;sbin&#x2F;firewalld –nofork –nopid<br>[root@Rocky8 ~]# systemctl disable –now firewalld<br>Removed &#x2F;etc&#x2F;systemd&#x2F;system&#x2F;multi-user.target.wants&#x2F;firewalld.service.<br>Removed &#x2F;etc&#x2F;systemd&#x2F;system&#x2F;dbus-org.fedoraproject.FirewallD1.service.<br>[root@Rocky8 ~]# systemctl status firewalld<br>● firewalld.service - firewalld - dynamic firewall daemon<br>   Loaded: loaded (&#x2F;usr&#x2F;lib&#x2F;systemd&#x2F;system&#x2F;firewalld.service; disabled; vendor preset: enabled)<br>   Active: inactive (dead)<br>     Docs: man:firewalld(1)</p>
+<p>Dec 30 23:08:13 localhost.localdomain systemd[1]: Starting firewalld - dynamic firewall daemon…<br>Dec 30 23:08:14 localhost.localdomain systemd[1]: Started firewalld - dynamic firewall daemon.<br>Dec 30 23:08:14 localhost.localdomain firewalld[904]: WARNING: AllowZoneDrifting is enabled. This is considered an insecure configuration option. It will be removed in a future r&gt;<br>Dec 30 23:15:31 Rocky8 systemd[1]: Stopping firewalld - dynamic firewall daemon…<br>Dec 30 23:15:31 Rocky8 systemd[1]: firewalld.service: Succeeded.<br>Dec 30 23:15:31 Rocky8 systemd[1]: Stopped firewalld - dynamic firewall daemon.</p>
+<p>[root@Rocky8 ~]# ip a<br>1: lo: &lt;LOOPBACK,UP,LOWER_UP&gt; mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000<br>    link&#x2F;loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00<br>    inet 127.0.0.1&#x2F;8 scope host lo<br>       valid_lft forever preferred_lft forever<br>    inet6 ::1&#x2F;128 scope host<br>       valid_lft forever preferred_lft forever<br>2: enp1s0: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1500 qdisc fq_codel state UP group default qlen 1000<br>    link&#x2F;ether 52:54:00:b4:c5:4b brd ff:ff:ff:ff:ff:ff<br>    inet 192.168.122.14&#x2F;24 brd 192.168.122.255 scope global dynamic noprefixroute enp1s0<br>       valid_lft 2999sec preferred_lft 2999sec<br>    inet6 fe80::5054:ff:feb4:c54b&#x2F;64 scope link noprefixroute<br>       valid_lft forever preferred_lft forever<br>[root@Rocky8 ~]# vi &#x2F;etc&#x2F;default&#x2F;grub<br>[root@Rocky8 ~]# cat &#x2F;etc&#x2F;default&#x2F;grub<br>GRUB_TIMEOUT&#x3D;5<br>GRUB_DISTRIBUTOR&#x3D;”$(sed ‘s, release .*$,,g’ &#x2F;etc&#x2F;system-release)”<br>GRUB_DEFAULT&#x3D;saved<br>GRUB_DISABLE_SUBMENU&#x3D;true<br>GRUB_TERMINAL_OUTPUT&#x3D;”console”<br>GRUB_CMDLINE_LINUX&#x3D;”crashkernel&#x3D;auto resume&#x3D;&#x2F;dev&#x2F;mapper&#x2F;rl-swap rd.lvm.lv&#x3D;rl&#x2F;root rd.lvm.lv&#x3D;rl&#x2F;swap net.ifnames&#x3D;0”<br>GRUB_DISABLE_RECOVERY&#x3D;”true”<br>GRUB_ENABLE_BLSCFG&#x3D;true<br>[root@Rocky8 ~]# grub2-mkconfig -o &#x2F;boot&#x2F;grub2&#x2F;grub.cfg<br>Generating grub configuration file …<br>done</p>
+<p>[root@Rocky8 ~]# cd &#x2F;etc&#x2F;yum.repos.d&#x2F;<br>[root@Rocky8 yum.repos.d]# ls<br>Rocky-AppStream.repo  Rocky-Debuginfo.repo  Rocky-Extras.repo            Rocky-Media.repo  Rocky-Plus.repo        Rocky-ResilientStorage.repo  Rocky-Sources.repo<br>Rocky-BaseOS.repo     Rocky-Devel.repo      Rocky-HighAvailability.repo  Rocky-NFV.repo    Rocky-PowerTools.repo  Rocky-RT.repo<br>[root@Rocky8 yum.repos.d]# mkdir -pv bak<br>mkdir: created directory ‘bak’<br>[root@Rocky8 yum.repos.d]# mv *.repo bak&#x2F;<br>[root@Rocky8 yum.repos.d]# ls<br>bak</p>
+<p>#从远程备份拉取yum仓配置<br>[root@rocky8 ~]#cat &#x2F;etc&#x2F;yum.repos.d&#x2F;base.repo<br>[BaseOS]<br>name&#x3D;BaseOS<br>baseurl&#x3D;<a target="_blank" rel="noopener" href="https://mirrors.aliyun.com/rockylinux/$releasever/BaseOS/x86_64/os/">https://mirrors.aliyun.com/rockylinux/$releasever/BaseOS/x86_64/os/</a><br>        <a target="_blank" rel="noopener" href="http://mirrors.163.com/rocky/$releasever/BaseOS/x86_64/os/">http://mirrors.163.com/rocky/$releasever/BaseOS/x86_64/os/</a><br>        <a target="_blank" rel="noopener" href="https://mirrors.nju.edu.cn/rocky/$releasever/BaseOS/x86_64/os/">https://mirrors.nju.edu.cn/rocky/$releasever/BaseOS/x86_64/os/</a><br>        <a target="_blank" rel="noopener" href="https://mirrors.sjtug.sjtu.edu.cn/rocky/$releasever/BaseOS/x86_64/os/">https://mirrors.sjtug.sjtu.edu.cn/rocky/$releasever/BaseOS/x86_64/os/</a><br>        <a target="_blank" rel="noopener" href="http://mirrors.sdu.edu.cn/rocky/$releasever/BaseOS/x86_64/os/">http://mirrors.sdu.edu.cn/rocky/$releasever/BaseOS/x86_64/os/</a><br>gpgcheck&#x3D;0</p>
+<p>[AppStream]<br>name&#x3D;AppStream<br>baseurl&#x3D;<a target="_blank" rel="noopener" href="https://mirrors.aliyun.com/rockylinux/$releasever/AppStream/x86_64/os/">https://mirrors.aliyun.com/rockylinux/$releasever/AppStream/x86_64/os/</a><br>        <a target="_blank" rel="noopener" href="http://mirrors.163.com/rocky/$releasever/AppStream/x86_64/os/">http://mirrors.163.com/rocky/$releasever/AppStream/x86_64/os/</a><br>        <a target="_blank" rel="noopener" href="https://mirrors.nju.edu.cn/rocky/$releasever/AppStream/x86_64/os/">https://mirrors.nju.edu.cn/rocky/$releasever/AppStream/x86_64/os/</a><br>        <a target="_blank" rel="noopener" href="https://mirrors.sjtug.sjtu.edu.cn/rocky/$releasever/AppStream/x86_64/os/">https://mirrors.sjtug.sjtu.edu.cn/rocky/$releasever/AppStream/x86_64/os/</a><br>        <a target="_blank" rel="noopener" href="http://mirrors.sdu.edu.cn/rocky/$releasever/AppStream/x86_64/os/">http://mirrors.sdu.edu.cn/rocky/$releasever/AppStream/x86_64/os/</a><br>gpgcheck&#x3D;0</p>
+<p>[extras]<br>name&#x3D;extras<br>baseurl&#x3D;<a target="_blank" rel="noopener" href="https://mirrors.aliyun.com/rockylinux/$releasever/extras/$basearch/os">https://mirrors.aliyun.com/rockylinux/$releasever/extras/$basearch/os</a><br>        <a target="_blank" rel="noopener" href="http://mirrors.163.com/rocky/$releasever/extras/$basearch/os">http://mirrors.163.com/rocky/$releasever/extras/$basearch/os</a><br>        <a target="_blank" rel="noopener" href="https://mirrors.nju.edu.cn/rocky/$releasever/extras/$basearch/os">https://mirrors.nju.edu.cn/rocky/$releasever/extras/$basearch/os</a><br>        <a target="_blank" rel="noopener" href="https://mirrors.sjtug.sjtu.edu.cn/rocky/$releasever/extras/$basearch/os">https://mirrors.sjtug.sjtu.edu.cn/rocky/$releasever/extras/$basearch/os</a><br>        <a target="_blank" rel="noopener" href="http://mirrors.sdu.edu.cn/rocky/$releasever/extras/$basearch/os">http://mirrors.sdu.edu.cn/rocky/$releasever/extras/$basearch/os</a> </p>
+<p>gpgcheck&#x3D;0<br>enabled&#x3D;1</p>
+<p>[PowerTools]<br>name&#x3D;CentOS-$releasever - PowerTools<br>baseurl&#x3D;<a target="_blank" rel="noopener" href="https://mirrors.aliyun.com/rockylinux/$releasever/PowerTools/$basearch/os/">https://mirrors.aliyun.com/rockylinux/$releasever/PowerTools/$basearch/os/</a><br>        <a target="_blank" rel="noopener" href="http://mirrors.163.com/rocky/$releasever/PowerTools/$basearch/os/">http://mirrors.163.com/rocky/$releasever/PowerTools/$basearch/os/</a><br>        <a target="_blank" rel="noopener" href="http://mirrors.sdu.edu.cn/rocky/$releasever/PowerTools/$basearch/os/">http://mirrors.sdu.edu.cn/rocky/$releasever/PowerTools/$basearch/os/</a><br>        <a target="_blank" rel="noopener" href="https://mirrors.sjtug.sjtu.edu.cn/rocky/$releasever/PowerTools/$basearch/os/">https://mirrors.sjtug.sjtu.edu.cn/rocky/$releasever/PowerTools/$basearch/os/</a><br>        <a target="_blank" rel="noopener" href="http://mirrors.sdu.edu.cn/rocky/$releasever/PowerTools/$basearch/os/">http://mirrors.sdu.edu.cn/rocky/$releasever/PowerTools/$basearch/os/</a><br>gpgcheck&#x3D;0<br>enabled&#x3D;0</p>
+<p>[epel]<br>name&#x3D;EPEL<br>baseurl&#x3D;<a target="_blank" rel="noopener" href="https://mirror.tuna.tsinghua.edu.cn/epel/$releasever/Everything/$basearch">https://mirror.tuna.tsinghua.edu.cn/epel/$releasever/Everything/$basearch</a><br>        <a target="_blank" rel="noopener" href="https://mirrors.cloud.tencent.com/epel/$releasever/Everything/$basearch">https://mirrors.cloud.tencent.com/epel/$releasever/Everything/$basearch</a><br>        <a target="_blank" rel="noopener" href="https://mirrors.huaweicloud.com/epel/$releasever/Everything/$basearch">https://mirrors.huaweicloud.com/epel/$releasever/Everything/$basearch</a><br>        <a target="_blank" rel="noopener" href="https://mirrors.aliyun.com/epel/$releasever/Everything/$basearch">https://mirrors.aliyun.com/epel/$releasever/Everything/$basearch</a><br>gpgcheck&#x3D;0<br>enabled&#x3D;1</p>
+<p>#cp到宿主机<br>[root@rocky8 ~]#scp &#x2F;etc&#x2F;yum.repos.d&#x2F;base.repo 10.0.0.200:<br><a href="mailto:&#114;&#x6f;&#x6f;&#x74;&#64;&#x31;&#48;&#46;&#48;&#46;&#48;&#x2e;&#x32;&#x30;&#48;">&#114;&#x6f;&#x6f;&#x74;&#64;&#x31;&#48;&#46;&#48;&#46;&#48;&#x2e;&#x32;&#x30;&#48;</a>‘s password:<br>base.repo<br>#再cp到虚拟机<br>[root@Rocky8 yum.repos.d]# scp 10.0.0.200:&#x2F;root&#x2F;base.repo .<br>The authenticity of host ‘10.0.0.200 (10.0.0.200)’ can’t be established.<br>ECDSA key fingerprint is SHA256:tnqFcM0vAKUTFBp39MI8wNU3P0OgZphFCM4&#x2F;jXbcSDM.<br>Are you sure you want to continue connecting (yes&#x2F;no&#x2F;[fingerprint])? yes<br>Warning: Permanently added ‘10.0.0.200’ (ECDSA) to the list of known hosts.<br><a href="mailto:&#x72;&#x6f;&#x6f;&#116;&#x40;&#49;&#48;&#46;&#48;&#x2e;&#x30;&#46;&#x32;&#48;&#48;">&#x72;&#x6f;&#x6f;&#116;&#x40;&#49;&#48;&#46;&#48;&#x2e;&#x30;&#46;&#x32;&#48;&#48;</a>‘s password:<br>base.repo                                                                                                                                        100% 2062   975.1KB&#x2F;s   00:00<br>[root@Rocky8 yum.repos.d]# ll<br>total 8<br>drwxr-xr-x. 2 root root 4096 Dec 30 23:21 bak<br>-rw-r–r–. 1 root root 2062 Dec 30 23:30 base.repo<br>[root@Rocky8 yum.repos.d]# yum update;yum install -y wget vim lrzsz net-tools<br>…<br>Installed:<br>  gpm-libs-1.20.7-17.el8.x86_64             libmetalink-0.1.3-7.el8.x86_64              lrzsz-0.12.20-43.el8.x86_64                   net-tools-2.0-0.52.20160912git.el8.x86_64<br>  vim-common-2:8.0.1763-19.el8_6.4.x86_64   vim-enhanced-2:8.0.1763-19.el8_6.4.x86_64   vim-filesystem-2:8.0.1763-19.el8_6.4.noarch   wget-1.19.5-10.el8.x86_64                  </p>
+<h2 id="Complete-至此Rocky8-6虚拟机模板完成-root-Rocky8-yum-repos-d-rebootConnection-to-192-168-122-14-closed-by-remote-host-Connection-to-192-168-122-14-closed-利用virt-clone克隆新的虚拟机-基于已有的虚拟机克隆生成新的虚拟机-root-ubuntu2204-images-virsh-list-–all-Id-Name-State"><a href="#Complete-至此Rocky8-6虚拟机模板完成-root-Rocky8-yum-repos-d-rebootConnection-to-192-168-122-14-closed-by-remote-host-Connection-to-192-168-122-14-closed-利用virt-clone克隆新的虚拟机-基于已有的虚拟机克隆生成新的虚拟机-root-ubuntu2204-images-virsh-list-–all-Id-Name-State" class="headerlink" title="Complete!#至此Rocky8.6虚拟机模板完成[root@Rocky8 yum.repos.d]# rebootConnection to 192.168.122.14 closed by remote host.Connection to 192.168.122.14 closed.利用virt-clone克隆新的虚拟机#基于已有的虚拟机克隆生成新的虚拟机[root@ubuntu2204 images]#virsh list –all Id   Name                State"></a>Complete!<br>#至此Rocky8.6虚拟机模板完成<br>[root@Rocky8 yum.repos.d]# reboot<br>Connection to 192.168.122.14 closed by remote host.<br>Connection to 192.168.122.14 closed.利用virt-clone克隆新的虚拟机<br>#基于已有的虚拟机克隆生成新的虚拟机<br>[root@ubuntu2204 images]#virsh list –all<br> Id   Name                State</h2><p> 1    centos7-mooreyxia   running</p>
+<ul>
+<li>rocky8              shut off</li>
+</ul>
+<p>[root@ubuntu2204 images]#virt-clone -o rocky8 -f &#x2F;var&#x2F;lib&#x2F;libvirt&#x2F;images&#x2F;rocky8-template.qcow2 -n rocky8-template<br>Allocating ‘rocky8-template.qcow2’                                                                                                                          | 3.5 GB  00:10:29 … </p>
+<p>Clone ‘rocky8-template’ created successfully.</p>
+<h2 id="o-rocky8-指已存在的虚拟机的名称-f-x2F-var-x2F-lib-x2F-libvirt-x2F-images-x2F-rocky8-3-qcow2-新虚拟机磁盘文件路径，此文件自动生成，不需要事先创建-n-rocky8-3-新虚拟机的名称-root-ubuntu2204-images-virsh-list-–all-Id-Name-State"><a href="#o-rocky8-指已存在的虚拟机的名称-f-x2F-var-x2F-lib-x2F-libvirt-x2F-images-x2F-rocky8-3-qcow2-新虚拟机磁盘文件路径，此文件自动生成，不需要事先创建-n-rocky8-3-新虚拟机的名称-root-ubuntu2204-images-virsh-list-–all-Id-Name-State" class="headerlink" title="-o rocky8 #指已存在的虚拟机的名称-f &#x2F;var&#x2F;lib&#x2F;libvirt&#x2F;images&#x2F;rocky8-3.qcow2 #新虚拟机磁盘文件路径，此文件自动生成，不需要事先创建-n rocky8-3 #新虚拟机的名称[root@ubuntu2204 images]#virsh list –all Id   Name                State"></a>-o rocky8 #指已存在的虚拟机的名称<br>-f &#x2F;var&#x2F;lib&#x2F;libvirt&#x2F;images&#x2F;rocky8-3.qcow2 #新虚拟机磁盘文件路径，此文件自动生成，不需要<br>事先创建<br>-n rocky8-3 #新虚拟机的名称<br>[root@ubuntu2204 images]#virsh list –all<br> Id   Name                State</h2><ul>
+<li>centos7-mooreyxia   shut off</li>
+<li>rocky8              shut off</li>
+<li>rocky8-template     shut off至此，就可以在裸机服务器上安装Linux，再KVM虚拟化安装任意操作系统的虚拟机了。</li>
+</ul>
+<p>我是moore,大家一起加油！</p>
+
+      
+       <hr><span style="font-style: italic;color: gray;"> 转载请注明来源，欢迎对文章中的引用来源进行考证，欢迎指出任何有错误或不够清晰的表达。可以在下面评论区评论，也可以邮件至 jaytp@qq.com </span>
+    </div>
+</article>
+
+
+<p>
+    <a  class="dashang" onclick="dashangToggle()">💰</a>
+</p>
+
+
+
+
+
+
+    
+
+
+
+
+    </div>
+    <div class="copyright">
+        <p class="footer-entry">
+    ©2016-2020 Yelog
+</p>
+<p class="footer-entry">Built with <a href="https://hexo.io/" target="_blank">Hexo</a> and <a href="https://github.com/yelog/hexo-theme-3-hexo" target="_blank">3-hexo</a> theme</p>
+
+    </div>
+    <div class="full-toc">
+        <button class="full" data-title="切换全屏 快捷键 s"><span class="min "></span></button>
+<a class="" id="rocket" ></a>
+
+    </div>
+</div>
+
+<div class="hide_box" onclick="dashangToggle()"></div>
+<div class="shang_box">
+    <a class="shang_close"  onclick="dashangToggle()">×</a>
+    <div class="shang_tit">
+        <p>Help us with donation</p>
+    </div>
+    <div class="shang_payimg">
+        <div class="pay_img">
+            <img src="/img/alipay.jpg" class="alipay" title="扫码支持">
+            <img src="/img/weixin.jpg" class="weixin" title="扫码支持">
+        </div>
+    </div>
+    <div class="shang_payselect">
+        <span><label><input type="radio" name="pay" checked value="alipay">alipay</label></span><span><label><input type="radio" name="pay" value="weixin">weixin</label></span>
+    </div>
+</div>
+
+
+</body>
+<script src="/js/jquery.pjax.js?v=1.1.0" ></script>
+
+<script src="/js/script.js?v=1.1.0" ></script>
+<script>
+    var img_resize = 'default';
+    function initArticle() {
+        /*渲染对应的表格样式*/
+        
+            $("#post .pjax table").addClass("green_title");
+        
+
+        /*渲染打赏样式*/
+        
+        $("input[name=pay]").on("click", function () {
+            if($("input[name=pay]:checked").val()=="weixin"){
+                $(".shang_box .shang_payimg .pay_img").addClass("weixin_img");
+            } else {
+                $(".shang_box .shang_payimg .pay_img").removeClass("weixin_img");
+            }
+        })
+        
+
+        /*高亮代码块行号*/
+        
+
+        /*访问数量*/
+        
+        $.getScript("//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js");
+        
+
+        /*代码高亮，行号对齐*/
+        $('.pre-numbering').css('line-height',$('.has-numbering').css('line-height'));
+
+        
+        
+    }
+
+    /*打赏页面隐藏与展示*/
+    
+    function dashangToggle() {
+        $(".shang_box").fadeToggle();
+        $(".hide_box").fadeToggle();
+    }
+    
+
+</script>
+
+<!--加入行号的高亮代码块样式-->
+
+<!--自定义样式设置-->
+<style>
+    
+    
+    .nav {
+        width: 542px;
+    }
+    .nav.fullscreen {
+        margin-left: -542px;
+    }
+    .nav-left {
+        width: 120px;
+    }
+    
+    
+    @media screen and (max-width: 1468px) {
+        .nav {
+            width: 492px;
+        }
+        .nav.fullscreen {
+            margin-left: -492px;
+        }
+        .nav-left {
+            width: 100px;
+        }
+    }
+    
+    
+    @media screen and (max-width: 1024px) {
+        .nav {
+            width: 492px;
+            margin-left: -492px
+        }
+        .nav.fullscreen {
+            margin-left: 0;
+        }
+    }
+    
+    @media screen and (max-width: 426px) {
+        .nav {
+            width: 100%;
+        }
+        .nav-left {
+            width: 100%;
+        }
+    }
+    
+    
+    .nav-right .title-list nav a .post-title, .nav-right .title-list #local-search-result a .post-title {
+        color: #383636;
+    }
+    
+    
+    .nav-right .title-list nav a .post-date, .nav-right .title-list #local-search-result a .post-date {
+        color: #5e5e5f;
+    }
+    
+    
+    .nav-right nav a.hover, #local-search-result a.hover{
+        background-color: #e2e0e0;
+    }
+    
+    
+
+    /*列表样式*/
+    
+
+    /* 背景图样式 */
+    
+    
+
+
+    /*引用块样式*/
+    
+
+    /*文章列表背景图*/
+    
+
+    
+</style>
+
+
+
+
+
+
+
+</html>

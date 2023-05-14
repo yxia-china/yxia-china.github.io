@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>44-KVM虚拟化-存储管理和磁盘扩容 | Hexo</title>
+  <meta name="keywords" content="">
+  <meta name="description" content="44-KVM虚拟化-存储管理和磁盘扩容 | Hexo">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="description" content="基于现有虚拟机磁盘为模版创建新的虚拟机使用 virt-install 创建虚拟机• 虽然使用virt-manager 可以方便的管理虚拟机,但如果需要批量进行虚拟机的创建管理,命令行工具virtinstall更加方便和适合案例：利用 qemu-img命令创建虚拟磁盘#注意: qemu-img create 一定要确认对应路径下没有此文件,如果存在将覆盖原文件  确认现有的虚拟磁盘文件[root@u">
+<meta property="og:type" content="article">
+<meta property="og:title" content="42-KVM虚拟化-基于现有虚拟机磁盘为模版创建新的虚拟机">
+<meta property="og:url" content="http://example.com/2023/05/14/42-KVM%E8%99%9A%E6%8B%9F%E5%8C%96-%E5%9F%BA%E4%BA%8E%E7%8E%B0%E6%9C%89%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%A3%81%E7%9B%98%E4%B8%BA%E6%A8%A1%E7%89%88%E5%88%9B%E5%BB%BA%E6%96%B0%E7%9A%84%E8%99%9A%E6%8B%9F%E6%9C%BA/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="基于现有虚拟机磁盘为模版创建新的虚拟机使用 virt-install 创建虚拟机• 虽然使用virt-manager 可以方便的管理虚拟机,但如果需要批量进行虚拟机的创建管理,命令行工具virtinstall更加方便和适合案例：利用 qemu-img命令创建虚拟磁盘#注意: qemu-img create 一定要确认对应路径下没有此文件,如果存在将覆盖原文件  确认现有的虚拟磁盘文件[root@u">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="http://example.com/img/092d6b54082e04ec1c20121058c692bc5844b5.png">
+<meta property="og:image" content="http://example.com/img/f8bada3025892d742fe1746c42ead86f562ddc.png">
+<meta property="article:published_time" content="2023-05-14T08:21:34.888Z">
+<meta property="article:modified_time" content="2023-05-14T08:23:40.552Z">
+<meta property="article:author" content="John Doe">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/img/092d6b54082e04ec1c20121058c692bc5844b5.png">
+
+
+<link rel="icon" href="/img/avatar.jpg">
+
+<link href="/css/style.css?v=1.1.0" rel="stylesheet">
+
+<link href="/css/hl_theme/atom-light.css?v=1.1.0" rel="stylesheet">
+
+<link href="//cdn.jsdelivr.net/npm/animate.css@4.1.0/animate.min.css" rel="stylesheet">
+
+<script src="//cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js"></script>
+<script src="/js/titleTip.js?v=1.1.0" ></script>
+
+<script src="//cdn.jsdelivr.net/npm/highlightjs@9.16.2/highlight.pack.min.js"></script>
+<script>
+    hljs.initHighlightingOnLoad();
+</script>
+
+<script src="//cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.min.js"></script>
+
+
+
+<script src="//cdn.jsdelivr.net/npm/jquery.cookie@1.4.1/jquery.cookie.min.js" ></script>
+
+<script src="/js/iconfont.js?v=1.1.0" ></script>
+
+<meta name="generator" content="Hexo 6.3.0"></head>
+<div style="display: none">
+  <input class="theme_disqus_on" value="false">
+  <input class="theme_preload_comment" value="">
+  <input class="theme_blog_path" value="">
+  <input id="theme_shortcut" value="true" />
+  <input id="theme_highlight_on" value="true" />
+  <input id="theme_code_copy" value="true" />
+</div>
+
+
+
+<body>
+<aside class="nav">
+    <div class="nav-left">
+        <a href="/"
+   class="avatar_target">
+    <img class="avatar"
+         src="/img/avatar.jpg"/>
+</a>
+<div class="author">
+    <span>John Doe</span>
+</div>
+
+<div class="icon">
+    
+        
+            <a title="rss"
+               href="/atom.xml"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-rss"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="github"
+               href="https://github.com/yelog"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-github"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="facebook"
+               href="https://www.facebook.com/faker.tops"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-facebook"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+    
+        
+    
+        
+            <a title="instagram"
+               href="https://www.facebook.com/faker.tops"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-instagram"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="reddit"
+               href="https://www.reddit.com/user/yelog/"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-reddit"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="weibo"
+               href="http://weibo.com/u/2307534817"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-weibo"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="jianshu"
+               href="https://www.jianshu.com/u/ff56736de7cf"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-jianshu"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="zhihu"
+               href="https://www.zhihu.com/people/jaytp/activities"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-zhihu"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+    
+        
+            <a title="oschina"
+               href="https://my.oschina.net/yelog"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-oschina"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+    
+        
+            <a title="email"
+               href="mailto:jaytp@qq.com"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-email"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="qq"
+               href="http://wpa.qq.com/msgrd?v=3&uin=872336115&site=qq&menu=yes"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-qq"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="kugou"
+               href="https://www.kugou.com/"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-kugou"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="neteasemusic"
+               href="https://music.163.com/#/user/home?id=88151013"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-neteasemusic"></use>
+                    </svg>
+                
+            </a>
+        
+    
+</div>
+
+
+
+
+<ul>
+    <li>
+        <div class="all active" data-rel="All">All
+            
+                <small>(36)</small>
+            
+        </div>
+    </li>
+    
+        
+            
+                <li>
+                    <div data-rel="SRE linux云计算">
+                        
+                        SRE linux云计算
+                        <small>(11)</small>
+                        
+                    </div>
+                    
+                </li>
+            
+        
+    
+        
+            
+                <li>
+                    <div data-rel="云原生">
+                        
+                        云原生
+                        <small>(10)</small>
+                        
+                    </div>
+                    
+                </li>
+            
+        
+    
+        
+            
+                <li>
+                    <div data-rel="PMP管理">
+                        
+                        PMP管理
+                        <small>(1)</small>
+                        
+                    </div>
+                    
+                </li>
+            
+        
+    
+        
+            
+                <li>
+                    <div data-rel="Python 爬虫">
+                        
+                        Python 爬虫
+                        <small>(14)</small>
+                        
+                    </div>
+                    
+                </li>
+            
+        
+    
+</ul>
+<div class="left-bottom">
+    <div class="menus">
+        
+            
+            
+            
+    </div>
+    <div>
+        
+            <a class="about  hasFriend  site_url"
+               
+               href="/about">About</a>
+        
+        <a style="width: 50%"
+                
+                                           class="friends">Friends</a>
+        
+    </div>
+</div>
+<input type="hidden" id="yelog_site_posts_number" value="36">
+
+<div style="display: none">
+    <span id="busuanzi_value_site_uv"></span>
+    <span id="busuanzi_value_site_pv"></span>
+</div>
+
+    </div>
+    <div class="nav-right">
+        <div class="friends-area">
+    <div class="friends-title">
+        Links
+        <i class="iconfont icon-left"></i>
+    </div>
+    <div class="friends-content">
+        <ul>
+            
+            <li><a target="_blank" href="http://yelog.org/">叶落阁</a></li>
+            
+        </ul>
+    </div>
+</div>
+        <div class="title-list">
+    <div class="right-top">
+        <div id="default-panel">
+            <i class="iconfont icon-search" data-title="搜索 快捷键 i"></i>
+            <div class="right-title">All</div>
+            <i class="iconfont icon-file-tree" data-title="切换到大纲视图 快捷键 w"></i>
+        </div>
+        <div id="search-panel">
+            <i class="iconfont icon-left" data-title="返回"></i>
+            <input id="local-search-input" autocomplete="off"/>
+            <label class="border-line" for="input"></label>
+            <i class="iconfont icon-case-sensitive" data-title="大小写敏感"></i>
+            <i class="iconfont icon-tag" data-title="标签"></i>
+        </div>
+        <div id="outline-panel" style="display: none">
+            <div class="right-title">大纲</div>
+            <i class="iconfont icon-list" data-title="切换到文章列表"></i>
+        </div>
+    </div>
+
+    <div class="tags-list">
+    <input id="tag-search" />
+    <div class="tag-wrapper">
+        
+    </div>
+
+</div>
+
+    
+    <nav id="title-list-nav">
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/14/42-KVM%E8%99%9A%E6%8B%9F%E5%8C%96-%E5%9F%BA%E4%BA%8E%E7%8E%B0%E6%9C%89%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%A3%81%E7%9B%98%E4%B8%BA%E6%A8%A1%E7%89%88%E5%88%9B%E5%BB%BA%E6%96%B0%E7%9A%84%E8%99%9A%E6%8B%9F%E6%9C%BA/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="42-KVM虚拟化-基于现有虚拟机磁盘为模版创建新的虚拟机">42-KVM虚拟化-基于现有虚拟机磁盘为模版创建新的虚拟机</span>
+            <span class="post-date" title="2023-05-14 16:21:34">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%B8%89%E7%AB%A0-2-requests%20%E8%BF%9B%E9%98%B6%E2%80%A2%20%E7%88%AC%E5%8F%96%E6%9F%90%E8%A7%86%E9%A2%91%E7%BD%91%E7%9B%B8%E5%85%B3%E8%A7%86%E9%A2%91/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第三章-2-requests 进阶• 爬取某视频网相关视频">Python爬虫-第三章-2-requests 进阶• 爬取某视频网相关视频</span>
+            <span class="post-date" title="2023-05-14 16:20:20">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/14/44-KVM%E8%99%9A%E6%8B%9F%E5%8C%96-%E5%AD%98%E5%82%A8%E7%AE%A1%E7%90%86%E5%92%8C%E7%A3%81%E7%9B%98%E6%89%A9%E5%AE%B9/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="44-KVM虚拟化-存储管理和磁盘扩容">44-KVM虚拟化-存储管理和磁盘扩容</span>
+            <span class="post-date" title="2023-05-14 16:18:30">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%B8%89%E7%AB%A0-3-%E5%88%A9%E7%94%A8re%E6%A8%A1%E5%9D%97%E7%88%AC%E5%8F%96%E6%9F%90%E7%BD%91%E7%94%B5%E5%BD%B1%E6%8E%92%E8%A1%8C%E6%A6%9C/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第三章-3-利用re模块爬取某网电影排行榜">Python爬虫-第三章-3-利用re模块爬取某网电影排行榜</span>
+            <span class="post-date" title="2023-05-14 16:16:51">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/14/46-Docker-Container%E5%AE%B9%E5%99%A8%E7%AE%A1%E7%90%86%E5%90%84%E7%A7%8D%E6%93%8D%E4%BD%9C/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="46-Docker-Container容器管理各种操作">46-Docker-Container容器管理各种操作</span>
+            <span class="post-date" title="2023-05-14 16:14:04">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/14/47-Docker-Dockerfile%E9%95%9C%E5%83%8F%E5%88%9B%E5%BB%BA%E8%87%AA%E5%8A%A8%E5%8C%96%E7%94%9F%E4%BA%A7%E6%A1%88%E4%BE%8B/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="47-Docker-Dockerfile镜像创建自动化生产案例">47-Docker-Dockerfile镜像创建自动化生产案例</span>
+            <span class="post-date" title="2023-05-14 16:09:19">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/14/48-Docker-%E5%A4%9A%E5%AE%B9%E5%99%A8%E6%95%B0%E6%8D%AE%E5%85%B1%E4%BA%AB%E5%8F%8A%E6%8C%81%E4%B9%85%E5%8C%96/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="48-Docker-多容器数据共享及持久化">48-Docker-多容器数据共享及持久化</span>
+            <span class="post-date" title="2023-05-14 16:06:48">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%B8%89%E7%AB%A0-4-%E5%88%A9%E7%94%A8BeautifulSoup%E6%A8%A1%E5%9D%97%E7%88%AC%E5%8F%96%E6%9F%90%E7%BD%91%E5%A3%81%E7%BA%B8%E5%9B%BE%E5%BA%93%E5%9B%BE%E7%89%87/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第三章-4-利用BeautifulSoup模块爬取某网壁纸图库图片">Python爬虫-第三章-4-利用BeautifulSoup模块爬取某网壁纸图库图片</span>
+            <span class="post-date" title="2023-05-14 16:05:34">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%B8%89%E7%AB%A0-5-%E5%88%A9%E7%94%A8xpath%E7%88%AC%E5%8F%96%E6%9F%90%E5%85%AB%E6%88%92%E7%BD%91%E7%9B%B8%E5%85%B3%E8%AF%8D%E8%AF%AD%E5%85%AC%E5%8F%B8%E7%9A%84%E4%BF%A1%E6%81%AF%E5%92%8C%E4%BB%B7%E6%A0%BC/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第三章-5-利用xpath爬取某八戒网相关词语公司的信息和价格">Python爬虫-第三章-5-利用xpath爬取某八戒网相关词语公司的信息和价格</span>
+            <span class="post-date" title="2023-05-14 16:04:16">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%B8%89%E7%AB%A0-6-%E6%8A%93%E5%8F%96%E6%9F%90%E4%BA%91%E9%9F%B3%E4%B9%90%E8%AF%84%E8%AE%BA%E6%95%B0%E6%8D%AE/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第三章-6-抓取某云音乐评论数据">Python爬虫-第三章-6-抓取某云音乐评论数据</span>
+            <span class="post-date" title="2023-05-14 16:03:15">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-1-%E5%A4%9A%E7%BA%BF%E7%A8%8B%E5%A4%9A%E8%BF%9B%E7%A8%8B%E5%B9%B6%E5%8F%91%E7%88%AC%E5%8F%96%E2%85%A0/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-1-多线程多进程并发爬取Ⅰ">Python爬虫-第四章-1-多线程多进程并发爬取Ⅰ</span>
+            <span class="post-date" title="2023-05-14 16:01:27">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-1-%E5%A4%9A%E7%BA%BF%E7%A8%8B%E5%A4%9A%E8%BF%9B%E7%A8%8B%E5%B9%B6%E5%8F%91%E7%88%AC%E5%8F%96%E2%85%A1/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-1-多线程多进程并发爬取Ⅱ">Python爬虫-第四章-1-多线程多进程并发爬取Ⅱ</span>
+            <span class="post-date" title="2023-05-14 16:00:37">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-1-%E5%A4%9A%E7%BA%BF%E7%A8%8B%E5%A4%9A%E8%BF%9B%E7%A8%8B%E5%B9%B6%E5%8F%91%E7%88%AC%E5%8F%96%E2%85%A2-%E7%88%AC%E5%8F%96%E6%9F%90%E8%8F%9C%E5%B8%82%E5%9C%BA%E6%89%B9%E5%8F%91%E4%BB%B7%E6%95%B0%E6%8D%AE/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-1-多线程多进程并发爬取Ⅲ-爬取某菜市场批发价数据">Python爬虫-第四章-1-多线程多进程并发爬取Ⅲ-爬取某菜市场批发价数据</span>
+            <span class="post-date" title="2023-05-14 15:59:35">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-2-%E5%8D%8F%E7%A8%8B%E4%B8%8E%E5%BC%82%E6%AD%A5/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-2-协程与异步">Python爬虫-第四章-2-协程与异步</span>
+            <span class="post-date" title="2023-05-14 15:58:20">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/14/52-HAProxy-10%E7%A7%8D%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E8%B0%83%E5%BA%A6%E7%AE%97%E6%B3%95/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="52-HAProxy-10种负载均衡调度算法">52-HAProxy-10种负载均衡调度算法</span>
+            <span class="post-date" title="2023-05-14 15:56:12">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/14/55-Redis-%E7%BC%96%E8%AF%91%E9%83%A8%E7%BD%B2%E5%8F%8A%E6%95%B0%E6%8D%AE%E6%8C%81%E4%B9%85%E5%8C%96/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="55-Redis-编译部署及数据持久化">55-Redis-编译部署及数据持久化</span>
+            <span class="post-date" title="2023-05-14 15:54:02">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/14/56-Redis%E9%9B%86%E7%BE%A4-%E5%93%A8%E5%85%B5Sentinel%E6%90%AD%E5%BB%BA%E5%AE%9E%E7%8E%B0%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E9%AB%98%E5%8F%AF%E7%94%A8/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="56-Redis集群-哨兵Sentinel搭建实现负载均衡高可用">56-Redis集群-哨兵Sentinel搭建实现负载均衡高可用</span>
+            <span class="post-date" title="2023-05-14 15:41:50">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/14/998-%E6%90%AD%E5%BB%BA%E4%B8%80%E5%8F%B0%E7%A7%81%E7%94%A8%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%A8%E8%BF%87%E7%A8%8B/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="998-搭建一台私用服务器全过程">998-搭建一台私用服务器全过程</span>
+            <span class="post-date" title="2023-05-14 15:36:20">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/%20Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-3-%E5%A4%9A%E7%BA%BF%E7%A8%8B%E5%A4%9A%E8%BF%9B%E7%A8%8B%E6%8F%90%E5%8D%87%E4%BB%BB%E5%8A%A1%E6%89%A7%E8%A1%8C%E6%95%88%E7%8E%87/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-3-多线程多进程提升任务执行效率">Python爬虫-第四章-3-多线程多进程提升任务执行效率</span>
+            <span class="post-date" title="2023-05-14 15:35:16">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/%20Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-4-%E5%88%A9%E7%94%A8%E7%BA%BF%E7%A8%8B%E6%B1%A0%E5%92%8C%E8%BF%9B%E7%A8%8B%E6%B1%A0%E9%AB%98%E6%95%88%E7%88%AC%E5%8F%96%E5%8C%97%E4%BA%AC%E6%9F%90%E5%8F%91%E8%8F%9C%E5%9C%B0%E6%95%B0%E6%8D%AE/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-4-利用线程池和进程池高效爬取北京某发菜地数据">Python爬虫-第四章-4-利用线程池和进程池高效爬取北京某发菜地数据</span>
+            <span class="post-date" title="2023-05-14 15:34:07">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/13/%20Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-5-%E9%AB%98%E6%95%88%E6%8A%93%E5%8F%96%E8%A7%86%E9%A2%91%E7%BD%91%E7%AB%99%E8%A7%86%E9%A2%91%E8%B5%84%E6%BA%90%E8%87%B3%E6%9C%AC%E5%9C%B0/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-5-高效抓取视频网站视频资源至本地">Python爬虫-第四章-5-高效抓取视频网站视频资源至本地</span>
+            <span class="post-date" title="2023-05-13 20:13:14">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/13/%20Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%BA%94%E7%AB%A0-1-%E8%B6%85%E7%BA%A7%E9%B9%B0%E6%8F%92%E4%BB%B6%E5%AE%9E%E7%8E%B0%E8%87%AA%E5%8A%A8%E5%A1%AB%E5%86%99%E8%AF%86%E5%88%AB%E7%A0%81%E5%B9%B6%E7%99%BB%E5%BD%9512306%E7%BD%91%E7%AB%99/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第五章-1-超级鹰插件实现自动填写识别码并登录12306网站">Python爬虫-第五章-1-超级鹰插件实现自动填写识别码并登录12306网站</span>
+            <span class="post-date" title="2023-05-13 19:54:30">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/13/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%BA%94%E7%AB%A0-2-%E7%88%AC%E5%8F%96%E6%9F%90%E7%BD%91%E7%AB%99%E5%9B%BE%E5%BA%93/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第五章-2-爬取某网站图库">Python爬虫-第五章-2-爬取某网站图库</span>
+            <span class="post-date" title="2023-05-13 19:52:47">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/66-CICD%E6%8C%81%E7%BB%AD%E9%9B%86%E6%88%90%E5%B7%A5%E5%85%B7-Jenkins%E5%A3%B0%E6%98%8E%E5%BC%8FPipeline%E9%83%A8%E7%BD%B2JAVA%E7%A8%8B%E5%BA%8F%E7%94%9F%E4%BA%A7%E6%A1%88%E4%BE%8B(%E5%8C%85%E5%90%ABDocker%E6%A1%88%E4%BE%8B)/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="66-CICD持续集成工具-Jenkins声明式Pipeline部署JAVA程序生产案例(包含Docker案例)">66-CICD持续集成工具-Jenkins声明式Pipeline部署JAVA程序生产案例(包含Docker案例)</span>
+            <span class="post-date" title="2023-05-13 19:49:20">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/997-%E6%89%A9%E5%B1%95KVM%E8%99%9A%E6%8B%9F%E6%9C%BA%E9%80%BB%E8%BE%91%E5%8D%B7/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="67-日志分析系统ELK-ELK架构简述">67-日志分析系统ELK-ELK架构简述</span>
+            <span class="post-date" title="2023-05-13 19:47:57">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/67-%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90%E7%B3%BB%E7%BB%9FELK-ELK%E6%9E%B6%E6%9E%84%E7%AE%80%E8%BF%B0/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="67-日志分析系统ELK-ELK架构简述">67-日志分析系统ELK-ELK架构简述</span>
+            <span class="post-date" title="2023-05-13 19:46:06">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/68-%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90%E7%B3%BB%E7%BB%9FELK-Elasticsearch%E5%8D%95%E7%82%B9%E9%83%A8%E7%BD%B2%E5%92%8C%E9%85%8D%E7%BD%AE%E4%BC%98%E5%8C%96%EF%BC%88%E5%90%AB%E5%9F%BA%E4%BA%8EDocker%E5%8D%95%E7%82%B9%E9%83%A8%E7%BD%B2%E6%A1%88%E4%BE%8B%EF%BC%89/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="68-日志分析系统ELK-Elasticsearch单点部署和配置优化（含基于Docker单点部署案例）">68-日志分析系统ELK-Elasticsearch单点部署和配置优化（含基于Docker单点部署案例）</span>
+            <span class="post-date" title="2023-05-13 19:44:06">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/13/78-%E4%BA%91%E5%8E%9F%E7%94%9F%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-Kubernetes%E9%9B%86%E7%BE%A4%E8%8A%82%E7%82%B9%E6%A8%AA%E5%90%91%E4%BC%B8%E7%BC%A9%E5%8F%8A%E6%A0%B8%E5%BF%83%E7%BB%84%E4%BB%B6%E7%89%88%E6%9C%AC%E5%8D%87%E7%BA%A7/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="78-云原生操作系统-Kubernetes集群节点横向伸缩及核心组件版本升级">78-云原生操作系统-Kubernetes集群节点横向伸缩及核心组件版本升级</span>
+            <span class="post-date" title="2023-05-13 17:37:37">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/13/79-%E4%BA%91%E5%8E%9F%E7%94%9F%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-Kubectl%E5%91%BD%E4%BB%A4%E4%BB%A5%E5%8F%8AEtcd%E5%9F%BA%E4%BA%8E%E5%BF%AB%E7%85%A7%E7%9A%84%E6%95%B0%E6%8D%AE%E5%A4%87%E4%BB%BD%E4%B8%8E%E6%81%A2%E5%A4%8D/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="79-云原生操作系统-Kubectl命令以及Etcd基于快照的数据备份与恢复">79-云原生操作系统-Kubectl命令以及Etcd基于快照的数据备份与恢复</span>
+            <span class="post-date" title="2023-05-13 17:34:14">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All PMP管理 "
+           href="/2023/05/13/%E9%A2%84%E6%B5%8B%E5%9E%8B%E9%A1%B9%E7%9B%AE%E7%AE%A1%E7%90%86-6-%E9%A1%B9%E7%9B%AE%E8%BF%9B%E5%BA%A6%E7%AE%A1%E7%90%86%E2%85%A1/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="预测型项目管理-6-项目进度管理Ⅱ">预测型项目管理-6-项目进度管理Ⅱ</span>
+            <span class="post-date" title="2023-05-13 17:32:31">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/13/84-%E4%BA%91%E5%8E%9F%E7%94%9F%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-%E5%9F%BA%E4%BA%8Enerdctl%20+%20buildkitd%E6%9E%84%E5%BB%BA%E5%AE%B9%E5%99%A8%E9%95%9C%E5%83%8F20230513/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="84-云原生操作系统-基于nerdctl + buildkitd构建容器镜像">84-云原生操作系统-基于nerdctl + buildkitd构建容器镜像</span>
+            <span class="post-date" title="2023-05-13 17:22:54">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/13/86-%E4%BA%91%E5%8E%9F%E7%94%9F%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-Zookeeper%E9%9B%86%E7%BE%A4%E5%8F%8A%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%8A%A8%E6%80%81%E6%B3%A8%E5%86%8C%E5%92%8C%E5%8F%91%E7%8E%B0%E4%B8%9A%E5%8A%A1%E5%AE%B9%E5%99%A8%E5%8C%96%E6%A1%88%E4%BE%8B/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="86-云原生操作系统-Zookeeper集群及微服务动态注册和发现业务容器化案例">86-云原生操作系统-Zookeeper集群及微服务动态注册和发现业务容器化案例</span>
+            <span class="post-date" title="2023-05-13 17:13:23">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/13/87-%E4%BA%91%E5%8E%9F%E7%94%9F%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-Redis%E5%8D%95%E6%9C%BA%E5%92%8C%E9%9B%86%E7%BE%A4%E4%B8%9A%E5%8A%A1%E5%AE%B9%E5%99%A8%E5%8C%96%E6%A1%88%E4%BE%8B/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="87-云原生操作系统-Redis单机和集群业务容器化案例">87-云原生操作系统-Redis单机和集群业务容器化案例</span>
+            <span class="post-date" title="2023-05-13 17:08:49">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/997-%E4%BD%BF%E7%94%A8ChatGPT%E5%81%9A%E8%BF%90%E7%BB%B4%E5%BA%94%E7%94%A8%E5%B7%A5%E5%85%B7%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E8%A7%A3%E7%AD%94/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="997-使用ChatGPT做运维应用工具常见问题解答">997-使用ChatGPT做运维应用工具常见问题解答</span>
+            <span class="post-date" title="2023-05-13 15:49:52">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/%E5%A4%A7%E5%9E%8B%E4%BA%92%E8%81%94%E7%BD%91%E5%BE%AE%E6%9C%8D%E5%8A%A1%E6%9E%B6%E6%9E%84%E5%9B%BE/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="大型互联网微服务架构图">大型互联网微服务架构图</span>
+            <span class="post-date" title="2023-05-13 15:47:16">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/%E4%BA%91%E8%AE%A1%E7%AE%97%E6%9E%B6%E6%9E%84%E5%9B%BE/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="云计算架构图">云计算架构图</span>
+            <span class="post-date" title="2023-05-13 15:24:25">2023/05/13</span>
+        </a>
+        
+        <div id="no-item-tips">
+
+        </div>
+    </nav>
+    <div id="outline-list">
+    </div>
+</div>
+
+    </div>
+    <div class="hide-list">
+        <div class="semicircle" data-title="切换全屏 快捷键 s">
+            <div class="brackets first"><</div>
+            <div class="brackets">&gt;</div>
+        </div>
+    </div>
+</aside>
+<div id="post">
+    <div class="pjax">
+        <article id="post-44-KVM虚拟化-存储管理和磁盘扩容" class="article article-type-post" itemscope itemprop="blogPost">
+    
+        <h1 class="article-title">44-KVM虚拟化-存储管理和磁盘扩容</h1>
+    
+    <div class="article-meta">
+        
+        
+        
+        <span class="book">
+            <i class="iconfont icon-category"></i>
+            
+            
+            <a  data-rel="云原生">云原生</a>
+            
+        </span>
+        
+        
+    </div>
+    <div class="article-meta">
+        
+            Created At : <time class="date" title='Updated At: 2023-05-14 16:19:36'>2023-05-14 16:18</time>
+        
+    </div>
+    <div class="article-meta">
+        
+        
+        <span id="busuanzi_container_page_pv">
+            Views 👀 :<span id="busuanzi_value_page_pv">
+                <span class="count-comment">
+                    <span class="spinner">
+                      <div class="cube1"></div>
+                      <div class="cube2"></div>
+                    </span>
+                </span>
+            </span>
+        </span>
+        
+        
+    </div>
+    
+    <div class="toc-ref">
+    
+        <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A1%88%E4%BE%8B4%EF%BC%9A%E6%8C%87%E5%AE%9A%E5%B0%86%E7%A8%80%E7%96%8F%E6%96%87%E4%BB%B6%E5%A4%8D%E5%88%B6%E4%B8%BA%E9%9D%9E%E7%A8%80%E7%96%8F%E6%A0%BC%E5%BC%8F%E6%96%87%E4%BB%B6-root-ubuntu2204-cp-%E2%80%93sparse-x3D-never-x2F-opt-x2F-vm3-img-x2F-opt-x2F-vm3-img-bk-root-ubuntu2204-qemu-img-info-x2F-opt-x2F-vm3-imgimage-x2F-opt-x2F-vm3-imgfile-format-rawvirtual-size-1-GiB-1073741824-bytes-disk-size-0-B-root-ubuntu2204-qemu-img-info-x2F-opt-x2F-vm3-img-bkimage-x2F-opt-x2F-vm3-img-bkfile-format-rawvirtual-size-1-GiB-1073741824-bytes-disk-size-1-GiB%E2%80%A2-%E6%A1%88%E4%BE%8B%EF%BC%9A%E5%88%9B%E5%BB%BAqcow2%E6%A0%BC%E5%BC%8F%E6%96%87%E4%BB%B6-qcow2-%E6%A0%BC%E5%BC%8F%E9%80%89%E9%A1%B9-backing-file-%E6%8C%87%E5%AE%9A%E5%90%8E%E7%AB%AF%E9%95%9C%E5%83%8F%E6%96%87%E4%BB%B6-backing-fmt-%E8%AE%BE%E7%BD%AE%E5%90%8E%E7%AB%AF%E9%95%9C%E5%83%8F%E7%9A%84%E9%95%9C%E5%83%8F%E6%A0%BC%E5%BC%8F-cluster-size-%E8%AE%BE%E7%BD%AE%E9%95%9C%E5%83%8F%E4%B8%AD%E7%9A%84%E7%B0%87%E5%A4%A7%E5%B0%8F%EF%BC%8C%E5%8F%96%E5%80%BC%E5%9C%A8512%E5%88%B02M%E4%B9%8B%E9%97%B4%EF%BC%8C%E9%BB%98%E8%AE%A4%E5%80%BC%E4%B8%BA64K-preallocation-%E8%AE%BE%E7%BD%AE%E9%95%9C%E5%83%8F%E6%96%87%E4%BB%B6%E7%A9%BA%E9%97%B4%E7%9A%84%E9%A2%84%E5%88%86%E9%85%8D%E6%A8%A1%E5%BC%8F-encryption-%E7%94%A8%E4%BA%8E%E8%AE%BE%E7%BD%AE%E5%8A%A0%E5%AF%86-root-ubuntu2204-qemu-img-create-f-qcow2-x2F-opt-x2F-vm1-img-2gFormatting-%E2%80%98-x2F-opt-x2F-vm1-img%E2%80%99-fmt-x3D-qcow2-cluster-size-x3D-65536-extended-l2-x3D-off-compression-type-x3D-zlib-size-x3D-2147483648-lazy-refcounts-x3D-off-refcount-bits-x3D-16-root-ubuntu2204-qemu-img-info-x2F-opt-x2F-vm1-imgimage-x2F-opt-x2F-vm1-imgfile-format-qcow2virtual-size-2-GiB-2147483648-bytes-disk-size-196-KiBcluster-size-65536Format-specific-information-compat-1-1-compression-type-zlib-lazy-refcounts-false-refcount-bits-16-corrupt-false-extended-l2-false%E2%80%A2-%E6%A1%88%E4%BE%8B%EF%BC%9A%E6%A3%80%E6%9F%A5%E8%99%9A%E6%8B%9F%E7%A3%81%E7%9B%98-%E5%AF%B9%E4%BA%8E%E5%85%B3%E6%9C%BA%E7%8A%B6%E6%80%81%E7%9A%84%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%A3%81%E7%9B%98-%E5%8F%AF%E4%BB%A5%E6%A3%80%E6%9F%A5%E6%96%87%E4%BB%B6%E9%94%99%E8%AF%AF-root-centos8-virsh-listId-Name-State"><span class="toc-text">#案例4：指定将稀疏文件复制为非稀疏格式文件[root@ubuntu2204 ~]#cp –sparse&#x3D;never &#x2F;opt&#x2F;vm3.img &#x2F;opt&#x2F;vm3.img.bk[root@ubuntu2204 ~]#qemu-img info &#x2F;opt&#x2F;vm3.imgimage: &#x2F;opt&#x2F;vm3.imgfile format: rawvirtual size: 1 GiB (1073741824 bytes)disk size: 0 B[root@ubuntu2204 ~]#qemu-img info &#x2F;opt&#x2F;vm3.img.bkimage: &#x2F;opt&#x2F;vm3.img.bkfile format: rawvirtual size: 1 GiB (1073741824 bytes)disk size: 1 GiB• 案例：创建qcow2格式文件#qcow2 格式选项    backing_file #指定后端镜像文件    backing_fmt #设置后端镜像的镜像格式    cluster_size #设置镜像中的簇大小，取值在512到2M之间，默认值为64K    preallocation #设置镜像文件空间的预分配模式    encryption #用于设置加密[root@ubuntu2204 ~]#qemu-img create -f qcow2 &#x2F;opt&#x2F;vm1.img 2gFormatting ‘&#x2F;opt&#x2F;vm1.img’, fmt&#x3D;qcow2 cluster_size&#x3D;65536 extended_l2&#x3D;off compression_type&#x3D;zlib size&#x3D;2147483648 lazy_refcounts&#x3D;off refcount_bits&#x3D;16[root@ubuntu2204 ~]#qemu-img info &#x2F;opt&#x2F;vm1.imgimage: &#x2F;opt&#x2F;vm1.imgfile format: qcow2virtual size: 2 GiB (2147483648 bytes)disk size: 196 KiBcluster_size: 65536Format specific information:    compat: 1.1    compression type: zlib    lazy refcounts: false    refcount bits: 16    corrupt: false    extended l2: false• 案例：检查虚拟磁盘*对于关机状态的虚拟机磁盘,可以检查文件错误[root@centos8 ~]#virsh listId Name State</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-centos8-running-root-centos8-qemu-img-check-x2F-var-x2F-lib-x2F-libvirt-x2F-images-x2F-centos8-qcow2qemu-img-Could-not-open-%E2%80%98-x2F-var-x2F-lib-x2F-libvirt-x2F-images-x2F-centos8-qcow2%E2%80%99-Failed-to-getshared-%E2%80%9Cwrite%E2%80%9D-lockIs-another-process-using-the-image-x2F-var-x2F-lib-x2F-libvirt-x2F-images-x2F-centos8-qcow2-root-centos8-virsh-suspend-centos8Domain-centos8-suspended-root-centos8-virsh-listId-Name-State"><span class="toc-text">2 centos8 running[root@centos8 ~]#qemu-img check &#x2F;var&#x2F;lib&#x2F;libvirt&#x2F;images&#x2F;centos8.qcow2qemu-img: Could not open ‘&#x2F;var&#x2F;lib&#x2F;libvirt&#x2F;images&#x2F;centos8.qcow2’: Failed to getshared “write” lockIs another process using the image [&#x2F;var&#x2F;lib&#x2F;libvirt&#x2F;images&#x2F;centos8.qcow2]?[root@centos8 ~]#virsh suspend centos8Domain centos8 suspended[root@centos8 ~]#virsh listId Name State</span></a></li></ol>
+    
+<style>
+    .left-col .switch-btn,
+    .left-col .switch-area {
+        display: none;
+    }
+    .toc-level-3 i,
+    .toc-level-3 ol {
+        display: none !important;
+    }
+</style>
+</div>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>KVM存储模式<br>基于文件系统的存储<br>• dir: Filesystem Directory 需要有挂载点的文件系统<br>• fs: Pre-Formatted Block Device 无需挂载的文件系统,如:位于SAN存储的文件系统,可支持多个主机同时访问,而本地文件系统不支持<br>• netfs: Network Exported Directory 网络文件系统,比如:NFS,SAMBA等<br>基于设备的存储 - 无需文件系统,性能更好,但可管理性差,无法实现快照<br>• Disk: Physical Disk Device<br>• Iscsi: isCSI Target<br>• logical:LVM Volume Group<br>虚拟磁盘类型<br>• 固定Fixed<br>在配置时，指定磁盘大小<br>不管在虚拟磁盘上实际存储多少数据，都将占用相同大小宿主机的磁盘空间• 动态Dynamic<br>初始空间占用小<br>随着空间的使用逐渐增长到最大容量，但是只根据需求使用更多的空间• 差异Differencing<br>因为创建是差异磁盘，所以只保存变更的数据<br>例如，将操作系统安装在父盘，然后创建差异化磁盘来执行进一步配置<br><img src="/../img/d85718b18932c2fbe6e400b1359109bf9cae1c.png"><br>虚拟镜像文件格式<br>KVM 上的磁盘镜像格式包括：<br>• raw<br>此为默认磁盘格式,但并是一种真正的磁盘格式，而是代表虚拟机所使用的原始镜像,它并不存储元数据，因此可作为保证虚拟机兼容性的候选方案。然而，也正因为它不存储元数据，因此不支持某些高级特往，比如快照和压缩等格式简单，容易转换为其他的格式。<br>如果主机文件系统允许，raw 文件可以是预分配（pre-allocated）或 稀疏（sparse）。稀疏文件根据需求分配主机磁盘空间，因此它是一种精简配置形式（thin provisioning）。预分配文件的所有空间需要被预先分配，但它比稀疏文件性能好。当对磁盘 I&#x2F;O 性能要求非常高，而且通常不需要通过网络传输镜像文件时，可以使用 raw文件<br>优点 : 性能好<br>缺点 : 空间占用大,功能较少,生产不推荐使用• cow<br>copy-on-write格式，昙花一现• qcow<br>QEMU早期的copy-on-write格式，过渡性方案• qcow2<br>qcow2 镜像文件提供许多高级磁盘镜像特征，如快照、压缩及加密。它们可以用来代表通过模板镜像创建的虚拟机。因为只有虚拟机写入的扇区部分才会分配在镜像中，所以 qcow2 文件的网络传输效率较高。RHEL 7.0 及更新版本支持 qcow2 v3 镜像文件格式按需进行分配磁盘空间，不管文件系统是否支持<br>优点 :<br>  空间节约,功能丰富<br>  支持快照<br>  支持zlib的磁盘压缩<br>  支持AES的加密<br>缺点 : 性能较差,生产推荐使用</p>
+<p>案例：查看不同磁盘文件格式支持选项<br>#raw<br>[root@ubuntu2204 ~]#qemu-img create -f raw -o ?<br>Supported raw options:<br>  size&#x3D;<size>            - Virtual disk size</p>
+<p>The protocol level may support further options.<br>Specify the target filename to include those options.</p>
+<p>#qcow2<br>[root@ubuntu2204 ~]#qemu-img create -f qcow2 -o ?<br>Supported qcow2 options:<br>  backing_file&#x3D;<str>     - File name of a base image<br>  backing_fmt&#x3D;<str>      - Image format of the base image<br>  cluster_size&#x3D;<size>    - qcow2 cluster size<br>  compat&#x3D;<str>           - Compatibility level (v2 [0.10] or v3 [1.1])<br>  compression_type&#x3D;<str> - Compression method used for image cluster compression<br>  data_file&#x3D;<str>        - File name of an external data file<br>  data_file_raw&#x3D;&lt;bool (on&#x2F;off)&gt; - The external data file must stay valid as a raw image<br>  encrypt.cipher-alg&#x3D;<str> - Name of encryption cipher algorithm<br>  encrypt.cipher-mode&#x3D;<str> - Name of encryption cipher mode<br>  encrypt.format&#x3D;<str>   - Encrypt the image, format choices: ‘aes’, ‘luks’<br>  encrypt.hash-alg&#x3D;<str> - Name of encryption hash algorithm<br>  encrypt.iter-time&#x3D;<num> - Time to spend in PBKDF in milliseconds<br>  encrypt.ivgen-alg&#x3D;<str> - Name of IV generator algorithm<br>  encrypt.ivgen-hash-alg&#x3D;<str> - Name of IV generator hash algorithm<br>  encrypt.key-secret&#x3D;<str> - ID of secret providing qcow AES key or LUKS passphrase<br>  encryption&#x3D;&lt;bool (on&#x2F;off)&gt; - Encrypt the image with format ‘aes’. (Deprecated in favor of encrypt.format&#x3D;aes)<br>  extended_l2&#x3D;&lt;bool (on&#x2F;off)&gt; - Extended L2 tables<br>  lazy_refcounts&#x3D;&lt;bool (on&#x2F;off)&gt; - Postpone refcount updates<br>  preallocation&#x3D;<str>    - Preallocation mode (allowed values: off, metadata, falloc, full)<br>  refcount_bits&#x3D;<num>    - Width of a reference count entry in bits<br>  size&#x3D;<size>            - Virtual disk size</p>
+<p>The protocol level may support further options.<br>Specify the target filename to include those options.• vmdk<br>VMware环境当中默认使用的磁盘格式• vhd&#x2F;vhdx<br>微软默认采用的文件格式• vdi<br>VirtualBox 采用的文件格式查看KVM支持的磁盘格式<br>[root@ubuntu2204 ~]#qemu-img –help|grep Support<br>Supported formats: blkdebug blklogwrites blkverify bochs cloop compress copy-before-write copy-on-read dmg file ftp ftps gluster host_cdrom host_device http https iscsi iser luks nbd null-aio null-co nvme parallels preallocate qcow qcow2 qed quorum raw rbd replication ssh throttle vdi vhdx vmdk vpc vvfat使用qemu-img管理虚拟磁盘文件<br>#qemu-img 包括以下子命令<br>check #检查完整性<br>create #创建镜像<br>commit #提交更改<br>compare #比较<br>convert #转换<br>info #获得信息<br>map #映射<br>snapshot #快照管理<br>rebase #在已有的镜像的基础上创建新的镜像<br>resize #调整大小<br>amend #修订镜像格式选项</p>
+<p>#格式：qemu-img create [-q] [–object objectdef] [-f fmt] [-b backing_file] [-F backing_fmt] [-u] [-o options] filename [size]• 案例：创建raw格式文件<br>#案例1：创建raw格式非稀疏文件<br>[root@ubuntu2204 ~]#dd if&#x3D;&#x2F;dev&#x2F;zero of&#x3D;&#x2F;opt&#x2F;vm2.img bs&#x3D;1M count&#x3D;1024<br>1024+0 records in<br>1024+0 records out<br>1073741824 bytes (1.1 GB, 1.0 GiB) copied, 6.2694 s, 171 MB&#x2F;s<br>[root@ubuntu2204 ~]#qemu-img info &#x2F;opt&#x2F;vm2.img<br>image: &#x2F;opt&#x2F;vm2.img<br>file format: raw<br>virtual size: 1 GiB (1073741824 bytes) –&gt; 显示1G<br>disk size: 1 GiB  –&gt; 实际占用磁盘1G</p>
+<p>#案例2：创建raw格式稀疏文件<br>[root@ubuntu2204 ~]#dd if&#x3D;&#x2F;dev&#x2F;zero of&#x3D;&#x2F;opt&#x2F;vm3.img bs&#x3D;1M count&#x3D;0 seek&#x3D;1024<br>0+0 records in<br>0+0 records out<br>0 bytes copied, 0.000217691 s, 0.0 kB&#x2F;s<br>[root@ubuntu2204 ~]#qemu-img info &#x2F;opt&#x2F;vm3.img<br>image: &#x2F;opt&#x2F;vm3.img<br>file format: raw<br>virtual size: 1 GiB (1073741824 bytes) –&gt; 显示1G<br>disk size: 0 B –&gt; 实际占用磁盘1字节</p>
+<p>#案例3：指定将非稀疏文件复制为稀疏格式文件<br>[root@ubuntu2204 ~]#cp –sparse&#x3D;always &#x2F;opt&#x2F;vm2.img &#x2F;opt&#x2F;vm2.img.bk<br>[root@ubuntu2204 ~]#qemu-img info &#x2F;opt&#x2F;vm2.img<br>image: &#x2F;opt&#x2F;vm2.img<br>file format: raw<br>virtual size: 1 GiB (1073741824 bytes)<br>disk size: 1 GiB<br>[root@ubuntu2204 ~]#qemu-img info &#x2F;opt&#x2F;vm2.img.bk<br>image: &#x2F;opt&#x2F;vm2.img.bk<br>file format: raw<br>virtual size: 1 GiB (1073741824 bytes)<br>disk size: 0 B</p>
+<h2 id="案例4：指定将稀疏文件复制为非稀疏格式文件-root-ubuntu2204-cp-–sparse-x3D-never-x2F-opt-x2F-vm3-img-x2F-opt-x2F-vm3-img-bk-root-ubuntu2204-qemu-img-info-x2F-opt-x2F-vm3-imgimage-x2F-opt-x2F-vm3-imgfile-format-rawvirtual-size-1-GiB-1073741824-bytes-disk-size-0-B-root-ubuntu2204-qemu-img-info-x2F-opt-x2F-vm3-img-bkimage-x2F-opt-x2F-vm3-img-bkfile-format-rawvirtual-size-1-GiB-1073741824-bytes-disk-size-1-GiB•-案例：创建qcow2格式文件-qcow2-格式选项-backing-file-指定后端镜像文件-backing-fmt-设置后端镜像的镜像格式-cluster-size-设置镜像中的簇大小，取值在512到2M之间，默认值为64K-preallocation-设置镜像文件空间的预分配模式-encryption-用于设置加密-root-ubuntu2204-qemu-img-create-f-qcow2-x2F-opt-x2F-vm1-img-2gFormatting-‘-x2F-opt-x2F-vm1-img’-fmt-x3D-qcow2-cluster-size-x3D-65536-extended-l2-x3D-off-compression-type-x3D-zlib-size-x3D-2147483648-lazy-refcounts-x3D-off-refcount-bits-x3D-16-root-ubuntu2204-qemu-img-info-x2F-opt-x2F-vm1-imgimage-x2F-opt-x2F-vm1-imgfile-format-qcow2virtual-size-2-GiB-2147483648-bytes-disk-size-196-KiBcluster-size-65536Format-specific-information-compat-1-1-compression-type-zlib-lazy-refcounts-false-refcount-bits-16-corrupt-false-extended-l2-false•-案例：检查虚拟磁盘-对于关机状态的虚拟机磁盘-可以检查文件错误-root-centos8-virsh-listId-Name-State"><a href="#案例4：指定将稀疏文件复制为非稀疏格式文件-root-ubuntu2204-cp-–sparse-x3D-never-x2F-opt-x2F-vm3-img-x2F-opt-x2F-vm3-img-bk-root-ubuntu2204-qemu-img-info-x2F-opt-x2F-vm3-imgimage-x2F-opt-x2F-vm3-imgfile-format-rawvirtual-size-1-GiB-1073741824-bytes-disk-size-0-B-root-ubuntu2204-qemu-img-info-x2F-opt-x2F-vm3-img-bkimage-x2F-opt-x2F-vm3-img-bkfile-format-rawvirtual-size-1-GiB-1073741824-bytes-disk-size-1-GiB•-案例：创建qcow2格式文件-qcow2-格式选项-backing-file-指定后端镜像文件-backing-fmt-设置后端镜像的镜像格式-cluster-size-设置镜像中的簇大小，取值在512到2M之间，默认值为64K-preallocation-设置镜像文件空间的预分配模式-encryption-用于设置加密-root-ubuntu2204-qemu-img-create-f-qcow2-x2F-opt-x2F-vm1-img-2gFormatting-‘-x2F-opt-x2F-vm1-img’-fmt-x3D-qcow2-cluster-size-x3D-65536-extended-l2-x3D-off-compression-type-x3D-zlib-size-x3D-2147483648-lazy-refcounts-x3D-off-refcount-bits-x3D-16-root-ubuntu2204-qemu-img-info-x2F-opt-x2F-vm1-imgimage-x2F-opt-x2F-vm1-imgfile-format-qcow2virtual-size-2-GiB-2147483648-bytes-disk-size-196-KiBcluster-size-65536Format-specific-information-compat-1-1-compression-type-zlib-lazy-refcounts-false-refcount-bits-16-corrupt-false-extended-l2-false•-案例：检查虚拟磁盘-对于关机状态的虚拟机磁盘-可以检查文件错误-root-centos8-virsh-listId-Name-State" class="headerlink" title="#案例4：指定将稀疏文件复制为非稀疏格式文件[root@ubuntu2204 ~]#cp –sparse&#x3D;never &#x2F;opt&#x2F;vm3.img &#x2F;opt&#x2F;vm3.img.bk[root@ubuntu2204 ~]#qemu-img info &#x2F;opt&#x2F;vm3.imgimage: &#x2F;opt&#x2F;vm3.imgfile format: rawvirtual size: 1 GiB (1073741824 bytes)disk size: 0 B[root@ubuntu2204 ~]#qemu-img info &#x2F;opt&#x2F;vm3.img.bkimage: &#x2F;opt&#x2F;vm3.img.bkfile format: rawvirtual size: 1 GiB (1073741824 bytes)disk size: 1 GiB• 案例：创建qcow2格式文件#qcow2 格式选项    backing_file #指定后端镜像文件    backing_fmt #设置后端镜像的镜像格式    cluster_size #设置镜像中的簇大小，取值在512到2M之间，默认值为64K    preallocation #设置镜像文件空间的预分配模式    encryption #用于设置加密[root@ubuntu2204 ~]#qemu-img create -f qcow2 &#x2F;opt&#x2F;vm1.img 2gFormatting ‘&#x2F;opt&#x2F;vm1.img’, fmt&#x3D;qcow2 cluster_size&#x3D;65536 extended_l2&#x3D;off compression_type&#x3D;zlib size&#x3D;2147483648 lazy_refcounts&#x3D;off refcount_bits&#x3D;16[root@ubuntu2204 ~]#qemu-img info &#x2F;opt&#x2F;vm1.imgimage: &#x2F;opt&#x2F;vm1.imgfile format: qcow2virtual size: 2 GiB (2147483648 bytes)disk size: 196 KiBcluster_size: 65536Format specific information:    compat: 1.1    compression type: zlib    lazy refcounts: false    refcount bits: 16    corrupt: false    extended l2: false• 案例：检查虚拟磁盘*对于关机状态的虚拟机磁盘,可以检查文件错误[root@centos8 ~]#virsh listId Name State"></a>#案例4：指定将稀疏文件复制为非稀疏格式文件<br>[root@ubuntu2204 ~]#cp –sparse&#x3D;never &#x2F;opt&#x2F;vm3.img &#x2F;opt&#x2F;vm3.img.bk<br>[root@ubuntu2204 ~]#qemu-img info &#x2F;opt&#x2F;vm3.img<br>image: &#x2F;opt&#x2F;vm3.img<br>file format: raw<br>virtual size: 1 GiB (1073741824 bytes)<br>disk size: 0 B<br>[root@ubuntu2204 ~]#qemu-img info &#x2F;opt&#x2F;vm3.img.bk<br>image: &#x2F;opt&#x2F;vm3.img.bk<br>file format: raw<br>virtual size: 1 GiB (1073741824 bytes)<br>disk size: 1 GiB• 案例：创建qcow2格式文件<br>#qcow2 格式选项<br>    backing_file #指定后端镜像文件<br>    backing_fmt #设置后端镜像的镜像格式<br>    cluster_size #设置镜像中的簇大小，取值在512到2M之间，默认值为64K<br>    preallocation #设置镜像文件空间的预分配模式<br>    encryption #用于设置加密<br><br>[root@ubuntu2204 ~]#qemu-img create -f qcow2 &#x2F;opt&#x2F;vm1.img 2g<br>Formatting ‘&#x2F;opt&#x2F;vm1.img’, fmt&#x3D;qcow2 cluster_size&#x3D;65536 extended_l2&#x3D;off compression_type&#x3D;zlib size&#x3D;2147483648 lazy_refcounts&#x3D;off refcount_bits&#x3D;16<br>[root@ubuntu2204 ~]#qemu-img info &#x2F;opt&#x2F;vm1.img<br>image: &#x2F;opt&#x2F;vm1.img<br>file format: qcow2<br>virtual size: 2 GiB (2147483648 bytes)<br>disk size: 196 KiB<br>cluster_size: 65536<br>Format specific information:<br>    compat: 1.1<br>    compression type: zlib<br>    lazy refcounts: false<br>    refcount bits: 16<br>    corrupt: false<br>    extended l2: false• 案例：检查虚拟磁盘<br>*对于关机状态的虚拟机磁盘,可以检查文件错误<br>[root@centos8 ~]#virsh list<br>Id Name State</h2><h2 id="2-centos8-running-root-centos8-qemu-img-check-x2F-var-x2F-lib-x2F-libvirt-x2F-images-x2F-centos8-qcow2qemu-img-Could-not-open-‘-x2F-var-x2F-lib-x2F-libvirt-x2F-images-x2F-centos8-qcow2’-Failed-to-getshared-“write”-lockIs-another-process-using-the-image-x2F-var-x2F-lib-x2F-libvirt-x2F-images-x2F-centos8-qcow2-root-centos8-virsh-suspend-centos8Domain-centos8-suspended-root-centos8-virsh-listId-Name-State"><a href="#2-centos8-running-root-centos8-qemu-img-check-x2F-var-x2F-lib-x2F-libvirt-x2F-images-x2F-centos8-qcow2qemu-img-Could-not-open-‘-x2F-var-x2F-lib-x2F-libvirt-x2F-images-x2F-centos8-qcow2’-Failed-to-getshared-“write”-lockIs-another-process-using-the-image-x2F-var-x2F-lib-x2F-libvirt-x2F-images-x2F-centos8-qcow2-root-centos8-virsh-suspend-centos8Domain-centos8-suspended-root-centos8-virsh-listId-Name-State" class="headerlink" title="2 centos8 running[root@centos8 ~]#qemu-img check &#x2F;var&#x2F;lib&#x2F;libvirt&#x2F;images&#x2F;centos8.qcow2qemu-img: Could not open ‘&#x2F;var&#x2F;lib&#x2F;libvirt&#x2F;images&#x2F;centos8.qcow2’: Failed to getshared “write” lockIs another process using the image [&#x2F;var&#x2F;lib&#x2F;libvirt&#x2F;images&#x2F;centos8.qcow2]?[root@centos8 ~]#virsh suspend centos8Domain centos8 suspended[root@centos8 ~]#virsh listId Name State"></a>2 centos8 running<br>[root@centos8 ~]#qemu-img check &#x2F;var&#x2F;lib&#x2F;libvirt&#x2F;images&#x2F;centos8.qcow2<br>qemu-img: Could not open ‘&#x2F;var&#x2F;lib&#x2F;libvirt&#x2F;images&#x2F;centos8.qcow2’: Failed to get<br>shared “write” lock<br>Is another process using the image [&#x2F;var&#x2F;lib&#x2F;libvirt&#x2F;images&#x2F;centos8.qcow2]?<br>[root@centos8 ~]#virsh suspend centos8<br>Domain centos8 suspended<br>[root@centos8 ~]#virsh list<br>Id Name State</h2><p>2 centos8 paused<br>[root@centos8 ~]#qemu-img check &#x2F;var&#x2F;lib&#x2F;libvirt&#x2F;images&#x2F;centos8.qcow2<br>qemu-img: Could not open ‘&#x2F;var&#x2F;lib&#x2F;libvirt&#x2F;images&#x2F;centos8.qcow2’: Failed to get<br>shared “write” lock<br>Is another process using the image [&#x2F;var&#x2F;lib&#x2F;libvirt&#x2F;images&#x2F;centos8.qcow2]?<br>[root@centos8 ~]#qemu-img check &#x2F;var&#x2F;lib&#x2F;libvirt&#x2F;images&#x2F;centos7.qcow2<br>No errors were found on the image.<br>25572&#x2F;327680 &#x3D; 7.80% allocated, 1.44% fragmented, 0.00% compressed clusters<br>Image end offset: 1676869632磁盘预分配策略<br>raw 文件的预分配策略和文件系统是否支持有关,而qcow2则无关<br>• off<br>此为缺省策略，即不使用预分配策略,预分配后的虚拟磁盘占用空间很小,不属于稀疏映像类型,生成的磁盘文件占用空间很小• metadata<br>只预分配元数据(metadata)，预分配后的磁盘文件属于稀疏映像类型,相当于vmware中的磁盘置备选项: Thin Provision(精简配置)<br>生成的磁盘文件为稀疏格式,实际占用的空间比off策略稍大一些• falloc<br>分配文件的块并标识它们的状态为未初始化，即只分配空间,但不置零(不格式化). 预分配后的虚拟磁盘属于非稀疏映像类型,相对full模式来说，创建虚拟磁盘的速度要快很多,相当于vmware中的磁盘置备选项:厚置备延迟置零<br>生成的磁盘文件实际占用的空间和分配的空间相同大小• full<br>分配所有磁盘空间并置零，预分配后的虚拟磁盘属于非稀疏映像类型,创建最慢,相当于vmware中的磁盘置备选项: 厚置备置零<br>生成的磁盘文件实际占用的空间和分配的空间相同大小案例：创建预分配置策略<br>#案例1：默认开启默认预分配策略 - 稀疏格式，根据实际需要自动分配磁盘空间<br>[root@ubuntu2204 ~]#qemu-img create -f qcow2 &#x2F;opt&#x2F;vm1.img 2g<br>Formatting ‘&#x2F;opt&#x2F;vm1.img’, fmt&#x3D;qcow2 cluster_size&#x3D;65536 extended_l2&#x3D;off compression_type&#x3D;zlib size&#x3D;2147483648 lazy_refcounts&#x3D;off refcount_bits&#x3D;16<br>[root@ubuntu2204 ~]#qemu-img info &#x2F;opt&#x2F;vm1.img<br>image: &#x2F;opt&#x2F;vm1.img<br>file format: qcow2<br>virtual size: 2 GiB (2147483648 bytes)<br>disk size: 196 KiB<br>cluster_size: 65536<br>Format specific information:<br>    compat: 1.1<br>    compression type: zlib<br>    lazy refcounts: false<br>    refcount bits: 16<br>    corrupt: false<br>    extended l2: false</p>
+<p>#案例2：指定off关闭预分配<br>[root@ubuntu2204 ~]#qemu-img create -f qcow2 &#x2F;opt&#x2F;vm2.img 1g -o preallocatinotallow&#x3D;off<br>Formatting ‘&#x2F;opt&#x2F;vm2.img’, fmt&#x3D;qcow2 cluster_size&#x3D;65536 extended_l2&#x3D;off preallocation&#x3D;off compression_type&#x3D;zlib size&#x3D;1073741824 lazy_refcounts&#x3D;off refcount_bits&#x3D;16<br>[root@ubuntu2204 ~]#qemu-img info &#x2F;opt&#x2F;vm2.img<br>image: &#x2F;opt&#x2F;vm2.img<br>file format: qcow2<br>virtual size: 1 GiB (1073741824 bytes)<br>disk size: 196 KiB<br>cluster_size: 65536<br>Format specific information:<br>    compat: 1.1<br>    compression type: zlib<br>    lazy refcounts: false<br>    refcount bits: 16<br>    corrupt: false<br>    extended l2: false</p>
+<p>#案例3：指定预分配metadata<br>[root@ubuntu2204 ~]#qemu-img create -f qcow2 &#x2F;opt&#x2F;vm3.img 1g -o preallocatinotallow&#x3D;metadata<br>Formatting ‘&#x2F;opt&#x2F;vm3.img’, fmt&#x3D;qcow2 cluster_size&#x3D;65536 extended_l2&#x3D;off preallocation&#x3D;metadata compression_type&#x3D;zlib size&#x3D;1073741824 lazy_refcounts&#x3D;off refcount_bits&#x3D;16<br>[root@ubuntu2204 ~]#qemu-img info &#x2F;opt&#x2F;vm3.img<br>image: &#x2F;opt&#x2F;vm3.img<br>file format: qcow2<br>virtual size: 1 GiB (1073741824 bytes)<br>disk size: 324 KiB<br>cluster_size: 65536<br>Format specific information:<br>    compat: 1.1<br>    compression type: zlib<br>    lazy refcounts: false<br>    refcount bits: 16<br>    corrupt: false<br>    extended l2: false</p>
+<p>#案例4：指定预分配falloc<br>[root@ubuntu2204 ~]#qemu-img create -f qcow2 &#x2F;opt&#x2F;vm4.img 1g -o preallocatinotallow&#x3D;falloc<br>Formatting ‘&#x2F;opt&#x2F;vm4.img’, fmt&#x3D;qcow2 cluster_size&#x3D;65536 extended_l2&#x3D;off preallocation&#x3D;falloc compression_type&#x3D;zlib size&#x3D;1073741824 lazy_refcounts&#x3D;off refcount_bits&#x3D;16<br>[root@ubuntu2204 ~]#qemu-img info &#x2F;opt&#x2F;vm4.img<br>image: &#x2F;opt&#x2F;vm4.img<br>file format: qcow2<br>virtual size: 1 GiB (1073741824 bytes)<br>disk size: 1 GiB<br>cluster_size: 65536<br>Format specific information:<br>    compat: 1.1<br>    compression type: zlib<br>    lazy refcounts: false<br>    refcount bits: 16<br>    corrupt: false<br>    extended l2: false</p>
+<p>#文件系统显示大小<br>[root@ubuntu2204 ~]#ll -h &#x2F;opt&#x2F;vm*<br>-rw-r–r– 1 root root 193K Jan  1 17:40 &#x2F;opt&#x2F;vm1.img<br>-rw-r–r– 1 root root 193K Jan  1 18:04 &#x2F;opt&#x2F;vm2.img<br>-rw-r–r– 1 root root 1.1G Jan  1 18:08 &#x2F;opt&#x2F;vm3.img<br>-rw-r–r– 1 root root 1.1G Jan  1 18:08 &#x2F;opt&#x2F;vm4.img<br>#查看真实大小<br>[root@ubuntu2204 ~]#du -h &#x2F;opt&#x2F;vm*<br>196K    &#x2F;opt&#x2F;vm1.img<br>196K    &#x2F;opt&#x2F;vm2.img<br>324K    &#x2F;opt&#x2F;vm3.img<br>1.1G    &#x2F;opt&#x2F;vm4.img虚拟磁盘格式转换<br>#qemu-img 可以将不同格式的虚拟磁盘文件进行格式转化</p>
+<p>#案例：将vmdk转化为raw 和qcow2格式<br>[root@centos8 ~]#qemu-img info CentOS8.2.vmdk<br>image: CentOS8.2.vmdk<br>file format: vmdk<br>virtual size: 200G (214748364800 bytes)<br>disk size: 1.6G<br>cluster_size: 65536<br>Format specific information:<br>cid: 2898578192<br>parent cid: 4294967295<br>create type: monolithicSparse<br>extents:<br>[0]:<br>virtual size: 214748364800<br>filename: CentOS8.2.vmdk<br>cluster size: 65536<br>format:<br>#默认转化为raw格式<br>[root@centos8 ~]#qemu-img convert CentOS8.2.vmdk CentOS8.2.img<br>#比较大小<br>[root@centos8 ~]#ll -h CentOS8.2.vmdk CentOS8.2.img<br>-rw-r–r– 1 root root 1.6G Sep 20 16:00 CentOS8.2.vmdk<br>-rw-r–r– 1 root root 200G Sep 20 16:10 CentOS8.2.img<br>[root@centos8 ~]#du -h CentOS8.2.vmdk CentOS8.2.img<br>1.6G CentOS8.2.vmdk<br>1.5G CentOS8.2.img<br>[root@centos8 ~]#qemu-img info CentOS8.2.img<br>image: CentOS8.2.img<br>file format: raw<br>virtual size: 200G (214748364800 bytes)<br>disk size: 1.4G<br>[root@centos8 ~]#mv CentOS8.2.img &#x2F;var&#x2F;lib&#x2F;libvirt&#x2F;images&#x2F;<br>[root@centos8 ~]#virt-install –import –name&#x3D;centos8-test2 –vcpus&#x3D;1 –ram&#x3D;2048<br>–disk bus&#x3D;scsi,path&#x3D;&#x2F;var&#x2F;lib&#x2F;libvirt&#x2F;images&#x2F;CentOS8.2.img –network<br>network&#x3D;default –graphics vnc,listen&#x3D;0.0.0.0 –os-type&#x3D;Linux –osvariant&#x3D;<br>centos8 –noautoconsole –boot hd<br>#转化为qcow2格式<br>[root@centos8 ~]#qemu-img convert -f vmdk -O qcow2 CentOS8.2.vmdk<br>CentOS8.2.qcow2<br>#比较大小<br>[root@centos8 ~]#ll -h CentOS8.2.vmdk CentOS8.2.qcow2<br>-rw-r–r– 1 root root 1.6G Sep 20 16:00 CentOS8.2.vmdk<br>-rw-r–r– 1 root root 1.6G Sep 20 16:12 CentOS8.2.qcow2<br>[root@centos8 ~]#du -h CentOS8.2.vmdk CentOS8.2.qcow2<br>1.6G CentOS8.2.vmdk<br>1.6G CentOS8.2.qcow2<br>[root@centos8 ~]#qemu-img info CentOS8.2.qcow2<br>image: CentOS8.2.qcow2<br>file format: qcow2<br>virtual size: 200G (214748364800 bytes)<br>disk size: 1.5G<br>cluster_size: 65536<br>Format specific information:<br>compat: 1.1<br>lazy refcounts: false<br>refcount bits: 16<br>corrupt: false<br>[root@centos8 ~]#mv CentOS8.2.qcow2 &#x2F;var&#x2F;lib&#x2F;libvirt&#x2F;images&#x2F;<br>[root@centos8 ~]#virt-install –import –name&#x3D;centos8-test3 –vcpus&#x3D;1 –ram&#x3D;2048<br>–disk bus&#x3D;scsi,path&#x3D;&#x2F;var&#x2F;lib&#x2F;libvirt&#x2F;images&#x2F;CentOS8.2.qcow2 –network<br>network&#x3D;default –graphics vnc,listen&#x3D;0.0.0.0 –os-type&#x3D;Linux –osvariant&#x3D;<br>centos8 –noautoconsole –boot hd调整虚拟磁盘大小<br>*做虚拟磁盘调整之前需要注意以下几点：<br>• 操作之前，一定要做好数据备份<br>• 增加文件大小后，需要在客户机中使用fdisk、parted等分区工具进行相应的操作才能真正让客户机使用到增加后的镜像空间。<br>• 缩小镜像之前，要在客户机中保证里面的文件系统有空余空间，否则会数据丢失。另外xfs文件系统不支持缩减<br>• qcow2不支持缩小镜像的操作<br>案例：扩展虚拟磁盘<br>#思路：扩展分区-扩容物理卷-扩容逻辑卷组-扩容指定逻辑卷<br>[root@ubuntu2204 ~]#qemu-img info   &#x2F;var&#x2F;lib&#x2F;libvirt&#x2F;images&#x2F;centos7-mooreyxia.qcow2<br>image: &#x2F;var&#x2F;lib&#x2F;libvirt&#x2F;images&#x2F;centos7-mooreyxia.qcow2<br>file format: qcow2<br>virtual size: 10 GiB (10737418240 bytes)<br>disk size: 1.6 GiB<br>cluster_size: 65536<br>Snapshot list:<br>ID        TAG               VM SIZE                DATE     VM CLOCK     ICOUNT<br>1         centos7-s1            0 B 2023-01-01 19:01:27 00:00:00.000          0<br>Format specific information:<br>    compat: 1.1<br>    compression type: zlib<br>    lazy refcounts: true<br>    refcount bits: 16<br>    corrupt: false<br>    extended l2: false<br>[root@ubuntu2204 ~]#du -sh &#x2F;var&#x2F;lib&#x2F;libvirt&#x2F;images&#x2F;centos7-mooreyxia.qcow2<br>1.6G  &#x2F;var&#x2F;lib&#x2F;libvirt&#x2F;images&#x2F;centos7-mooreyxia.qcow2</p>
+<p>#扩容 - 增加10G空间<br>[root@ubuntu2204 ~]#qemu-img info   &#x2F;var&#x2F;lib&#x2F;libvirt&#x2F;images&#x2F;centos7-mooreyxia.qcow2<br>image: &#x2F;var&#x2F;lib&#x2F;libvirt&#x2F;images&#x2F;centos7-mooreyxia.qcow2<br>file format: qcow2<br>virtual size: 20 GiB (21474836480 bytes)<br>disk size: 1.6 GiB<br>cluster_size: 65536<br>Snapshot list:<br>ID        TAG               VM SIZE                DATE     VM CLOCK     ICOUNT<br>1         centos7-s1            0 B 2023-01-01 19:01:27 00:00:00.000          0<br>Format specific information:<br>    compat: 1.1<br>    compression type: zlib<br>    lazy refcounts: true<br>    refcount bits: 16<br>    corrupt: false<br>    extended l2: false</p>
+<p>#qemu-img resize 扩展空间后，在虚拟机内还需执行如下操作才能最终扩容<br>[root@localhost ~]# lsblk<br>NAME            MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT<br>sr0              11:0    1 1024M  0 rom<br>vda             252:0    0   20G  0 disk<br>├─vda1          252:1    0    1G  0 part &#x2F;boot<br>└─vda2          252:2    0    9G  0 part<br>  ├─centos-root 253:0    0    8G  0 lvm  &#x2F;<br>  └─centos-swap 253:1    0    1G  0 lvm  [SWAP]</p>
+<p>[root@localhost ~]# df -h<br>Filesystem               Size  Used Avail Use% Mounted on<br>devtmpfs                 908M     0  908M   0% &#x2F;dev<br>tmpfs                    919M     0  919M   0% &#x2F;dev&#x2F;shm<br>tmpfs                    919M  8.6M  911M   1% &#x2F;run<br>tmpfs                    919M     0  919M   0% &#x2F;sys&#x2F;fs&#x2F;cgroup<br>&#x2F;dev&#x2F;mapper&#x2F;centos-root  8.0G  1.3G  6.8G  16% &#x2F;<br>&#x2F;dev&#x2F;vda1               1014M  153M  862M  15% &#x2F;boot<br>tmpfs                    184M     0  184M   0% &#x2F;run&#x2F;user&#x2F;0</p>
+<p>#重新创建&#x2F;dev&#x2F;vda2,容量使用所有空间，&#x2F;dev&#x2F;vda2扩容到20G<br>[root@localhost ~]# fdisk &#x2F;dev&#x2F;vda<br>Welcome to fdisk (util-linux 2.23.2).</p>
+<p>Changes will remain in memory only, until you decide to write them.<br>Be careful before using the write command.</p>
+<p>Command (m for help): m<br>Command action<br>   a   toggle a bootable flag<br>   b   edit bsd disklabel<br>   c   toggle the dos compatibility flag<br>   d   delete a partition<br>   g   create a new empty GPT partition table<br>   G   create an IRIX (SGI) partition table<br>   l   list known partition types<br>   m   print this menu<br>   n   add a new partition<br>   o   create a new empty DOS partition table<br>   p   print the partition table<br>   q   quit without saving changes<br>   s   create a new empty Sun disklabel<br>   t   change a partition’s system id<br>   u   change display&#x2F;entry units<br>   v   verify the partition table<br>   w   write table to disk and exit<br>   x   extra functionality (experts only)</p>
+<p>Command (m for help): p</p>
+<p>Disk &#x2F;dev&#x2F;vda: 21.5 GB, 21474836480 bytes, 41943040 sectors<br>Units &#x3D; sectors of 1 * 512 &#x3D; 512 bytes<br>Sector size (logical&#x2F;physical): 512 bytes &#x2F; 512 bytes<br>I&#x2F;O size (minimum&#x2F;optimal): 512 bytes &#x2F; 512 bytes<br>Disk label type: dos<br>Disk identifier: 0x000df5df</p>
+<p>   Device Boot      Start         End      Blocks   Id  System<br>&#x2F;dev&#x2F;vda1   *        2048     2099199     1048576   83  Linux<br>&#x2F;dev&#x2F;vda2         2099200    20971519     9436160   8e  Linux LVM</p>
+<p>Command (m for help): d<br>Partition number (1,2, default 2):<br>Partition 2 is deleted</p>
+<p>Command (m for help): p</p>
+<p>Disk &#x2F;dev&#x2F;vda: 21.5 GB, 21474836480 bytes, 41943040 sectors<br>Units &#x3D; sectors of 1 * 512 &#x3D; 512 bytes<br>Sector size (logical&#x2F;physical): 512 bytes &#x2F; 512 bytes<br>I&#x2F;O size (minimum&#x2F;optimal): 512 bytes &#x2F; 512 bytes<br>Disk label type: dos<br>Disk identifier: 0x000df5df</p>
+<p>   Device Boot      Start         End      Blocks   Id  System<br>&#x2F;dev&#x2F;vda1   *        2048     2099199     1048576   83  Linux</p>
+<p>Command (m for help): p</p>
+<p>Disk &#x2F;dev&#x2F;vda: 21.5 GB, 21474836480 bytes, 41943040 sectors<br>Units &#x3D; sectors of 1 * 512 &#x3D; 512 bytes<br>Sector size (logical&#x2F;physical): 512 bytes &#x2F; 512 bytes<br>I&#x2F;O size (minimum&#x2F;optimal): 512 bytes &#x2F; 512 bytes<br>Disk label type: dos<br>Disk identifier: 0x000df5df</p>
+<p>   Device Boot      Start         End      Blocks   Id  System<br>&#x2F;dev&#x2F;vda1   *        2048     2099199     1048576   83  Linux</p>
+<p>Command (m for help): n<br>Partition type:<br>   p   primary (1 primary, 0 extended, 3 free)<br>   e   extended<br>Select (default p):<br>Using default response p<br>Partition number (2-4, default 2):<br>First sector (2099200-41943039, default 2099200):<br>Using default value 2099200<br>Last sector, +sectors or +size{K,M,G} (2099200-41943039, default 41943039):<br>Using default value 41943039<br>Partition 2 of type Linux and of size 19 GiB is set</p>
+<p>Command (m for help): p</p>
+<p>Disk &#x2F;dev&#x2F;vda: 21.5 GB, 21474836480 bytes, 41943040 sectors<br>Units &#x3D; sectors of 1 * 512 &#x3D; 512 bytes<br>Sector size (logical&#x2F;physical): 512 bytes &#x2F; 512 bytes<br>I&#x2F;O size (minimum&#x2F;optimal): 512 bytes &#x2F; 512 bytes<br>Disk label type: dos<br>Disk identifier: 0x000df5df</p>
+<p>   Device Boot      Start         End      Blocks   Id  System<br>&#x2F;dev&#x2F;vda1   *        2048     2099199     1048576   83  Linux<br>&#x2F;dev&#x2F;vda2         2099200    41943039    19921920   83  Linux</p>
+<p>Command (m for help): t<br>Partition number (1,2, default 2):<br>Hex code (type L to list all codes): 8e<br>Changed type of partition ‘Linux’ to ‘Linux LVM’</p>
+<p>Command (m for help): p</p>
+<p>Disk &#x2F;dev&#x2F;vda: 21.5 GB, 21474836480 bytes, 41943040 sectors<br>Units &#x3D; sectors of 1 * 512 &#x3D; 512 bytes<br>Sector size (logical&#x2F;physical): 512 bytes &#x2F; 512 bytes<br>I&#x2F;O size (minimum&#x2F;optimal): 512 bytes &#x2F; 512 bytes<br>Disk label type: dos<br>Disk identifier: 0x000df5df</p>
+<p>   Device Boot      Start         End      Blocks   Id  System<br>&#x2F;dev&#x2F;vda1   *        2048     2099199     1048576   83  Linux<br>&#x2F;dev&#x2F;vda2         2099200    41943039    19921920   8e  Linux LVM</p>
+<p>Command (m for help): w<br>The partition table has been altered!</p>
+<p>Calling ioctl() to re-read partition table.</p>
+<p>WARNING: Re-reading the partition table failed with error 16: Device or resource busy.<br>The kernel still uses the old table. The new table will be used at<br>the next reboot or after you run partprobe(8) or kpartx(8)<br>Syncing disks.</p>
+<p>#同步文件系统，扩展逻辑卷<br>[root@localhost ~]# lsblk<br>NAME            MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT<br>sr0              11:0    1 1024M  0 rom<br>vda             252:0    0   20G  0 disk<br>├─vda1          252:1    0    1G  0 part &#x2F;boot<br>└─vda2          252:2    0   19G  0 part<br>  ├─centos-root 253:0    0    8G  0 lvm  &#x2F;<br>  └─centos-swap 253:1    0    1G  0 lvm  [SWAP]</p>
+<p>[root@localhost ~]# lsblk -f<br>NAME            FSTYPE      LABEL UUID                                   MOUNTPOINT<br>sr0<br>vda<br>├─vda1          xfs               1a55b4e7-3e79-4319-8fd0-7ceb3d1ab505   &#x2F;boot<br>└─vda2          LVM2_member       0Sybbx-w3aS-ZdSN-1zQO-eXpw-0zqz-YcYT4V<br>  ├─centos-root xfs               f1205cb4-8a06-44a8-bece-89e8610e5a77   &#x2F;<br>  └─centos-swap swap              7ccb94cc-3909-4af8-9abf-e1b63d627f52   [SWAP]</p>
+<p>#当前物理卷空间并没有扩容，需要执行下面操作扩容PV<br>[root@localhost ~]# pvs<br>  PV         VG     Fmt  Attr PSize  PFree<br>  &#x2F;dev&#x2F;vda2  centos lvm2 a–  &lt;9.00g    0 </p>
+<p>[root@localhost ~]# pvresize –setphysicalvolumesize 19G &#x2F;dev&#x2F;vda2<br>  WARNING: &#x2F;dev&#x2F;vda2: Overriding real size &lt;19.00 GiB. You could lose data.<br>&#x2F;dev&#x2F;vda2: Requested size 19.00 GiB exceeds real size &lt;19.00 GiB. Proceed?  [y&#x2F;n]: y<br>  WARNING: &#x2F;dev&#x2F;vda2: Pretending size is 39845888 not 39843840 sectors.<br>  Physical volume “&#x2F;dev&#x2F;vda2” changed<br>  1 physical volume(s) resized or updated &#x2F; 0 physical volume(s) not resized</p>
+<p>[root@localhost ~]# pvs<br>  PV         VG     Fmt  Attr PSize   PFree<br>  &#x2F;dev&#x2F;vda2  centos lvm2 a–  &lt;19.00g 10.00g</p>
+<p>#逻辑卷组被自动扩容<br>[root@localhost ~]# vgs -a<br>  VG     #PV #LV #SN Attr   VSize   VFree<br>  centos   1   2   0 wz–n- &lt;19.00g    0 </p>
+<p>#扩容指定逻辑卷<br>[root@localhost ~]# lvextend -r -l +100%free &#x2F;dev&#x2F;centos&#x2F;root<br>  Size of logical volume centos&#x2F;root changed from &lt;8.00 GiB (2047 extents) to &lt;18.00 GiB (4607 extents).<br>  Logical volume centos&#x2F;root successfully resized.<br>meta-data&#x3D;&#x2F;dev&#x2F;mapper&#x2F;centos-root isize&#x3D;512    agcount&#x3D;4, agsize&#x3D;524032 blks<br>         &#x3D;                       sectsz&#x3D;512   attr&#x3D;2, projid32bit&#x3D;1<br>         &#x3D;                       crc&#x3D;1        finobt&#x3D;0 spinodes&#x3D;0<br>data     &#x3D;                       bsize&#x3D;4096   blocks&#x3D;2096128, imaxpct&#x3D;25<br>         &#x3D;                       sunit&#x3D;0      swidth&#x3D;0 blks<br>naming   &#x3D;version 2              bsize&#x3D;4096   ascii-ci&#x3D;0 ftype&#x3D;1<br>log      &#x3D;internal               bsize&#x3D;4096   blocks&#x3D;2560, versinotallow&#x3D;2<br>         &#x3D;                       sectsz&#x3D;512   sunit&#x3D;0 blks, lazy-count&#x3D;1<br>realtime &#x3D;none                   extsz&#x3D;4096   blocks&#x3D;0, rtextents&#x3D;0<br>data blocks changed from 2096128 to 4717568<br>[root@localhost ~]# lvs<br>  LV   VG     Attr       LSize   Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert<br>  root centos -wi-ao—- &lt;18.00g<br>  swap centos -wi-ao—-   1.00g<br>[root@localhost ~]# lsblk<br>NAME            MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT<br>sr0              11:0    1 1024M  0 rom<br>vda             252:0    0   20G  0 disk<br>├─vda1          252:1    0    1G  0 part &#x2F;boot<br>└─vda2          252:2    0   19G  0 part<br>  ├─centos-root 253:0    0   18G  0 lvm  &#x2F;<br>  └─centos-swap 253:1    0    1G  0 lvm  [SWAP]</p>
+<hr>
+<p>#如果是分区不是逻辑卷，则执行如下操作<br>#如果是xfs文件系统<br>xfs_growfs &#x2F;<br>#如果是ext<br>resize2fs &#x2F;dev&#x2F;vda2<br>———————————————————————————-我是moore,大家一起加油！新年快乐！</p>
+
+      
+       <hr><span style="font-style: italic;color: gray;"> 转载请注明来源，欢迎对文章中的引用来源进行考证，欢迎指出任何有错误或不够清晰的表达。可以在下面评论区评论，也可以邮件至 jaytp@qq.com </span>
+    </div>
+</article>
+
+
+<p>
+    <a  class="dashang" onclick="dashangToggle()">💰</a>
+</p>
+
+
+
+
+
+
+    
+
+
+
+
+    </div>
+    <div class="copyright">
+        <p class="footer-entry">
+    ©2016-2020 Yelog
+</p>
+<p class="footer-entry">Built with <a href="https://hexo.io/" target="_blank">Hexo</a> and <a href="https://github.com/yelog/hexo-theme-3-hexo" target="_blank">3-hexo</a> theme</p>
+
+    </div>
+    <div class="full-toc">
+        <button class="full" data-title="切换全屏 快捷键 s"><span class="min "></span></button>
+<a class="" id="rocket" ></a>
+
+    </div>
+</div>
+
+<div class="hide_box" onclick="dashangToggle()"></div>
+<div class="shang_box">
+    <a class="shang_close"  onclick="dashangToggle()">×</a>
+    <div class="shang_tit">
+        <p>Help us with donation</p>
+    </div>
+    <div class="shang_payimg">
+        <div class="pay_img">
+            <img src="/img/alipay.jpg" class="alipay" title="扫码支持">
+            <img src="/img/weixin.jpg" class="weixin" title="扫码支持">
+        </div>
+    </div>
+    <div class="shang_payselect">
+        <span><label><input type="radio" name="pay" checked value="alipay">alipay</label></span><span><label><input type="radio" name="pay" value="weixin">weixin</label></span>
+    </div>
+</div>
+
+
+</body>
+<script src="/js/jquery.pjax.js?v=1.1.0" ></script>
+
+<script src="/js/script.js?v=1.1.0" ></script>
+<script>
+    var img_resize = 'default';
+    function initArticle() {
+        /*渲染对应的表格样式*/
+        
+            $("#post .pjax table").addClass("green_title");
+        
+
+        /*渲染打赏样式*/
+        
+        $("input[name=pay]").on("click", function () {
+            if($("input[name=pay]:checked").val()=="weixin"){
+                $(".shang_box .shang_payimg .pay_img").addClass("weixin_img");
+            } else {
+                $(".shang_box .shang_payimg .pay_img").removeClass("weixin_img");
+            }
+        })
+        
+
+        /*高亮代码块行号*/
+        
+
+        /*访问数量*/
+        
+        $.getScript("//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js");
+        
+
+        /*代码高亮，行号对齐*/
+        $('.pre-numbering').css('line-height',$('.has-numbering').css('line-height'));
+
+        
+        
+    }
+
+    /*打赏页面隐藏与展示*/
+    
+    function dashangToggle() {
+        $(".shang_box").fadeToggle();
+        $(".hide_box").fadeToggle();
+    }
+    
+
+</script>
+
+<!--加入行号的高亮代码块样式-->
+
+<!--自定义样式设置-->
+<style>
+    
+    
+    .nav {
+        width: 542px;
+    }
+    .nav.fullscreen {
+        margin-left: -542px;
+    }
+    .nav-left {
+        width: 120px;
+    }
+    
+    
+    @media screen and (max-width: 1468px) {
+        .nav {
+            width: 492px;
+        }
+        .nav.fullscreen {
+            margin-left: -492px;
+        }
+        .nav-left {
+            width: 100px;
+        }
+    }
+    
+    
+    @media screen and (max-width: 1024px) {
+        .nav {
+            width: 492px;
+            margin-left: -492px
+        }
+        .nav.fullscreen {
+            margin-left: 0;
+        }
+    }
+    
+    @media screen and (max-width: 426px) {
+        .nav {
+            width: 100%;
+        }
+        .nav-left {
+            width: 100%;
+        }
+    }
+    
+    
+    .nav-right .title-list nav a .post-title, .nav-right .title-list #local-search-result a .post-title {
+        color: #383636;
+    }
+    
+    
+    .nav-right .title-list nav a .post-date, .nav-right .title-list #local-search-result a .post-date {
+        color: #5e5e5f;
+    }
+    
+    
+    .nav-right nav a.hover, #local-search-result a.hover{
+        background-color: #e2e0e0;
+    }
+    
+    
+
+    /*列表样式*/
+    
+
+    /* 背景图样式 */
+    
+    
+
+
+    /*引用块样式*/
+    
+
+    /*文章列表背景图*/
+    
+
+    
+</style>
+
+
+
+
+
+
+
+</html>

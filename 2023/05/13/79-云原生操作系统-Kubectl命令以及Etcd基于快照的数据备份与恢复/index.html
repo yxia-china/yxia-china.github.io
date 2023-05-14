@@ -1,0 +1,1131 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>79-云原生操作系统-Kubectl命令以及Etcd基于快照的数据备份与恢复 | Hexo</title>
+  <meta name="keywords" content="">
+  <meta name="description" content="79-云原生操作系统-Kubectl命令以及Etcd基于快照的数据备份与恢复 | Hexo">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="description" content="基于现有虚拟机磁盘为模版创建新的虚拟机使用 virt-install 创建虚拟机• 虽然使用virt-manager 可以方便的管理虚拟机,但如果需要批量进行虚拟机的创建管理,命令行工具virtinstall更加方便和适合案例：利用 qemu-img命令创建虚拟磁盘#注意: qemu-img create 一定要确认对应路径下没有此文件,如果存在将覆盖原文件  确认现有的虚拟磁盘文件[root@u">
+<meta property="og:type" content="article">
+<meta property="og:title" content="42-KVM虚拟化-基于现有虚拟机磁盘为模版创建新的虚拟机">
+<meta property="og:url" content="http://example.com/2023/05/14/42-KVM%E8%99%9A%E6%8B%9F%E5%8C%96-%E5%9F%BA%E4%BA%8E%E7%8E%B0%E6%9C%89%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%A3%81%E7%9B%98%E4%B8%BA%E6%A8%A1%E7%89%88%E5%88%9B%E5%BB%BA%E6%96%B0%E7%9A%84%E8%99%9A%E6%8B%9F%E6%9C%BA/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="基于现有虚拟机磁盘为模版创建新的虚拟机使用 virt-install 创建虚拟机• 虽然使用virt-manager 可以方便的管理虚拟机,但如果需要批量进行虚拟机的创建管理,命令行工具virtinstall更加方便和适合案例：利用 qemu-img命令创建虚拟磁盘#注意: qemu-img create 一定要确认对应路径下没有此文件,如果存在将覆盖原文件  确认现有的虚拟磁盘文件[root@u">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="http://example.com/img/092d6b54082e04ec1c20121058c692bc5844b5.png">
+<meta property="og:image" content="http://example.com/img/f8bada3025892d742fe1746c42ead86f562ddc.png">
+<meta property="article:published_time" content="2023-05-14T08:21:34.888Z">
+<meta property="article:modified_time" content="2023-05-14T08:23:40.552Z">
+<meta property="article:author" content="John Doe">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/img/092d6b54082e04ec1c20121058c692bc5844b5.png">
+
+
+<link rel="icon" href="/img/avatar.jpg">
+
+<link href="/css/style.css?v=1.1.0" rel="stylesheet">
+
+<link href="/css/hl_theme/atom-light.css?v=1.1.0" rel="stylesheet">
+
+<link href="//cdn.jsdelivr.net/npm/animate.css@4.1.0/animate.min.css" rel="stylesheet">
+
+<script src="//cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js"></script>
+<script src="/js/titleTip.js?v=1.1.0" ></script>
+
+<script src="//cdn.jsdelivr.net/npm/highlightjs@9.16.2/highlight.pack.min.js"></script>
+<script>
+    hljs.initHighlightingOnLoad();
+</script>
+
+<script src="//cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.min.js"></script>
+
+
+
+<script src="//cdn.jsdelivr.net/npm/jquery.cookie@1.4.1/jquery.cookie.min.js" ></script>
+
+<script src="/js/iconfont.js?v=1.1.0" ></script>
+
+<meta name="generator" content="Hexo 6.3.0"></head>
+<div style="display: none">
+  <input class="theme_disqus_on" value="false">
+  <input class="theme_preload_comment" value="">
+  <input class="theme_blog_path" value="">
+  <input id="theme_shortcut" value="true" />
+  <input id="theme_highlight_on" value="true" />
+  <input id="theme_code_copy" value="true" />
+</div>
+
+
+
+<body>
+<aside class="nav">
+    <div class="nav-left">
+        <a href="/"
+   class="avatar_target">
+    <img class="avatar"
+         src="/img/avatar.jpg"/>
+</a>
+<div class="author">
+    <span>John Doe</span>
+</div>
+
+<div class="icon">
+    
+        
+            <a title="rss"
+               href="/atom.xml"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-rss"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="github"
+               href="https://github.com/yelog"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-github"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="facebook"
+               href="https://www.facebook.com/faker.tops"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-facebook"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+    
+        
+    
+        
+            <a title="instagram"
+               href="https://www.facebook.com/faker.tops"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-instagram"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="reddit"
+               href="https://www.reddit.com/user/yelog/"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-reddit"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="weibo"
+               href="http://weibo.com/u/2307534817"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-weibo"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="jianshu"
+               href="https://www.jianshu.com/u/ff56736de7cf"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-jianshu"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="zhihu"
+               href="https://www.zhihu.com/people/jaytp/activities"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-zhihu"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+    
+        
+            <a title="oschina"
+               href="https://my.oschina.net/yelog"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-oschina"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+    
+        
+            <a title="email"
+               href="mailto:jaytp@qq.com"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-email"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="qq"
+               href="http://wpa.qq.com/msgrd?v=3&uin=872336115&site=qq&menu=yes"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-qq"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="kugou"
+               href="https://www.kugou.com/"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-kugou"></use>
+                    </svg>
+                
+            </a>
+        
+    
+        
+            <a title="neteasemusic"
+               href="https://music.163.com/#/user/home?id=88151013"
+               target="_blank">
+                
+                    <svg class="iconfont-svg" aria-hidden="true">
+                        <use xlink:href="#icon-neteasemusic"></use>
+                    </svg>
+                
+            </a>
+        
+    
+</div>
+
+
+
+
+<ul>
+    <li>
+        <div class="all active" data-rel="All">All
+            
+                <small>(36)</small>
+            
+        </div>
+    </li>
+    
+        
+            
+                <li>
+                    <div data-rel="SRE linux云计算">
+                        
+                        SRE linux云计算
+                        <small>(11)</small>
+                        
+                    </div>
+                    
+                </li>
+            
+        
+    
+        
+            
+                <li>
+                    <div data-rel="云原生">
+                        
+                        云原生
+                        <small>(10)</small>
+                        
+                    </div>
+                    
+                </li>
+            
+        
+    
+        
+            
+                <li>
+                    <div data-rel="PMP管理">
+                        
+                        PMP管理
+                        <small>(1)</small>
+                        
+                    </div>
+                    
+                </li>
+            
+        
+    
+        
+            
+                <li>
+                    <div data-rel="Python 爬虫">
+                        
+                        Python 爬虫
+                        <small>(14)</small>
+                        
+                    </div>
+                    
+                </li>
+            
+        
+    
+</ul>
+<div class="left-bottom">
+    <div class="menus">
+        
+            
+            
+            
+    </div>
+    <div>
+        
+            <a class="about  hasFriend  site_url"
+               
+               href="/about">About</a>
+        
+        <a style="width: 50%"
+                
+                                           class="friends">Friends</a>
+        
+    </div>
+</div>
+<input type="hidden" id="yelog_site_posts_number" value="36">
+
+<div style="display: none">
+    <span id="busuanzi_value_site_uv"></span>
+    <span id="busuanzi_value_site_pv"></span>
+</div>
+
+    </div>
+    <div class="nav-right">
+        <div class="friends-area">
+    <div class="friends-title">
+        Links
+        <i class="iconfont icon-left"></i>
+    </div>
+    <div class="friends-content">
+        <ul>
+            
+            <li><a target="_blank" href="http://yelog.org/">叶落阁</a></li>
+            
+        </ul>
+    </div>
+</div>
+        <div class="title-list">
+    <div class="right-top">
+        <div id="default-panel">
+            <i class="iconfont icon-search" data-title="搜索 快捷键 i"></i>
+            <div class="right-title">All</div>
+            <i class="iconfont icon-file-tree" data-title="切换到大纲视图 快捷键 w"></i>
+        </div>
+        <div id="search-panel">
+            <i class="iconfont icon-left" data-title="返回"></i>
+            <input id="local-search-input" autocomplete="off"/>
+            <label class="border-line" for="input"></label>
+            <i class="iconfont icon-case-sensitive" data-title="大小写敏感"></i>
+            <i class="iconfont icon-tag" data-title="标签"></i>
+        </div>
+        <div id="outline-panel" style="display: none">
+            <div class="right-title">大纲</div>
+            <i class="iconfont icon-list" data-title="切换到文章列表"></i>
+        </div>
+    </div>
+
+    <div class="tags-list">
+    <input id="tag-search" />
+    <div class="tag-wrapper">
+        
+    </div>
+
+</div>
+
+    
+    <nav id="title-list-nav">
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/14/42-KVM%E8%99%9A%E6%8B%9F%E5%8C%96-%E5%9F%BA%E4%BA%8E%E7%8E%B0%E6%9C%89%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%A3%81%E7%9B%98%E4%B8%BA%E6%A8%A1%E7%89%88%E5%88%9B%E5%BB%BA%E6%96%B0%E7%9A%84%E8%99%9A%E6%8B%9F%E6%9C%BA/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="42-KVM虚拟化-基于现有虚拟机磁盘为模版创建新的虚拟机">42-KVM虚拟化-基于现有虚拟机磁盘为模版创建新的虚拟机</span>
+            <span class="post-date" title="2023-05-14 16:21:34">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%B8%89%E7%AB%A0-2-requests%20%E8%BF%9B%E9%98%B6%E2%80%A2%20%E7%88%AC%E5%8F%96%E6%9F%90%E8%A7%86%E9%A2%91%E7%BD%91%E7%9B%B8%E5%85%B3%E8%A7%86%E9%A2%91/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第三章-2-requests 进阶• 爬取某视频网相关视频">Python爬虫-第三章-2-requests 进阶• 爬取某视频网相关视频</span>
+            <span class="post-date" title="2023-05-14 16:20:20">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/14/44-KVM%E8%99%9A%E6%8B%9F%E5%8C%96-%E5%AD%98%E5%82%A8%E7%AE%A1%E7%90%86%E5%92%8C%E7%A3%81%E7%9B%98%E6%89%A9%E5%AE%B9/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="44-KVM虚拟化-存储管理和磁盘扩容">44-KVM虚拟化-存储管理和磁盘扩容</span>
+            <span class="post-date" title="2023-05-14 16:18:30">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%B8%89%E7%AB%A0-3-%E5%88%A9%E7%94%A8re%E6%A8%A1%E5%9D%97%E7%88%AC%E5%8F%96%E6%9F%90%E7%BD%91%E7%94%B5%E5%BD%B1%E6%8E%92%E8%A1%8C%E6%A6%9C/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第三章-3-利用re模块爬取某网电影排行榜">Python爬虫-第三章-3-利用re模块爬取某网电影排行榜</span>
+            <span class="post-date" title="2023-05-14 16:16:51">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/14/46-Docker-Container%E5%AE%B9%E5%99%A8%E7%AE%A1%E7%90%86%E5%90%84%E7%A7%8D%E6%93%8D%E4%BD%9C/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="46-Docker-Container容器管理各种操作">46-Docker-Container容器管理各种操作</span>
+            <span class="post-date" title="2023-05-14 16:14:04">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/14/47-Docker-Dockerfile%E9%95%9C%E5%83%8F%E5%88%9B%E5%BB%BA%E8%87%AA%E5%8A%A8%E5%8C%96%E7%94%9F%E4%BA%A7%E6%A1%88%E4%BE%8B/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="47-Docker-Dockerfile镜像创建自动化生产案例">47-Docker-Dockerfile镜像创建自动化生产案例</span>
+            <span class="post-date" title="2023-05-14 16:09:19">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/14/48-Docker-%E5%A4%9A%E5%AE%B9%E5%99%A8%E6%95%B0%E6%8D%AE%E5%85%B1%E4%BA%AB%E5%8F%8A%E6%8C%81%E4%B9%85%E5%8C%96/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="48-Docker-多容器数据共享及持久化">48-Docker-多容器数据共享及持久化</span>
+            <span class="post-date" title="2023-05-14 16:06:48">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%B8%89%E7%AB%A0-4-%E5%88%A9%E7%94%A8BeautifulSoup%E6%A8%A1%E5%9D%97%E7%88%AC%E5%8F%96%E6%9F%90%E7%BD%91%E5%A3%81%E7%BA%B8%E5%9B%BE%E5%BA%93%E5%9B%BE%E7%89%87/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第三章-4-利用BeautifulSoup模块爬取某网壁纸图库图片">Python爬虫-第三章-4-利用BeautifulSoup模块爬取某网壁纸图库图片</span>
+            <span class="post-date" title="2023-05-14 16:05:34">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%B8%89%E7%AB%A0-5-%E5%88%A9%E7%94%A8xpath%E7%88%AC%E5%8F%96%E6%9F%90%E5%85%AB%E6%88%92%E7%BD%91%E7%9B%B8%E5%85%B3%E8%AF%8D%E8%AF%AD%E5%85%AC%E5%8F%B8%E7%9A%84%E4%BF%A1%E6%81%AF%E5%92%8C%E4%BB%B7%E6%A0%BC/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第三章-5-利用xpath爬取某八戒网相关词语公司的信息和价格">Python爬虫-第三章-5-利用xpath爬取某八戒网相关词语公司的信息和价格</span>
+            <span class="post-date" title="2023-05-14 16:04:16">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%B8%89%E7%AB%A0-6-%E6%8A%93%E5%8F%96%E6%9F%90%E4%BA%91%E9%9F%B3%E4%B9%90%E8%AF%84%E8%AE%BA%E6%95%B0%E6%8D%AE/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第三章-6-抓取某云音乐评论数据">Python爬虫-第三章-6-抓取某云音乐评论数据</span>
+            <span class="post-date" title="2023-05-14 16:03:15">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-1-%E5%A4%9A%E7%BA%BF%E7%A8%8B%E5%A4%9A%E8%BF%9B%E7%A8%8B%E5%B9%B6%E5%8F%91%E7%88%AC%E5%8F%96%E2%85%A0/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-1-多线程多进程并发爬取Ⅰ">Python爬虫-第四章-1-多线程多进程并发爬取Ⅰ</span>
+            <span class="post-date" title="2023-05-14 16:01:27">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-1-%E5%A4%9A%E7%BA%BF%E7%A8%8B%E5%A4%9A%E8%BF%9B%E7%A8%8B%E5%B9%B6%E5%8F%91%E7%88%AC%E5%8F%96%E2%85%A1/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-1-多线程多进程并发爬取Ⅱ">Python爬虫-第四章-1-多线程多进程并发爬取Ⅱ</span>
+            <span class="post-date" title="2023-05-14 16:00:37">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-1-%E5%A4%9A%E7%BA%BF%E7%A8%8B%E5%A4%9A%E8%BF%9B%E7%A8%8B%E5%B9%B6%E5%8F%91%E7%88%AC%E5%8F%96%E2%85%A2-%E7%88%AC%E5%8F%96%E6%9F%90%E8%8F%9C%E5%B8%82%E5%9C%BA%E6%89%B9%E5%8F%91%E4%BB%B7%E6%95%B0%E6%8D%AE/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-1-多线程多进程并发爬取Ⅲ-爬取某菜市场批发价数据">Python爬虫-第四章-1-多线程多进程并发爬取Ⅲ-爬取某菜市场批发价数据</span>
+            <span class="post-date" title="2023-05-14 15:59:35">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-2-%E5%8D%8F%E7%A8%8B%E4%B8%8E%E5%BC%82%E6%AD%A5/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-2-协程与异步">Python爬虫-第四章-2-协程与异步</span>
+            <span class="post-date" title="2023-05-14 15:58:20">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/14/52-HAProxy-10%E7%A7%8D%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E8%B0%83%E5%BA%A6%E7%AE%97%E6%B3%95/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="52-HAProxy-10种负载均衡调度算法">52-HAProxy-10种负载均衡调度算法</span>
+            <span class="post-date" title="2023-05-14 15:56:12">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/14/55-Redis-%E7%BC%96%E8%AF%91%E9%83%A8%E7%BD%B2%E5%8F%8A%E6%95%B0%E6%8D%AE%E6%8C%81%E4%B9%85%E5%8C%96/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="55-Redis-编译部署及数据持久化">55-Redis-编译部署及数据持久化</span>
+            <span class="post-date" title="2023-05-14 15:54:02">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/14/56-Redis%E9%9B%86%E7%BE%A4-%E5%93%A8%E5%85%B5Sentinel%E6%90%AD%E5%BB%BA%E5%AE%9E%E7%8E%B0%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E9%AB%98%E5%8F%AF%E7%94%A8/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="56-Redis集群-哨兵Sentinel搭建实现负载均衡高可用">56-Redis集群-哨兵Sentinel搭建实现负载均衡高可用</span>
+            <span class="post-date" title="2023-05-14 15:41:50">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/14/998-%E6%90%AD%E5%BB%BA%E4%B8%80%E5%8F%B0%E7%A7%81%E7%94%A8%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%85%A8%E8%BF%87%E7%A8%8B/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="998-搭建一台私用服务器全过程">998-搭建一台私用服务器全过程</span>
+            <span class="post-date" title="2023-05-14 15:36:20">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/%20Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-3-%E5%A4%9A%E7%BA%BF%E7%A8%8B%E5%A4%9A%E8%BF%9B%E7%A8%8B%E6%8F%90%E5%8D%87%E4%BB%BB%E5%8A%A1%E6%89%A7%E8%A1%8C%E6%95%88%E7%8E%87/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-3-多线程多进程提升任务执行效率">Python爬虫-第四章-3-多线程多进程提升任务执行效率</span>
+            <span class="post-date" title="2023-05-14 15:35:16">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/14/%20Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-4-%E5%88%A9%E7%94%A8%E7%BA%BF%E7%A8%8B%E6%B1%A0%E5%92%8C%E8%BF%9B%E7%A8%8B%E6%B1%A0%E9%AB%98%E6%95%88%E7%88%AC%E5%8F%96%E5%8C%97%E4%BA%AC%E6%9F%90%E5%8F%91%E8%8F%9C%E5%9C%B0%E6%95%B0%E6%8D%AE/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-4-利用线程池和进程池高效爬取北京某发菜地数据">Python爬虫-第四章-4-利用线程池和进程池高效爬取北京某发菜地数据</span>
+            <span class="post-date" title="2023-05-14 15:34:07">2023/05/14</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/13/%20Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E5%9B%9B%E7%AB%A0-5-%E9%AB%98%E6%95%88%E6%8A%93%E5%8F%96%E8%A7%86%E9%A2%91%E7%BD%91%E7%AB%99%E8%A7%86%E9%A2%91%E8%B5%84%E6%BA%90%E8%87%B3%E6%9C%AC%E5%9C%B0/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第四章-5-高效抓取视频网站视频资源至本地">Python爬虫-第四章-5-高效抓取视频网站视频资源至本地</span>
+            <span class="post-date" title="2023-05-13 20:13:14">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/13/%20Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%BA%94%E7%AB%A0-1-%E8%B6%85%E7%BA%A7%E9%B9%B0%E6%8F%92%E4%BB%B6%E5%AE%9E%E7%8E%B0%E8%87%AA%E5%8A%A8%E5%A1%AB%E5%86%99%E8%AF%86%E5%88%AB%E7%A0%81%E5%B9%B6%E7%99%BB%E5%BD%9512306%E7%BD%91%E7%AB%99/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第五章-1-超级鹰插件实现自动填写识别码并登录12306网站">Python爬虫-第五章-1-超级鹰插件实现自动填写识别码并登录12306网站</span>
+            <span class="post-date" title="2023-05-13 19:54:30">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All Python 爬虫 "
+           href="/2023/05/13/Python%E7%88%AC%E8%99%AB-%E7%AC%AC%E4%BA%94%E7%AB%A0-2-%E7%88%AC%E5%8F%96%E6%9F%90%E7%BD%91%E7%AB%99%E5%9B%BE%E5%BA%93/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="Python爬虫-第五章-2-爬取某网站图库">Python爬虫-第五章-2-爬取某网站图库</span>
+            <span class="post-date" title="2023-05-13 19:52:47">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/66-CICD%E6%8C%81%E7%BB%AD%E9%9B%86%E6%88%90%E5%B7%A5%E5%85%B7-Jenkins%E5%A3%B0%E6%98%8E%E5%BC%8FPipeline%E9%83%A8%E7%BD%B2JAVA%E7%A8%8B%E5%BA%8F%E7%94%9F%E4%BA%A7%E6%A1%88%E4%BE%8B(%E5%8C%85%E5%90%ABDocker%E6%A1%88%E4%BE%8B)/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="66-CICD持续集成工具-Jenkins声明式Pipeline部署JAVA程序生产案例(包含Docker案例)">66-CICD持续集成工具-Jenkins声明式Pipeline部署JAVA程序生产案例(包含Docker案例)</span>
+            <span class="post-date" title="2023-05-13 19:49:20">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/997-%E6%89%A9%E5%B1%95KVM%E8%99%9A%E6%8B%9F%E6%9C%BA%E9%80%BB%E8%BE%91%E5%8D%B7/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="67-日志分析系统ELK-ELK架构简述">67-日志分析系统ELK-ELK架构简述</span>
+            <span class="post-date" title="2023-05-13 19:47:57">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/67-%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90%E7%B3%BB%E7%BB%9FELK-ELK%E6%9E%B6%E6%9E%84%E7%AE%80%E8%BF%B0/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="67-日志分析系统ELK-ELK架构简述">67-日志分析系统ELK-ELK架构简述</span>
+            <span class="post-date" title="2023-05-13 19:46:06">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/68-%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90%E7%B3%BB%E7%BB%9FELK-Elasticsearch%E5%8D%95%E7%82%B9%E9%83%A8%E7%BD%B2%E5%92%8C%E9%85%8D%E7%BD%AE%E4%BC%98%E5%8C%96%EF%BC%88%E5%90%AB%E5%9F%BA%E4%BA%8EDocker%E5%8D%95%E7%82%B9%E9%83%A8%E7%BD%B2%E6%A1%88%E4%BE%8B%EF%BC%89/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="68-日志分析系统ELK-Elasticsearch单点部署和配置优化（含基于Docker单点部署案例）">68-日志分析系统ELK-Elasticsearch单点部署和配置优化（含基于Docker单点部署案例）</span>
+            <span class="post-date" title="2023-05-13 19:44:06">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/13/78-%E4%BA%91%E5%8E%9F%E7%94%9F%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-Kubernetes%E9%9B%86%E7%BE%A4%E8%8A%82%E7%82%B9%E6%A8%AA%E5%90%91%E4%BC%B8%E7%BC%A9%E5%8F%8A%E6%A0%B8%E5%BF%83%E7%BB%84%E4%BB%B6%E7%89%88%E6%9C%AC%E5%8D%87%E7%BA%A7/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="78-云原生操作系统-Kubernetes集群节点横向伸缩及核心组件版本升级">78-云原生操作系统-Kubernetes集群节点横向伸缩及核心组件版本升级</span>
+            <span class="post-date" title="2023-05-13 17:37:37">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/13/79-%E4%BA%91%E5%8E%9F%E7%94%9F%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-Kubectl%E5%91%BD%E4%BB%A4%E4%BB%A5%E5%8F%8AEtcd%E5%9F%BA%E4%BA%8E%E5%BF%AB%E7%85%A7%E7%9A%84%E6%95%B0%E6%8D%AE%E5%A4%87%E4%BB%BD%E4%B8%8E%E6%81%A2%E5%A4%8D/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="79-云原生操作系统-Kubectl命令以及Etcd基于快照的数据备份与恢复">79-云原生操作系统-Kubectl命令以及Etcd基于快照的数据备份与恢复</span>
+            <span class="post-date" title="2023-05-13 17:34:14">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All PMP管理 "
+           href="/2023/05/13/%E9%A2%84%E6%B5%8B%E5%9E%8B%E9%A1%B9%E7%9B%AE%E7%AE%A1%E7%90%86-6-%E9%A1%B9%E7%9B%AE%E8%BF%9B%E5%BA%A6%E7%AE%A1%E7%90%86%E2%85%A1/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="预测型项目管理-6-项目进度管理Ⅱ">预测型项目管理-6-项目进度管理Ⅱ</span>
+            <span class="post-date" title="2023-05-13 17:32:31">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/13/84-%E4%BA%91%E5%8E%9F%E7%94%9F%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-%E5%9F%BA%E4%BA%8Enerdctl%20+%20buildkitd%E6%9E%84%E5%BB%BA%E5%AE%B9%E5%99%A8%E9%95%9C%E5%83%8F20230513/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="84-云原生操作系统-基于nerdctl + buildkitd构建容器镜像">84-云原生操作系统-基于nerdctl + buildkitd构建容器镜像</span>
+            <span class="post-date" title="2023-05-13 17:22:54">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/13/86-%E4%BA%91%E5%8E%9F%E7%94%9F%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-Zookeeper%E9%9B%86%E7%BE%A4%E5%8F%8A%E5%BE%AE%E6%9C%8D%E5%8A%A1%E5%8A%A8%E6%80%81%E6%B3%A8%E5%86%8C%E5%92%8C%E5%8F%91%E7%8E%B0%E4%B8%9A%E5%8A%A1%E5%AE%B9%E5%99%A8%E5%8C%96%E6%A1%88%E4%BE%8B/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="86-云原生操作系统-Zookeeper集群及微服务动态注册和发现业务容器化案例">86-云原生操作系统-Zookeeper集群及微服务动态注册和发现业务容器化案例</span>
+            <span class="post-date" title="2023-05-13 17:13:23">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All 云原生 "
+           href="/2023/05/13/87-%E4%BA%91%E5%8E%9F%E7%94%9F%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F-Redis%E5%8D%95%E6%9C%BA%E5%92%8C%E9%9B%86%E7%BE%A4%E4%B8%9A%E5%8A%A1%E5%AE%B9%E5%99%A8%E5%8C%96%E6%A1%88%E4%BE%8B/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="87-云原生操作系统-Redis单机和集群业务容器化案例">87-云原生操作系统-Redis单机和集群业务容器化案例</span>
+            <span class="post-date" title="2023-05-13 17:08:49">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/997-%E4%BD%BF%E7%94%A8ChatGPT%E5%81%9A%E8%BF%90%E7%BB%B4%E5%BA%94%E7%94%A8%E5%B7%A5%E5%85%B7%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E8%A7%A3%E7%AD%94/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="997-使用ChatGPT做运维应用工具常见问题解答">997-使用ChatGPT做运维应用工具常见问题解答</span>
+            <span class="post-date" title="2023-05-13 15:49:52">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/%E5%A4%A7%E5%9E%8B%E4%BA%92%E8%81%94%E7%BD%91%E5%BE%AE%E6%9C%8D%E5%8A%A1%E6%9E%B6%E6%9E%84%E5%9B%BE/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="大型互联网微服务架构图">大型互联网微服务架构图</span>
+            <span class="post-date" title="2023-05-13 15:47:16">2023/05/13</span>
+        </a>
+        
+        
+        <a  class="All SRE linux云计算 "
+           href="/2023/05/13/%E4%BA%91%E8%AE%A1%E7%AE%97%E6%9E%B6%E6%9E%84%E5%9B%BE/"
+           data-tag=""
+           data-author="" >
+            <span class="post-title" title="云计算架构图">云计算架构图</span>
+            <span class="post-date" title="2023-05-13 15:24:25">2023/05/13</span>
+        </a>
+        
+        <div id="no-item-tips">
+
+        </div>
+    </nav>
+    <div id="outline-list">
+    </div>
+</div>
+
+    </div>
+    <div class="hide-list">
+        <div class="semicircle" data-title="切换全屏 快捷键 s">
+            <div class="brackets first"><</div>
+            <div class="brackets">&gt;</div>
+        </div>
+    </div>
+</aside>
+<div id="post">
+    <div class="pjax">
+        <article id="post-79-云原生操作系统-Kubectl命令以及Etcd基于快照的数据备份与恢复" class="article article-type-post" itemscope itemprop="blogPost">
+    
+        <h1 class="article-title">79-云原生操作系统-Kubectl命令以及Etcd基于快照的数据备份与恢复</h1>
+    
+    <div class="article-meta">
+        
+        
+        
+        <span class="book">
+            <i class="iconfont icon-category"></i>
+            
+            
+            <a  data-rel="云原生">云原生</a>
+            
+        </span>
+        
+        
+    </div>
+    <div class="article-meta">
+        
+            Created At : <time class="date" title='Updated At: 2023-05-13 17:36:18'>2023-05-13 17:34</time>
+        
+    </div>
+    <div class="article-meta">
+        
+        
+        <span id="busuanzi_container_page_pv">
+            Views 👀 :<span id="busuanzi_value_page_pv">
+                <span class="count-comment">
+                    <span class="spinner">
+                      <div class="cube1"></div>
+                      <div class="cube2"></div>
+                    </span>
+                </span>
+            </span>
+        </span>
+        
+        
+    </div>
+    
+    <div class="toc-ref">
+    
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#kubectl-get-service-%E2%80%93all-namespaces-o-wide"><span class="toc-text">kubectl get service –all-namespaces -o wide</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#kubectl-get-pods-%E2%80%93all-namespaces-o-wide"><span class="toc-text">kubectl get pods –all-namespaces -o wide</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#kubectl-get-nodes-%E2%80%93all-namespaces-o-wide"><span class="toc-text">kubectl get nodes –all-namespaces -o wide</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#kubectl-get-deployment-%E2%80%93all-namespaces"><span class="toc-text">kubectl get deployment –all-namespaces</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#kubectl-get-deployment-n-magedu-o-wide-%E6%9B%B4%E6%94%B9%E6%98%BE%E7%A4%BA%E6%A0%BC%E5%BC%8F"><span class="toc-text">kubectl get deployment -n magedu -o wide #更改显示格式</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#kubectl-describe-pods-mooreyxia-tomcat-app1-deployment-n-myserver-%E6%9F%A5%E7%9C%8B%E6%9F%90%E4%B8%AA%E8%B5%84%E6%BA%90%E8%AF%A6%E7%BB%86%E4%BF%A1%E6%81%AF"><span class="toc-text">kubectl describe pods mooreyxia-tomcat-app1-deployment -n myserver #查看某个资源详细信息</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#kubectl-create-f-tomcat-app1-yaml"><span class="toc-text">kubectl create -f tomcat-app1.yaml</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#kubectl-apply-f-tomcat-app1-yaml"><span class="toc-text">kubectl apply -f tomcat-app1.yaml</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#kubectl-delete-f-tomcat-app1-yaml"><span class="toc-text">kubectl delete -f tomcat-app1.yaml</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#kubectl-create-f-tomcat-app1-yaml-%E2%80%93save-config-%E2%80%93record"><span class="toc-text">kubectl create -f tomcat-app1.yaml –save-config –record</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#kubectl-apply-f-tomcat-app1-yaml-%E2%80%93record-%E6%8E%A8%E8%8D%90%E5%91%BD%E4%BB%A4"><span class="toc-text">kubectl apply -f tomcat-app1.yaml –record #推荐命令</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#kubectl-exec-it-mooreyxia-tomcat-app1-deployment-6bccd8f9c7-g76s5-bash-n-myserver"><span class="toc-text">kubectl exec -it mooreyxia-tomcat-app1-deployment-6bccd8f9c7-g76s5 bash -n myserver</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#kubectl-logs-mooreyxia-tomcat-app1-deployment-6bccd8f9c7-g76s5-n-magedu"><span class="toc-text">kubectl logs mooreyxia-tomcat-app1-deployment-6bccd8f9c7-g76s5 -n magedu</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#kubectl-delete-pods-mooreyxia-tomcat-app1-deployment-6bccd8f9c7-g76s5-n-myserver%E2%80%A2-%E8%AE%BE%E7%BD%AEkubectl%E5%91%BD%E4%BB%A4%E8%A1%A5%E5%85%A8"><span class="toc-text">kubectl delete pods mooreyxia-tomcat-app1-deployment-6bccd8f9c7-g76s5 -n myserver• 设置kubectl命令补全</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#cluster-backup-playbook"><span class="toc-text">cluster-backup playbook</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#read-the-guide-%E2%80%98op-x2F-cluster-restore-md%E2%80%99"><span class="toc-text">read the guide: ‘op&#x2F;cluster_restore.md’</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#step1-find-a-healthy-member-in-the-etcd-cluster"><span class="toc-text">step1: find a healthy member in the etcd cluster</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#step2-backup-data-to-the-ansible-node"><span class="toc-text">step2: backup data to the ansible node</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#cluster-restore-playbook"><span class="toc-text">cluster-restore playbook</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#read-the-guide-%E2%80%98op-x2F-cluster-restore-md%E2%80%99-1"><span class="toc-text">read the guide: ‘op&#x2F;cluster_restore.md’</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#https-kubernetes-io-docs-tasks-administer-cluster-configure-upgrade-etcd-restoring-an-etcd-cluster"><span class="toc-text">https:&#x2F;&#x2F;kubernetes.io&#x2F;docs&#x2F;tasks&#x2F;administer-cluster&#x2F;configure-upgrade-etcd&#x2F;#restoring-an-etcd-cluster</span></a></li></ol>
+    
+<style>
+    .left-col .switch-btn,
+    .left-col .switch-area {
+        display: none;
+    }
+    .toc-level-3 i,
+    .toc-level-3 ol {
+        display: none !important;
+    }
+</style>
+</div>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>Kubectl常用命令<br>[root@K8s-ansible ~]#kubectl api-resources<br>NAME                              SHORTNAMES   APIVERSION                             NAMESPACED   KIND<br>bindings                                       v1                                     true         Binding<br>componentstatuses                 cs           v1                                     false        ComponentStatus<br>configmaps                        cm           v1                                     true         ConfigMap<br>endpoints                         ep           v1                                     true         Endpoints<br>events                            ev           v1                                     true         Event<br>limitranges                       limits       v1                                     true         LimitRange<br>namespaces                        ns           v1                                     false        Namespace<br>nodes                             no           v1                                     false        Node<br>persistentvolumeclaims            pvc          v1                                     true         PersistentVolumeClaim<br>persistentvolumes                 pv           v1                                     false        PersistentVolume<br>pods                              po           v1                                     true         Pod<br>podtemplates                                   v1                                     true         PodTemplate<br>replicationcontrollers            rc           v1                                     true         ReplicationController<br>resourcequotas                    quota        v1                                     true         ResourceQuota<br>secrets                                        v1                                     true         Secret<br>serviceaccounts                   sa           v1                                     true         ServiceAccount<br>services                          svc          v1                                     true         Service<br>mutatingwebhookconfigurations                  admissionregistration.k8s.io&#x2F;v1        false        MutatingWebhookConfiguration<br>validatingwebhookconfigurations                admissionregistration.k8s.io&#x2F;v1        false        ValidatingWebhookConfiguration<br>customresourcedefinitions         crd,crds     apiextensions.k8s.io&#x2F;v1                false        CustomResourceDefinition<br>apiservices                                    apiregistration.k8s.io&#x2F;v1              false        APIService<br>controllerrevisions                            apps&#x2F;v1                                true         ControllerRevision<br>daemonsets                        ds           apps&#x2F;v1                                true         DaemonSet<br>deployments                       deploy       apps&#x2F;v1                                true         Deployment<br>replicasets                       rs           apps&#x2F;v1                                true         ReplicaSet<br>statefulsets                      sts          apps&#x2F;v1                                true         StatefulSet<br>tokenreviews                                   authentication.k8s.io&#x2F;v1               false        TokenReview<br>localsubjectaccessreviews                      authorization.k8s.io&#x2F;v1                true         LocalSubjectAccessReview<br>selfsubjectaccessreviews                       authorization.k8s.io&#x2F;v1                false        SelfSubjectAccessReview<br>selfsubjectrulesreviews                        authorization.k8s.io&#x2F;v1                false        SelfSubjectRulesReview<br>subjectaccessreviews                           authorization.k8s.io&#x2F;v1                false        SubjectAccessReview<br>horizontalpodautoscalers          hpa          autoscaling&#x2F;v2                         true         HorizontalPodAutoscaler<br>cronjobs                          cj           batch&#x2F;v1                               true         CronJob<br>jobs                                           batch&#x2F;v1                               true         Job<br>certificatesigningrequests        csr          certificates.k8s.io&#x2F;v1                 false        CertificateSigningRequest<br>leases                                         coordination.k8s.io&#x2F;v1                 true         Lease<br>endpointslices                                 discovery.k8s.io&#x2F;v1                    true         EndpointSlice<br>events                            ev           events.k8s.io&#x2F;v1                       true         Event<br>flowschemas                                    flowcontrol.apiserver.k8s.io&#x2F;v1beta3   false        FlowSchema<br>prioritylevelconfigurations                    flowcontrol.apiserver.k8s.io&#x2F;v1beta3   false        PriorityLevelConfiguration<br>ingressclasses                                 networking.k8s.io&#x2F;v1                   false        IngressClass<br>ingresses                         ing          networking.k8s.io&#x2F;v1                   true         Ingress<br>networkpolicies                   netpol       networking.k8s.io&#x2F;v1                   true         NetworkPolicy<br>runtimeclasses                                 node.k8s.io&#x2F;v1                         false        RuntimeClass<br>poddisruptionbudgets              pdb          policy&#x2F;v1                              true         PodDisruptionBudget<br>clusterrolebindings                            rbac.authorization.k8s.io&#x2F;v1           false        ClusterRoleBinding<br>clusterroles                                   rbac.authorization.k8s.io&#x2F;v1           false        ClusterRole<br>rolebindings                                   rbac.authorization.k8s.io&#x2F;v1           true         RoleBinding<br>roles                                          rbac.authorization.k8s.io&#x2F;v1           true         Role<br>priorityclasses                   pc           scheduling.k8s.io&#x2F;v1                   false        PriorityClass<br>csidrivers                                     storage.k8s.io&#x2F;v1                      false        CSIDriver<br>csinodes                                       storage.k8s.io&#x2F;v1                      false        CSINode<br>csistoragecapacities                           storage.k8s.io&#x2F;v1                      true         CSIStorageCapacity<br>storageclasses                    sc           storage.k8s.io&#x2F;v1                      false        StorageClass<br>volumeattachments                              storage.k8s.io&#x2F;v1                      false        VolumeAttachment• 常见命令<br>#官网API<br><a target="_blank" rel="noopener" href="https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands">https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands</a></p>
+<h1 id="kubectl-get-service-–all-namespaces-o-wide"><a href="#kubectl-get-service-–all-namespaces-o-wide" class="headerlink" title="kubectl get service –all-namespaces -o wide"></a>kubectl get service –all-namespaces -o wide</h1><h1 id="kubectl-get-pods-–all-namespaces-o-wide"><a href="#kubectl-get-pods-–all-namespaces-o-wide" class="headerlink" title="kubectl get pods –all-namespaces -o wide"></a>kubectl get pods –all-namespaces -o wide</h1><h1 id="kubectl-get-nodes-–all-namespaces-o-wide"><a href="#kubectl-get-nodes-–all-namespaces-o-wide" class="headerlink" title="kubectl get nodes –all-namespaces -o wide"></a>kubectl get nodes –all-namespaces -o wide</h1><h1 id="kubectl-get-deployment-–all-namespaces"><a href="#kubectl-get-deployment-–all-namespaces" class="headerlink" title="kubectl get deployment –all-namespaces"></a>kubectl get deployment –all-namespaces</h1><h1 id="kubectl-get-deployment-n-magedu-o-wide-更改显示格式"><a href="#kubectl-get-deployment-n-magedu-o-wide-更改显示格式" class="headerlink" title="kubectl get deployment -n magedu -o wide #更改显示格式"></a>kubectl get deployment -n magedu -o wide #更改显示格式</h1><h1 id="kubectl-describe-pods-mooreyxia-tomcat-app1-deployment-n-myserver-查看某个资源详细信息"><a href="#kubectl-describe-pods-mooreyxia-tomcat-app1-deployment-n-myserver-查看某个资源详细信息" class="headerlink" title="kubectl describe pods mooreyxia-tomcat-app1-deployment -n myserver #查看某个资源详细信息"></a>kubectl describe pods mooreyxia-tomcat-app1-deployment -n myserver #查看某个资源详细信息</h1><h1 id="kubectl-create-f-tomcat-app1-yaml"><a href="#kubectl-create-f-tomcat-app1-yaml" class="headerlink" title="kubectl create -f tomcat-app1.yaml"></a>kubectl create -f tomcat-app1.yaml</h1><h1 id="kubectl-apply-f-tomcat-app1-yaml"><a href="#kubectl-apply-f-tomcat-app1-yaml" class="headerlink" title="kubectl apply -f tomcat-app1.yaml"></a>kubectl apply -f tomcat-app1.yaml</h1><h1 id="kubectl-delete-f-tomcat-app1-yaml"><a href="#kubectl-delete-f-tomcat-app1-yaml" class="headerlink" title="kubectl delete -f tomcat-app1.yaml"></a>kubectl delete -f tomcat-app1.yaml</h1><h1 id="kubectl-create-f-tomcat-app1-yaml-–save-config-–record"><a href="#kubectl-create-f-tomcat-app1-yaml-–save-config-–record" class="headerlink" title="kubectl create -f tomcat-app1.yaml –save-config –record"></a>kubectl create -f tomcat-app1.yaml –save-config –record</h1><h1 id="kubectl-apply-f-tomcat-app1-yaml-–record-推荐命令"><a href="#kubectl-apply-f-tomcat-app1-yaml-–record-推荐命令" class="headerlink" title="kubectl apply -f tomcat-app1.yaml –record #推荐命令"></a>kubectl apply -f tomcat-app1.yaml –record #推荐命令</h1><h1 id="kubectl-exec-it-mooreyxia-tomcat-app1-deployment-6bccd8f9c7-g76s5-bash-n-myserver"><a href="#kubectl-exec-it-mooreyxia-tomcat-app1-deployment-6bccd8f9c7-g76s5-bash-n-myserver" class="headerlink" title="kubectl exec -it mooreyxia-tomcat-app1-deployment-6bccd8f9c7-g76s5 bash -n myserver"></a>kubectl exec -it mooreyxia-tomcat-app1-deployment-6bccd8f9c7-g76s5 bash -n myserver</h1><h1 id="kubectl-logs-mooreyxia-tomcat-app1-deployment-6bccd8f9c7-g76s5-n-magedu"><a href="#kubectl-logs-mooreyxia-tomcat-app1-deployment-6bccd8f9c7-g76s5-n-magedu" class="headerlink" title="kubectl logs mooreyxia-tomcat-app1-deployment-6bccd8f9c7-g76s5 -n magedu"></a>kubectl logs mooreyxia-tomcat-app1-deployment-6bccd8f9c7-g76s5 -n magedu</h1><h1 id="kubectl-delete-pods-mooreyxia-tomcat-app1-deployment-6bccd8f9c7-g76s5-n-myserver•-设置kubectl命令补全"><a href="#kubectl-delete-pods-mooreyxia-tomcat-app1-deployment-6bccd8f9c7-g76s5-n-myserver•-设置kubectl命令补全" class="headerlink" title="kubectl delete pods mooreyxia-tomcat-app1-deployment-6bccd8f9c7-g76s5 -n myserver• 设置kubectl命令补全"></a>kubectl delete pods mooreyxia-tomcat-app1-deployment-6bccd8f9c7-g76s5 -n myserver• 设置kubectl命令补全</h1><p>[root@K8s-ansible script]#kubectl –help|grep completion<br>  completion      Output shell completion code for the specified shell (bash, zsh, fish, or powershell)</p>
+<p>#生成命令行自动补全脚本<br>[root@K8s-ansible script]#kubectl completion bash<br>#加载自动补全脚本即可<br>[root@K8s-ansible script]#source &lt;(kubectl completion bash)</p>
+<p>#如果出现命令补全报错，则需要下载bash命令补全安装包<br>[root@K8s-ansible ~]#kubectl g-bash: _get_comp_words_by_ref: command not found<br>-bash: _get_comp_words_by_ref: command not found<br>#安装bash-completion<br>[root@K8s-ansible ~]#apt install bash-completion -y<br>[root@K8s-ansible ~]#source &#x2F;etc&#x2F;bash_completion<br>Etcd客户端命令及基于快照的备份和恢复<br><img src="/../img/f87ded939ef33ade7f74060d9a60922555f2b2.png"><br>Service文件配置说明<br>[root@K8s-etcd01 ~]#cat &#x2F;etc&#x2F;systemd&#x2F;system&#x2F;etcd.service<br>[Unit]<br>Description&#x3D;Etcd Server<br>After&#x3D;network.target<br>After&#x3D;network-online.target<br>Wants&#x3D;network-online.target<br>Documentation&#x3D;<a target="_blank" rel="noopener" href="https://github.com/coreos">https://github.com/coreos</a></p>
+<p>[Service]<br>Type&#x3D;notify<br>WorkingDirectory&#x3D;&#x2F;var&#x2F;lib&#x2F;etcd #数据保存目录<br>ExecStart&#x3D;&#x2F;usr&#x2F;local&#x2F;bin&#x2F;etcd \ #二进制文件路径<br>  –name&#x3D;etcd-192.168.11.217 \ #当前node名称<br>  –cert-file&#x3D;&#x2F;etc&#x2F;kubernetes&#x2F;ssl&#x2F;etcd.pem <br>  –key-file&#x3D;&#x2F;etc&#x2F;kubernetes&#x2F;ssl&#x2F;etcd-key.pem <br>  –peer-cert-file&#x3D;&#x2F;etc&#x2F;kubernetes&#x2F;ssl&#x2F;etcd.pem <br>  –peer-key-file&#x3D;&#x2F;etc&#x2F;kubernetes&#x2F;ssl&#x2F;etcd-key.pem <br>  –trusted-ca-file&#x3D;&#x2F;etc&#x2F;kubernetes&#x2F;ssl&#x2F;ca.pem <br>  –peer-trusted-ca-file&#x3D;&#x2F;etc&#x2F;kubernetes&#x2F;ssl&#x2F;ca.pem <br>  –initial-advertise-peer-urls&#x3D;<a target="_blank" rel="noopener" href="https://192.168.11.217:2380/">https://192.168.11.217:2380</a> \ #通告自己的集群端口<br>  –listen-peer-urls&#x3D;<a target="_blank" rel="noopener" href="https://192.168.11.217:2380/">https://192.168.11.217:2380</a> \ #集群之间通讯端口<br>  –listen-client-urls&#x3D;<a href="https://192.168.11.217:2379,http://127.0.0.1:2379">https://192.168.11.217:2379,http://127.0.0.1:2379</a> \ #客户端访问地址<br>  –advertise-client-urls&#x3D;<a target="_blank" rel="noopener" href="https://192.168.11.217:2379/">https://192.168.11.217:2379</a> \ #通告自己的客户端端口<br>  –initial-cluster-token&#x3D;etcd-cluster-0 \ #创建集群使用的token，一个集群内的节点保持一致<br>  –initial-cluster&#x3D;etcd-192.168.11.217&#x3D;<a href="https://192.168.11.217:2380,etcd-">https://192.168.11.217:2380,etcd-</a> 192.168.11.218&#x3D;<a href="https://192.168.11.218:2380,etcd-192.168.11.219=https://192.168.11.219:2380">https://192.168.11.218:2380,etcd-192.168.11.219=https://192.168.11.219:2380</a> \<br>  –initial-cluster-state&#x3D;new \ #新建集群的时候的值为new,如果是已经存在的集群为existing<br>  –data-dir&#x3D;&#x2F;var&#x2F;lib&#x2F;etcd \ #数据目录路径<br>  –wal-dir&#x3D; <br>  –snapshot-count&#x3D;50000 <br>  –auto-compaction-retention&#x3D;1 \ #数据压缩：第一次压缩等待1小时，以后每次1小时*10%&#x3D;1小时压缩一次。<br>  –auto-compaction-mode&#x3D;periodic \ #周期性数据压缩<br>  –max-request-bytes&#x3D;10485760 \ #request size limit(请求的最大字节数,默认一个key最大1.5Mib,官方推荐最大10Mib)<br>  –quota-backend-bytes&#x3D;8589934592 #storage size limit(磁盘存储空间大小限制,默认为2G,此值超过8G启动会有警告信息)<br>Restart&#x3D;always<br>RestartSec&#x3D;15<br>LimitNOFILE&#x3D;65536<br>OOMScoreAdjust&#x3D;-999</p>
+<p>[Install]<br>WantedBy&#x3D;multi-user.target</p>
+<p>#对etcd集群进行心跳检测<br>[root@K8s-etcd01 ~]#&#x2F;usr&#x2F;local&#x2F;bin&#x2F;etcdctl defrag –cluster –endpoints&#x3D;<a target="_blank" rel="noopener" href="https://192.168.11.217:2379/">https://192.168.11.217:2379</a> –cacert&#x3D;&#x2F;etc&#x2F;kubernetes&#x2F;ssl&#x2F;ca.pem –cert&#x3D;&#x2F;etc&#x2F;kubernetes&#x2F;ssl&#x2F;etcd.pem –key&#x3D;&#x2F;etc&#x2F;kubernetes&#x2F;ssl&#x2F;etcd-key.pem<br>Finished defragmenting etcd member[<a href="https://192.168.11.219:2379]">https://192.168.11.219:2379]</a><br>Finished defragmenting etcd member[<a href="https://192.168.11.218:2379]">https://192.168.11.218:2379]</a><br>Finished defragmenting etcd member[<a href="https://192.168.11.217:2379]etcd客户端命令使用">https://192.168.11.217:2379]etcd客户端命令使用</a><br>[root@K8s-etcd01 ~]#etcdctl –help<br>NAME:<br>    etcdctl - A simple command line client for etcd3.</p>
+<p>USAGE:<br>    etcdctl [flags]</p>
+<p>VERSION:<br>    3.5.5</p>
+<p>API VERSION:<br>    3.5</p>
+<p>COMMANDS:<br>    alarm disarm		Disarms all alarms<br>    alarm list		Lists all alarms<br>    auth disable		Disables authentication<br>    auth enable		Enables authentication<br>    auth status		Returns authentication status<br>    check datascale		Check the memory usage of holding data for different workloads on a given server endpoint.<br>    check perf		Check the performance of the etcd cluster<br>    compaction		Compacts the event history in etcd<br>    defrag			Defragments the storage of the etcd members with given endpoints<br>    del			Removes the specified key or range of keys [key, range_end)<br>    elect			Observes and participates in leader election<br>    endpoint hashkv		Prints the KV history hash for each endpoint in –endpoints<br>    endpoint health		Checks the healthiness of endpoints specified in <code>--endpoints</code> flag<br>    endpoint status		Prints out the status of endpoints specified in <code>--endpoints</code> flag<br>    get			Gets the key or a range of keys<br>    help			Help about any command<br>    lease grant		Creates leases<br>    lease keep-alive	Keeps leases alive (renew)<br>    lease list		List all active leases<br>    lease revoke		Revokes leases<br>    lease timetolive	Get lease information<br>    lock			Acquires a named lock<br>    make-mirror		Makes a mirror at the destination etcd cluster<br>    member add		Adds a member into the cluster<br>    member list		Lists all members in the cluster<br>    member promote		Promotes a non-voting member in the cluster<br>    member remove		Removes a member from the cluster<br>    member update		Updates a member in the cluster<br>    move-leader		Transfers leadership to another etcd cluster member.<br>    put			Puts the given key into the store<br>    role add		Adds a new role<br>    role delete		Deletes a role<br>    role get		Gets detailed information of a role<br>    role grant-permission	Grants a key to a role<br>    role list		Lists all roles<br>    role revoke-permission	Revokes a key from a role<br>    snapshot restore	Restores an etcd member snapshot to an etcd directory<br>    snapshot save		Stores an etcd node backend snapshot to a given file<br>    snapshot status		[deprecated] Gets backend snapshot status of a given file<br>    txn			Txn processes all the requests in one transaction<br>    user add		Adds a new user<br>    user delete		Deletes a user<br>    user get		Gets detailed information of a user<br>    user grant-role		Grants a role to a user<br>    user list		Lists all users<br>    user passwd		Changes password of user<br>    user revoke-role	Revokes a role from a user<br>    version			Prints the version of etcdctl<br>    watch			Watches events stream on keys or prefixes</p>
+<p>OPTIONS:<br>      –cacert&#x3D;””				verify certificates of TLS-enabled secure servers using this CA bundle<br>      –cert&#x3D;””					identify secure client using this TLS certificate file<br>      –command-timeout&#x3D;5s			timeout for short running command (excluding dial timeout)<br>      –debug[&#x3D;false]				enable client-side debug logging<br>      –dial-timeout&#x3D;2s				dial timeout for client connections<br>  -d, –discovery-srv&#x3D;””			domain name to query for SRV records describing cluster endpoints<br>      –discovery-srv-name&#x3D;””			service name to query when using DNS discovery<br>      –endpoints&#x3D;[127.0.0.1:2379]		gRPC endpoints<br>  -h, –help[&#x3D;false]				help for etcdctl<br>      –hex[&#x3D;false]				print byte strings as hex encoded strings<br>      –insecure-discovery[&#x3D;true]		accept insecure SRV records describing cluster endpoints<br>      –insecure-skip-tls-verify[&#x3D;false]	skip server certificate verification (CAUTION: this option should be enabled only for testing purposes)<br>      –insecure-transport[&#x3D;true]		disable transport security for client connections<br>      –keepalive-time&#x3D;2s			keepalive time for client connections<br>      –keepalive-timeout&#x3D;6s			keepalive timeout for client connections<br>      –key&#x3D;””					identify secure client using this TLS key file<br>      –password&#x3D;””				password for authentication (if this option is used, –user option shouldn’t include password)<br>      –user&#x3D;””					username[:password] for authentication (prompt if password is not supplied)<br>  -w, –write-out&#x3D;”simple”			set the output format (fields, json, protobuf, simple, table)</p>
+<p>#查询etcd节点信息<br>[root@K8s-etcd01 ~]#cat check_etcdcluster.sh<br>#!&#x2F;bin&#x2F;bash</p>
+<p>IP&#x3D;”<br>192.168.11.217<br>192.168.11.218<br>192.168.11.219<br>“<br>for ip in ${IP}; do<br>ETCDCTL_API&#x3D;3 <br>&#x2F;usr&#x2F;local&#x2F;bin&#x2F;etcdctl <br>–endpoints&#x3D;https:&#x2F;&#x2F;${ip}:2379 <br>–cacert&#x3D;&#x2F;etc&#x2F;kubernetes&#x2F;ssl&#x2F;ca.pem <br>–cert&#x3D;&#x2F;etc&#x2F;kubernetes&#x2F;ssl&#x2F;etcd.pem <br>–key&#x3D;&#x2F;etc&#x2F;kubernetes&#x2F;ssl&#x2F;etcd-key.pem endpoint health;<br>done<br>[root@K8s-etcd01 ~]#bash check_etcdcluster.sh<br><a target="_blank" rel="noopener" href="https://192.168.11.217:2379/">https://192.168.11.217:2379</a> is healthy: successfully committed proposal: took &#x3D; 28.898693ms<br><a target="_blank" rel="noopener" href="https://192.168.11.218:2379/">https://192.168.11.218:2379</a> is healthy: successfully committed proposal: took &#x3D; 20.830087ms<br><a target="_blank" rel="noopener" href="https://192.168.11.219:2379/">https://192.168.11.219:2379</a> is healthy: successfully committed proposal: took &#x3D; 25.347226ms</p>
+<p>#以表格方式显示节点详细状态<br>[root@K8s-etcd01 ~]#cat check_etcdcluster.sh<br>#!&#x2F;bin&#x2F;bash</p>
+<p>IP&#x3D;”<br>192.168.11.217<br>192.168.11.218<br>192.168.11.219<br>“<br>for ip in ${IP}; do<br>ETCDCTL_API&#x3D;3 <br>&#x2F;usr&#x2F;local&#x2F;bin&#x2F;etcdctl <br>–write-out&#x3D;table endpoint status <br>–endpoints&#x3D;https:&#x2F;&#x2F;${ip}:2379 <br>–cacert&#x3D;&#x2F;etc&#x2F;kubernetes&#x2F;ssl&#x2F;ca.pem <br>–cert&#x3D;&#x2F;etc&#x2F;kubernetes&#x2F;ssl&#x2F;etcd.pem <br>–key&#x3D;&#x2F;etc&#x2F;kubernetes&#x2F;ssl&#x2F;etcd-key.pem endpoint health;<br>done<br><img src="/../img/d630f5b33578a8a1d13461a933063911a821ec.png"><br>#查询etcd数据信息<br>[root@K8s-etcd01 ~]#ETCDCTL_API&#x3D;3 etcdctl get &#x2F; –prefix –keys-only | grep nginx<br>&#x2F;calico&#x2F;resources&#x2F;v3&#x2F;projectcalico.org&#x2F;workloadendpoints&#x2F;myserver&#x2F;k8s–noded01.mooreyxia.com-k8s-mooreyxia–nginx–deployment–789dfdcb7b–dlvrh-eth0<br>&#x2F;calico&#x2F;resources&#x2F;v3&#x2F;projectcalico.org&#x2F;workloadendpoints&#x2F;myserver&#x2F;k8s–noded02.mooreyxia.com-k8s-mooreyxia–nginx–deployment–789dfdcb7b–vg675-eth0<br>&#x2F;calico&#x2F;resources&#x2F;v3&#x2F;projectcalico.org&#x2F;workloadendpoints&#x2F;myserver&#x2F;k8s–noded02.mooreyxia.com-k8s-mooreyxia–nginx–deployment–789dfdcb7b–wbpvl-eth0<br>&#x2F;calico&#x2F;resources&#x2F;v3&#x2F;projectcalico.org&#x2F;workloadendpoints&#x2F;myserver&#x2F;k8s–noded03.mooreyxia.com-k8s-mooreyxia–nginx–deployment–789dfdcb7b–rntpm-eth0<br>&#x2F;registry&#x2F;deployments&#x2F;myserver&#x2F;mooreyxia-nginx-deployment<br>&#x2F;registry&#x2F;endpointslices&#x2F;myserver&#x2F;mooreyxia-nginx-service-cpn6k<br>&#x2F;registry&#x2F;events&#x2F;myserver&#x2F;mooreyxia-nginx-deployment-789dfdcb7b-dlvrh.1750771802f5c1b0</p>
+<p>#数据增删改查<br>[root@K8s-etcd01 ~]#ETCDCTL_API&#x3D;3 &#x2F;usr&#x2F;local&#x2F;bin&#x2F;etcdctl put &#x2F;name “tom”<br>OK<br>[root@K8s-etcd01 ~]#ETCDCTL_API&#x3D;3 &#x2F;usr&#x2F;local&#x2F;bin&#x2F;etcdctl get &#x2F;name<br>&#x2F;name<br>tom<br>[root@K8s-etcd01 ~]#ETCDCTL_API&#x3D;3 &#x2F;usr&#x2F;local&#x2F;bin&#x2F;etcdctl put &#x2F;name “moore”<br>OK<br>[root@K8s-etcd01 ~]#ETCDCTL_API&#x3D;3 &#x2F;usr&#x2F;local&#x2F;bin&#x2F;etcdctl get  &#x2F;name<br>&#x2F;name<br>moore<br>[root@K8s-etcd01 ~]#ETCDCTL_API&#x3D;3 &#x2F;usr&#x2F;local&#x2F;bin&#x2F;etcdctl del  &#x2F;name<br>1<br>[root@K8s-etcd01 ~]#ETCDCTL_API&#x3D;3 &#x2F;usr&#x2F;local&#x2F;bin&#x2F;etcdctl get  &#x2F;nameetcd数据watch机制<br>持续查看，发生变化就主动触发通知客户端，Etcd v3 的watch机制支持watch某个固定的key，也支持watch一个范围。<br>#在etcd node1上watch一个key，没有此key也可以执行watch，后期可以再创建：<br>[root@K8s-etcd01 ~]#ETCDCTL_API&#x3D;3 &#x2F;usr&#x2F;local&#x2F;bin&#x2F;etcdctl watch &#x2F;dataetcd V3 API版本数据备份与恢复<br>• WAL是write ahead log(预写日志)的缩写，顾名思义，也就是在执行真正的写操作之前先写一个日志，预写日志。<br>#wal: 存放预写式日志,最大的作用是记录了整个数据变化的全部历程。在etcd中，所有数据的修改在提交前，都要先写入到WAL中。<br>[root@K8s-etcd01 ~]#ll &#x2F;var&#x2F;lib&#x2F;etcd&#x2F;member&#x2F;wal&#x2F;<br>total 187512<br>drwx—— 2 root root     4096 Mar 29 03:16 .&#x2F;<br>drwx—— 4 root root     4096 Mar 29 03:16 ..&#x2F;<br>-rw——- 1 root root 64000000 Mar 29 03:16 0.tmp<br>-rw——- 1 root root 64000048 Mar 28 10:30 0000000000000000-0000000000000000.wal<br>-rw——- 1 root root 64000000 Mar 29 03:18 0000000000000001-0000000000014d5d.wal<br>[root@K8s-etcd01 ~]#file &#x2F;var&#x2F;lib&#x2F;etcd&#x2F;member&#x2F;wal&#x2F;0000000000000001-0000000000014d5d.wal<br>&#x2F;var&#x2F;lib&#x2F;etcd&#x2F;member&#x2F;wal&#x2F;0000000000000001-0000000000014d5d.wal: data</p>
+<p>#存放数据的文件 - 数据备份主要针对这个文件<br>[root@K8s-etcd01 ~]#file &#x2F;var&#x2F;lib&#x2F;etcd&#x2F;member&#x2F;snap&#x2F;db<br>&#x2F;var&#x2F;lib&#x2F;etcd&#x2F;member&#x2F;snap&#x2F;db: data• V3版本备份数据<br>#etcd数据库集群默认同步机制的情况下只需要备份一个数据库的数据即可<br>[root@K8s-etcd01 ~]#etcdctl –help|grep snapshot<br>    snapshot restore	Restores an etcd member snapshot to an etcd directory<br>    snapshot save		Stores an etcd node backend snapshot to a given file<br>    snapshot status		[deprecated] Gets backend snapshot status of a given file<br>[root@K8s-etcd01 ~]#etcdctl snapshot save &#x2F;tmp&#x2F;backup.db<br>{“level”:”info”,”ts”:”2023-03-29T03:25:58.725Z”,”caller”:”snapshot&#x2F;v3_snapshot.go:65”,”msg”:”created temporary db file”,”path”:”&#x2F;tmp&#x2F;backup.db.part”}<br>{“level”:”info”,”ts”:”2023-03-29T03:25:58.739Z”,”logger”:”client”,”caller”:”v3&#x2F;maintenance.go:211”,”msg”:”opened snapshot stream; downloading”}<br>{“level”:”info”,”ts”:”2023-03-29T03:25:58.739Z”,”caller”:”snapshot&#x2F;v3_snapshot.go:73”,”msg”:”fetching snapshot”,”endpoint”:”127.0.0.1:2379”}<br>{“level”:”info”,”ts”:”2023-03-29T03:25:58.861Z”,”logger”:”client”,”caller”:”v3&#x2F;maintenance.go:219”,”msg”:”completed snapshot read; closing”}<br>{“level”:”info”,”ts”:”2023-03-29T03:25:58.924Z”,”caller”:”snapshot&#x2F;v3_snapshot.go:88”,”msg”:”fetched snapshot”,”endpoint”:”127.0.0.1:2379”,”size”:”4.3 MB”,”took”:”now”}<br>{“level”:”info”,”ts”:”2023-03-29T03:25:58.925Z”,”caller”:”snapshot&#x2F;v3_snapshot.go:97”,”msg”:”saved”,”path”:”&#x2F;tmp&#x2F;backup.db”}<br>Snapshot saved at &#x2F;tmp&#x2F;backup.db<br>#备份文件建议进行集群外主机远端备份<br>[root@K8s-etcd01 ~]#ll &#x2F;tmp&#x2F;backup.db<br>-rw——- 1 root root 4263968 Mar 29 03:25 &#x2F;tmp&#x2F;backup.db• V3版本恢复数据<br>#etcd用于恢复数据的目录会自动创建，如果目录已存在，需要清空<br>[root@K8s-etcd01 ~]#etcdctl snapshot restore &#x2F;tmp&#x2F;backup.db –data-dir&#x3D;&#x2F;opt&#x2F;etcd-testdir1<br>Deprecated: Use <code>etcdutl snapshot restore</code> instead.</p>
+<p>2023-03-29T03:33:29Z	info	snapshot&#x2F;v3_snapshot.go:248	restoring snapshot	{“path”: “&#x2F;tmp&#x2F;backup.db”, “wal-dir”: “&#x2F;opt&#x2F;etcd-testdir1&#x2F;member&#x2F;wal”, “data-dir”: “&#x2F;opt&#x2F;etcd-testdir1”, “snap-dir”: “&#x2F;opt&#x2F;etcd-testdir1&#x2F;member&#x2F;snap”, “stack”: “go.etcd.io&#x2F;etcd&#x2F;etcdutl&#x2F;v3&#x2F;snapshot.(*v3Manager).Restore\n\t&#x2F;tmp&#x2F;etcd-release-3.5.5&#x2F;etcd&#x2F;release&#x2F;etcd&#x2F;etcdutl&#x2F;snapshot&#x2F;v3_snapshot.go:254\ngo.etcd.io&#x2F;etcd&#x2F;etcdutl&#x2F;v3&#x2F;etcdutl.SnapshotRestoreCommandFunc\n\t&#x2F;tmp&#x2F;etcd-release-3.5.5&#x2F;etcd&#x2F;release&#x2F;etcd&#x2F;etcdutl&#x2F;etcdutl&#x2F;snapshot_command.go:147\ngo.etcd.io&#x2F;etcd&#x2F;etcdctl&#x2F;v3&#x2F;ctlv3&#x2F;command.snapshotRestoreCommandFunc\n\t&#x2F;tmp&#x2F;etcd-release-3.5.5&#x2F;etcd&#x2F;release&#x2F;etcd&#x2F;etcdctl&#x2F;ctlv3&#x2F;command&#x2F;snapshot_command.go:129\ngithub.com&#x2F;spf13&#x2F;cobra.(*Command).execute\n\t&#x2F;usr&#x2F;local&#x2F;google&#x2F;home&#x2F;siarkowicz&#x2F;.gvm&#x2F;pkgsets&#x2F;go1.16.15&#x2F;global&#x2F;pkg&#x2F;mod&#x2F;github.com&#x2F;spf13&#x2F;<a href="mailto:&#x63;&#111;&#x62;&#x72;&#97;&#x40;&#118;&#x31;&#x2e;&#x31;&#x2e;&#x33;">&#x63;&#111;&#x62;&#x72;&#97;&#x40;&#118;&#x31;&#x2e;&#x31;&#x2e;&#x33;</a>&#x2F;command.go:856\ngithub.com&#x2F;spf13&#x2F;cobra.(*Command).ExecuteC\n\t&#x2F;usr&#x2F;local&#x2F;google&#x2F;home&#x2F;siarkowicz&#x2F;.gvm&#x2F;pkgsets&#x2F;go1.16.15&#x2F;global&#x2F;pkg&#x2F;mod&#x2F;github.com&#x2F;spf13&#x2F;<a href="mailto:&#99;&#111;&#x62;&#114;&#97;&#x40;&#118;&#x31;&#x2e;&#49;&#46;&#x33;">&#99;&#111;&#x62;&#114;&#97;&#x40;&#118;&#x31;&#x2e;&#49;&#46;&#x33;</a>&#x2F;command.go:960\ngithub.com&#x2F;spf13&#x2F;cobra.(*Command).Execute\n\t&#x2F;usr&#x2F;local&#x2F;google&#x2F;home&#x2F;siarkowicz&#x2F;.gvm&#x2F;pkgsets&#x2F;go1.16.15&#x2F;global&#x2F;pkg&#x2F;mod&#x2F;github.com&#x2F;spf13&#x2F;<a href="mailto:&#x63;&#x6f;&#x62;&#114;&#97;&#64;&#x76;&#49;&#46;&#x31;&#46;&#x33;">&#x63;&#x6f;&#x62;&#114;&#97;&#64;&#x76;&#49;&#46;&#x31;&#46;&#x33;</a>&#x2F;command.go:897\ngo.etcd.io&#x2F;etcd&#x2F;etcdctl&#x2F;v3&#x2F;ctlv3.Start\n\t&#x2F;tmp&#x2F;etcd-release-3.5.5&#x2F;etcd&#x2F;release&#x2F;etcd&#x2F;etcdctl&#x2F;ctlv3&#x2F;ctl.go:107\ngo.etcd.io&#x2F;etcd&#x2F;etcdctl&#x2F;v3&#x2F;ctlv3.MustStart\n\t&#x2F;tmp&#x2F;etcd-release-3.5.5&#x2F;etcd&#x2F;release&#x2F;etcd&#x2F;etcdctl&#x2F;ctlv3&#x2F;ctl.go:111\nmain.main\n\t&#x2F;tmp&#x2F;etcd-release-3.5.5&#x2F;etcd&#x2F;release&#x2F;etcd&#x2F;etcdctl&#x2F;main.go:59\nruntime.main\n\t&#x2F;usr&#x2F;local&#x2F;google&#x2F;home&#x2F;siarkowicz&#x2F;.gvm&#x2F;gos&#x2F;go1.16.15&#x2F;src&#x2F;runtime&#x2F;proc.go:225”}<br>2023-03-29T03:33:29Z	info	membership&#x2F;store.go:141	Trimming membership information from the backend…<br>2023-03-29T03:33:29Z	info	membership&#x2F;cluster.go:421	added member	{“cluster-id”: “cdf818194e3a8c32”, “local-member-id”: “0”, “added-peer-id”: “8e9e05c52164694d”, “added-peer-peer-urls”: [“<a target="_blank" rel="noopener" href="http://localhost:2380"]}">http://localhost:2380&quot;]}</a><br>2023-03-29T03:33:29Z	info	snapshot&#x2F;v3_snapshot.go:269	restored snapshot	{“path”: “&#x2F;tmp&#x2F;backup.db”, “wal-dir”: “&#x2F;opt&#x2F;etcd-testdir1&#x2F;member&#x2F;wal”, “data-dir”: “&#x2F;opt&#x2F;etcd-testdir1”, “snap-dir”: “&#x2F;opt&#x2F;etcd-testdir1&#x2F;member&#x2F;snap”}</p>
+<p>[root@K8s-etcd01 ~]#tree &#x2F;opt&#x2F;etcd-testdir1<br>&#x2F;opt&#x2F;etcd-testdir1<br>└── member<br>    ├── snap<br>    │   ├── 0000000000000001-0000000000000001.snap<br>    │   └── db<br>    └── wal<br>        └── 0000000000000000-0000000000000000.wal</p>
+<p>3 directories, 3 files</p>
+<p>#如果用存在文件的目录进行数据恢复会报错<br>[root@K8s-etcd01 ~]#mkdir -p &#x2F;opt&#x2F;etcd-testdir2&#x2F;<br>[root@K8s-etcd01 ~]#touch &#x2F;opt&#x2F;etcd-testdir2&#x2F;test<br>[root@K8s-etcd01 ~]#ll &#x2F;opt&#x2F;etcd-testdir2&#x2F;test<br>-rw-r–r– 1 root root 0 Mar 29 03:35 &#x2F;opt&#x2F;etcd-testdir2&#x2F;test<br>[root@K8s-etcd01 ~]#etcdctl snapshot restore &#x2F;tmp&#x2F;backup.db –data-dir&#x3D;&#x2F;opt&#x2F;etcd-testdir2<br>Deprecated: Use <code>etcdutl snapshot restore</code> instead.</p>
+<p>Error: data-dir “&#x2F;opt&#x2F;etcd-testdir2” not empty or could not be read<br>#清空文件夹再用来恢复数据<br>[root@K8s-etcd01 ~]#rm -f &#x2F;opt&#x2F;etcd-testdir2&#x2F;test<br>[root@K8s-etcd01 ~]#etcdctl snapshot restore &#x2F;tmp&#x2F;backup.db –data-dir&#x3D;&#x2F;opt&#x2F;etcd-testdir2<br>Deprecated: Use <code>etcdutl snapshot restore</code> instead.</p>
+<p>2023-03-29T03:36:19Z	info	snapshot&#x2F;v3_snapshot.go:248	restoring snapshot	{“path”: “&#x2F;tmp&#x2F;backup.db”, “wal-dir”: “&#x2F;opt&#x2F;etcd-testdir2&#x2F;member&#x2F;wal”, “data-dir”: “&#x2F;opt&#x2F;etcd-testdir2”, “snap-dir”: “&#x2F;opt&#x2F;etcd-testdir2&#x2F;member&#x2F;snap”, “stack”: “go.etcd.io&#x2F;etcd&#x2F;etcdutl&#x2F;v3&#x2F;snapshot.(*v3Manager).Restore\n\t&#x2F;tmp&#x2F;etcd-release-3.5.5&#x2F;etcd&#x2F;release&#x2F;etcd&#x2F;etcdutl&#x2F;snapshot&#x2F;v3_snapshot.go:254\ngo.etcd.io&#x2F;etcd&#x2F;etcdutl&#x2F;v3&#x2F;etcdutl.SnapshotRestoreCommandFunc\n\t&#x2F;tmp&#x2F;etcd-release-3.5.5&#x2F;etcd&#x2F;release&#x2F;etcd&#x2F;etcdutl&#x2F;etcdutl&#x2F;snapshot_command.go:147\ngo.etcd.io&#x2F;etcd&#x2F;etcdctl&#x2F;v3&#x2F;ctlv3&#x2F;command.snapshotRestoreCommandFunc\n\t&#x2F;tmp&#x2F;etcd-release-3.5.5&#x2F;etcd&#x2F;release&#x2F;etcd&#x2F;etcdctl&#x2F;ctlv3&#x2F;command&#x2F;snapshot_command.go:129\ngithub.com&#x2F;spf13&#x2F;cobra.(*Command).execute\n\t&#x2F;usr&#x2F;local&#x2F;google&#x2F;home&#x2F;siarkowicz&#x2F;.gvm&#x2F;pkgsets&#x2F;go1.16.15&#x2F;global&#x2F;pkg&#x2F;mod&#x2F;github.com&#x2F;spf13&#x2F;<a href="mailto:&#99;&#111;&#98;&#x72;&#97;&#x40;&#118;&#49;&#x2e;&#49;&#46;&#x33;">&#99;&#111;&#98;&#x72;&#97;&#x40;&#118;&#49;&#x2e;&#49;&#46;&#x33;</a>&#x2F;command.go:856\ngithub.com&#x2F;spf13&#x2F;cobra.(*Command).ExecuteC\n\t&#x2F;usr&#x2F;local&#x2F;google&#x2F;home&#x2F;siarkowicz&#x2F;.gvm&#x2F;pkgsets&#x2F;go1.16.15&#x2F;global&#x2F;pkg&#x2F;mod&#x2F;github.com&#x2F;spf13&#x2F;<a href="mailto:&#x63;&#111;&#x62;&#x72;&#97;&#x40;&#118;&#49;&#x2e;&#x31;&#x2e;&#51;">&#x63;&#111;&#x62;&#x72;&#97;&#x40;&#118;&#49;&#x2e;&#x31;&#x2e;&#51;</a>&#x2F;command.go:960\ngithub.com&#x2F;spf13&#x2F;cobra.(*Command).Execute\n\t&#x2F;usr&#x2F;local&#x2F;google&#x2F;home&#x2F;siarkowicz&#x2F;.gvm&#x2F;pkgsets&#x2F;go1.16.15&#x2F;global&#x2F;pkg&#x2F;mod&#x2F;github.com&#x2F;spf13&#x2F;<a href="mailto:&#x63;&#x6f;&#x62;&#x72;&#97;&#x40;&#x76;&#x31;&#46;&#49;&#x2e;&#x33;">&#x63;&#x6f;&#x62;&#x72;&#97;&#x40;&#x76;&#x31;&#46;&#49;&#x2e;&#x33;</a>&#x2F;command.go:897\ngo.etcd.io&#x2F;etcd&#x2F;etcdctl&#x2F;v3&#x2F;ctlv3.Start\n\t&#x2F;tmp&#x2F;etcd-release-3.5.5&#x2F;etcd&#x2F;release&#x2F;etcd&#x2F;etcdctl&#x2F;ctlv3&#x2F;ctl.go:107\ngo.etcd.io&#x2F;etcd&#x2F;etcdctl&#x2F;v3&#x2F;ctlv3.MustStart\n\t&#x2F;tmp&#x2F;etcd-release-3.5.5&#x2F;etcd&#x2F;release&#x2F;etcd&#x2F;etcdctl&#x2F;ctlv3&#x2F;ctl.go:111\nmain.main\n\t&#x2F;tmp&#x2F;etcd-release-3.5.5&#x2F;etcd&#x2F;release&#x2F;etcd&#x2F;etcdctl&#x2F;main.go:59\nruntime.main\n\t&#x2F;usr&#x2F;local&#x2F;google&#x2F;home&#x2F;siarkowicz&#x2F;.gvm&#x2F;gos&#x2F;go1.16.15&#x2F;src&#x2F;runtime&#x2F;proc.go:225”}<br>2023-03-29T03:36:19Z	info	membership&#x2F;store.go:141	Trimming membership information from the backend…<br>2023-03-29T03:36:19Z	info	membership&#x2F;cluster.go:421	added member	{“cluster-id”: “cdf818194e3a8c32”, “local-member-id”: “0”, “added-peer-id”: “8e9e05c52164694d”, “added-peer-peer-urls”: [“<a target="_blank" rel="noopener" href="http://localhost:2380"]}">http://localhost:2380&quot;]}</a><br>2023-03-29T03:36:19Z	info	snapshot&#x2F;v3_snapshot.go:269	restored snapshot	{“path”: “&#x2F;tmp&#x2F;backup.db”, “wal-dir”: “&#x2F;opt&#x2F;etcd-testdir2&#x2F;member&#x2F;wal”, “data-dir”: “&#x2F;opt&#x2F;etcd-testdir2”, “snap-dir”: “&#x2F;opt&#x2F;etcd-testdir2&#x2F;member&#x2F;snap”}<br>[root@K8s-etcd01 ~]#tree &#x2F;opt&#x2F;etcd-testdir2&#x2F;<br>&#x2F;opt&#x2F;etcd-testdir2&#x2F;<br>└── member<br>    ├── snap<br>    │   ├── 0000000000000001-0000000000000001.snap<br>    │   └── db<br>    └── wal<br>        └── 0000000000000000-0000000000000000.wal</p>
+<p>3 directories, 3 files• 定时执行数据备份<br>[root@K8s-etcd01 ~]# mkdir &#x2F;data&#x2F;etcd-backup-dir&#x2F; -p<br>[root@K8s-etcd01 ~]# cat script.sh<br>#!&#x2F;bin&#x2F;bash<br>source &#x2F;etc&#x2F;profile<br>DATE&#x3D;<code>date +%Y-%m-%d_%H-%M-%S</code><br>&#x2F;usr&#x2F;bin&#x2F;etcdctl snapshot save &#x2F;data&#x2F;etcd-backup-dir&#x2F;etcd-snapshot-${DATE}.db基于kubeasz的数据备份与恢复<br>• 查看kubeasz的数据备份策略<br>[root@K8s-ansible kubeasz]#pwd<br>&#x2F;etc&#x2F;kubeasz<br>[root@K8s-ansible kubeasz]#cat playbooks&#x2F;94.backup.yml </p>
+<h1 id="cluster-backup-playbook"><a href="#cluster-backup-playbook" class="headerlink" title="cluster-backup playbook"></a>cluster-backup playbook</h1><h1 id="read-the-guide-‘op-x2F-cluster-restore-md’"><a href="#read-the-guide-‘op-x2F-cluster-restore-md’" class="headerlink" title="read the guide: ‘op&#x2F;cluster_restore.md’"></a>read the guide: ‘op&#x2F;cluster_restore.md’</h1><ul>
+<li><p>hosts:</p>
+<ul>
+<li>localhost<br>tasks:</li>
+</ul>
+<h1 id="step1-find-a-healthy-member-in-the-etcd-cluster"><a href="#step1-find-a-healthy-member-in-the-etcd-cluster" class="headerlink" title="step1: find a healthy member in the etcd cluster"></a>step1: find a healthy member in the etcd cluster</h1><ul>
+<li><p>name: set NODE_IPS of the etcd cluster<br>set_fact: NODE_IPS&#x3D;”“</p>
+</li>
+<li><p>name: get etcd cluster status<br>shell: ‘for ip in ;do <br>      ETCDCTL_API&#x3D;3 &#x2F;bin&#x2F;etcdctl <br>      –endpoints&#x3D;https:&#x2F;&#x2F;“$ip”:2379 <br>      –cacert&#x3D;&#x2F;ssl&#x2F;ca.pem <br>      –cert&#x3D;&#x2F;ssl&#x2F;etcd.pem <br>      –key&#x3D;&#x2F;ssl&#x2F;etcd-key.pem <br>      endpoint health; <br>    done’<br>register: ETCD_CLUSTER_STATUS<br>ignore_errors: true</p>
+</li>
+<li><p>debug: var&#x3D;”ETCD_CLUSTER_STATUS”</p>
+</li>
+<li><p>name: get a running ectd node<br>shell: ‘echo -e ““ <br>     ““ <br>     |grep “is healthy”|sed -n “1p”|cut -d: -f2|cut -d&#x2F; -f3’<br>register: RUNNING_NODE</p>
+</li>
+<li><p>debug: var&#x3D;”RUNNING_NODE.stdout”</p>
+</li>
+<li><p>name: get current time<br>shell: “date +’%Y%m%d%H%M’”<br>register: timestamp</p>
+</li>
+</ul>
+<h1 id="step2-backup-data-to-the-ansible-node"><a href="#step2-backup-data-to-the-ansible-node" class="headerlink" title="step2: backup data to the ansible node"></a>step2: backup data to the ansible node</h1><ul>
+<li><p>name: make a backup on the etcd node<br>shell: “mkdir -p &#x2F;backup &amp;&amp; cd &#x2F;backup &amp;&amp; <br>ETCDCTL_API&#x3D;3 &#x2F;bin&#x2F;etcdctl <br>      –endpoints&#x3D;https:&#x2F;&#x2F;:2379 <br>      –cacert&#x3D;&#x2F;ssl&#x2F;ca.pem <br>      –cert&#x3D;&#x2F;ssl&#x2F;etcd.pem <br>      –key&#x3D;&#x2F;ssl&#x2F;etcd-key.pem <br>snapshot save snapshot_.db”<br>args:<br>  warn: false</p>
+</li>
+<li><p>name: update the latest backup<br>shell: ‘cd &#x2F;backup&#x2F; &amp;&amp; &#x2F;bin&#x2F;cp -f snapshot_.db snapshot.db’• 数据备份</p>
+</li>
+</ul>
+</li>
+</ul>
+<p>#确认需要备份的pod及集群对象<br>[root@K8s-ansible kubeasz]#kubectl run net-test1 –image&#x3D;centos:7.9.2009 sleep 100000000 -n myserver<br>pod&#x2F;net-test1 created<br>[root@K8s-ansible kubeasz]#kubectl run net-test2 –image&#x3D;centos:7.9.2009 sleep 100000000 -n myserver<br>pod&#x2F;net-test2 created<br>[root@K8s-ansible kubeasz]#kubectl run net-test3 –image&#x3D;centos:7.9.2009 sleep 100000000 -n myserver</p>
+<p>[root@K8s-ansible kubeasz]#kubectl get pod -A<br>NAMESPACE     NAME                                          READY   STATUS    RESTARTS      AGE<br>myserver      net-test1                                     1&#x2F;1     Running   0             41s<br>myserver      net-test2                                     1&#x2F;1     Running   0             35s<br>myserver      net-test3                                     1&#x2F;1     Running   0             30s</p>
+<p>#备份集群<br>[root@K8s-ansible kubeasz]#.&#x2F;ezctl backup  k8s-cluster1<br>ansible-playbook -i clusters&#x2F;k8s-cluster1&#x2F;hosts -e @clusters&#x2F;k8s-cluster1&#x2F;config.yml playbooks&#x2F;94.backup.yml<br>2023-03-29 03:54:20 INFO cluster:k8s-cluster1 backup begins in 5s, press any key to abort:</p>
+<p>PLAY [localhost] *****************************************************************************************************************************************************************</p>
+<p>TASK [Gathering Facts] ***********************************************************************************************************************************************************<br>ok: [localhost]</p>
+<p>TASK [set NODE_IPS of the etcd cluster] ******************************************************************************************************************************************<br>ok: [localhost]</p>
+<p>TASK [get etcd cluster status] ***************************************************************************************************************************************************<br>changed: [localhost]</p>
+<p>TASK [debug] *********************************************************************************************************************************************************************<br>ok: [localhost] &#x3D;&gt; {<br>    “ETCD_CLUSTER_STATUS”: {<br>        “changed”: true,<br>        “cmd”: “for ip in 192.168.11.217 192.168.11.218 192.168.11.219 ;do ETCDCTL_API&#x3D;3 &#x2F;etc&#x2F;kubeasz&#x2F;bin&#x2F;etcdctl –endpoints&#x3D;https:&#x2F;&#x2F;&quot;$ip&quot;:2379 –cacert&#x3D;&#x2F;etc&#x2F;kubeasz&#x2F;clusters&#x2F;k8s-cluster1&#x2F;ssl&#x2F;ca.pem –cert&#x3D;&#x2F;etc&#x2F;kubeasz&#x2F;clusters&#x2F;k8s-cluster1&#x2F;ssl&#x2F;etcd.pem –key&#x3D;&#x2F;etc&#x2F;kubeasz&#x2F;clusters&#x2F;k8s-cluster1&#x2F;ssl&#x2F;etcd-key.pem endpoint health; done”,<br>        “delta”: “0:00:00.655272”,<br>        “end”: “2023-03-29 03:54:30.559406”,<br>        “failed”: false,<br>        “rc”: 0,<br>        “start”: “2023-03-29 03:54:29.904134”,<br>        “stderr”: “”,<br>        “stderr_lines”: [],<br>        “stdout”: “<a target="_blank" rel="noopener" href="https://192.168.11.217:2379/">https://192.168.11.217:2379</a> is healthy: successfully committed proposal: took &#x3D; 36.927011ms\n<a target="_blank" rel="noopener" href="https://192.168.11.218:2379/">https://192.168.11.218:2379</a> is healthy: successfully committed proposal: took &#x3D; 26.676368ms\n<a target="_blank" rel="noopener" href="https://192.168.11.219:2379/">https://192.168.11.219:2379</a> is healthy: successfully committed proposal: took &#x3D; 27.100284ms”,<br>        “stdout_lines”: [<br>            “<a target="_blank" rel="noopener" href="https://192.168.11.217:2379/">https://192.168.11.217:2379</a> is healthy: successfully committed proposal: took &#x3D; 36.927011ms”,<br>            “<a target="_blank" rel="noopener" href="https://192.168.11.218:2379/">https://192.168.11.218:2379</a> is healthy: successfully committed proposal: took &#x3D; 26.676368ms”,<br>            “<a target="_blank" rel="noopener" href="https://192.168.11.219:2379/">https://192.168.11.219:2379</a> is healthy: successfully committed proposal: took &#x3D; 27.100284ms”<br>        ]<br>    }<br>}</p>
+<p>TASK [get a running ectd node] ***************************************************************************************************************************************************<br>changed: [localhost]</p>
+<p>TASK [debug] *********************************************************************************************************************************************************************<br>ok: [localhost] &#x3D;&gt; {<br>    “RUNNING_NODE.stdout”: “192.168.11.217”<br>}</p>
+<p>TASK [get current time] **********************************************************************************************************************************************************<br>changed: [localhost]</p>
+<p>TASK [make a backup on the etcd node] ********************************************************************************************************************************************<br>changed: [localhost]</p>
+<p>TASK [update the latest backup] **************************************************************************************************************************************************<br>changed: [localhost]</p>
+<p>PLAY RECAP ***********************************************************************************************************************************************************************<br>localhost                  : ok&#x3D;9    changed&#x3D;5    unreachable&#x3D;0    failed&#x3D;0    skipped&#x3D;0    rescued&#x3D;0    ignored&#x3D;0   </p>
+<p>#查看备份文件<br>[root@K8s-ansible kubeasz]#ll clusters&#x2F;k8s-cluster1&#x2F;backup&#x2F;<br>total 8560<br>drwxr-xr-x 2 root root    4096 Mar 29 03:54 .&#x2F;<br>drwxr-xr-x 5 root root    4096 Mar 27 12:03 ..&#x2F;<br>-rw——- 1 root root 4374560 Mar 29 03:54 snapshot.db<br>-rw——- 1 root root 4374560 Mar 29 03:54 snapshot_202303290354.db• 查看kubeasz的数据恢复策略<br>#数据恢复需要停止集群服务<br>[root@K8s-ansible kubeasz]#cat playbooks&#x2F;95.restore.yml </p>
+<h1 id="cluster-restore-playbook"><a href="#cluster-restore-playbook" class="headerlink" title="cluster-restore playbook"></a>cluster-restore playbook</h1><h1 id="read-the-guide-‘op-x2F-cluster-restore-md’-1"><a href="#read-the-guide-‘op-x2F-cluster-restore-md’-1" class="headerlink" title="read the guide: ‘op&#x2F;cluster_restore.md’"></a>read the guide: ‘op&#x2F;cluster_restore.md’</h1><h1 id="https-kubernetes-io-docs-tasks-administer-cluster-configure-upgrade-etcd-restoring-an-etcd-cluster"><a href="#https-kubernetes-io-docs-tasks-administer-cluster-configure-upgrade-etcd-restoring-an-etcd-cluster" class="headerlink" title="https://kubernetes.io/docs/tasks/administer-cluster/configure-upgrade-etcd/#restoring-an-etcd-cluster"></a><a target="_blank" rel="noopener" href="https://kubernetes.io/docs/tasks/administer-cluster/configure-upgrade-etcd/#restoring-an-etcd-cluster">https://kubernetes.io/docs/tasks/administer-cluster/configure-upgrade-etcd/#restoring-an-etcd-cluster</a></h1><ul>
+<li><p>hosts: kube_master<br>tasks:</p>
+<ul>
+<li>name: stopping kube_master services<br>service: name&#x3D; state&#x3D;stopped<br>with_items:<ul>
+<li>kube-apiserver</li>
+<li>kube-controller-manager</li>
+<li>kube-scheduler</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>hosts:</p>
+<ul>
+<li>kube_master</li>
+<li>kube_node<br>tasks:</li>
+<li>name: stopping kube_node services<br>service: name&#x3D; state&#x3D;stopped<br>with_items:<ul>
+<li>kubelet</li>
+<li>kube-proxy</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>hosts: etcd<br>roles:</p>
+<ul>
+<li>cluster-restore</li>
+</ul>
+</li>
+<li><p>hosts: kube_master<br>tasks:</p>
+<ul>
+<li>name: starting kube_master services<br>service: name&#x3D; state&#x3D;started enabled&#x3D;yes<br>with_items:<ul>
+<li>kube-apiserver</li>
+<li>kube-controller-manager</li>
+<li>kube-scheduler</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>hosts:</p>
+<ul>
+<li>kube_master</li>
+<li>kube_node<br>tasks:</li>
+<li>name: starting kube_node services<br>service: name&#x3D; state&#x3D;started enabled&#x3D;yes<br>with_items:<ul>
+<li>kubelet</li>
+<li>kube-proxy</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p>#cluster-restore<br>[root@K8s-ansible kubeasz]#cat roles&#x2F;cluster-restore&#x2F;tasks&#x2F;main.yml </p>
+<ul>
+<li><p>name: 停止ectd 服务<br>service: name&#x3D;etcd state&#x3D;stopped</p>
+</li>
+<li><p>name: 清除etcd 数据目录<br>file: name&#x3D;&#x2F;member state&#x3D;absent</p>
+</li>
+<li><p>name: 清除 etcd 备份目录<br>file: name&#x3D;&#x2F;backup&#x2F;etcd-restore state&#x3D;absent<br>delegate_to: 127.0.0.1<br>run_once: true</p>
+</li>
+<li><p>name: etcd 数据恢复<br>shell: “cd &#x2F;backup &amp;&amp; <br>  ETCDCTL_API&#x3D;3 &#x2F;bin&#x2F;etcdctl snapshot restore snapshot.db <br>   –data-dir&#x3D;&#x2F;backup&#x2F;etcd-restore”<br>delegate_to: 127.0.0.1<br>run_once: true</p>
+</li>
+<li><p>name: 分发恢复文件到 etcd 各个节点<br>copy: src&#x3D;&#x2F;backup&#x2F;etcd-restore&#x2F;member dest&#x3D;</p>
+</li>
+<li><p>name: 重启etcd 服务<br>service: name&#x3D;etcd state&#x3D;restarted</p>
+</li>
+<li><p>name: 以轮询的方式等待服务同步完成<br>shell: “systemctl is-active etcd.service”<br>register: etcd_status<br>until: ‘“active” in etcd_status.stdout’<br>retries: 8<br>delay: 8• 数据恢复</p>
+</li>
+</ul>
+<p>#删除数据<br>[root@K8s-ansible kubeasz]#kubectl delete pod net-test2 -n myserver<br>[root@K8s-ansible kubeasz]#kubectl delete pod net-test1 -n myserver<br>pod “net-test2” deleted<br>[root@K8s-ansible kubeasz]#kubectl get pod -A<br>NAMESPACE     NAME                                          READY   STATUS    RESTARTS      AGE<br>myserver      net-test3                                     1&#x2F;1     Running   0             10m</p>
+<p>#恢复数据<br>#1.防止误操作备份现有数据并将文件夹clusters&#x2F;k8s-cluster1&#x2F;backup&#x2F;备份后进行恢复操作<br>[root@K8s-ansible kubeasz]#.&#x2F;ezctl backup  k8s-cluster1<br>[root@K8s-ansible kubeasz]#ll clusters&#x2F;k8s-cluster1&#x2F;backup&#x2F;<br>total 12836<br>drwxr-xr-x 2 root root    4096 Mar 29 04:04 .&#x2F;<br>drwxr-xr-x 5 root root    4096 Mar 27 12:03 ..&#x2F;<br>-rw——- 1 root root 4374560 Mar 29 04:04 snapshot.db<br>-rw——- 1 root root 4374560 Mar 29 03:54 snapshot_202303290354.db #删除前备份<br>-rw——- 1 root root 4374560 Mar 29 04:04 snapshot_202303290404.db #最近备份<br>#2.将指定备份文件改名为snapshot.db<br>[root@K8s-ansible kubeasz]#cp -rf clusters&#x2F;k8s-cluster1&#x2F;backup&#x2F;snapshot_202303290354.db clusters&#x2F;k8s-cluster1&#x2F;backup&#x2F;snapshot.db<br>#3.恢复集群<br>[root@K8s-ansible kubeasz]#.&#x2F;ezctl restore  k8s-cluster1<br>ansible-playbook -i clusters&#x2F;k8s-cluster1&#x2F;hosts -e @clusters&#x2F;k8s-cluster1&#x2F;config.yml playbooks&#x2F;95.restore.yml<br>2023-03-29 04:22:11 INFO cluster:k8s-cluster1 restore begins in 5s, press any key to abort:</p>
+<p>PLAY [kube_master] ***************************************************************************************************************************************************************</p>
+<p>TASK [Gathering Facts] ***********************************************************************************************************************************************************<br>ok: [192.168.11.211]<br>ok: [192.168.11.212]<br>ok: [192.168.11.213]</p>
+<p>TASK [stopping kube_master services] *********************************************************************************************************************************************<br>changed: [192.168.11.213] &#x3D;&gt; (item&#x3D;kube-apiserver)<br>changed: [192.168.11.212] &#x3D;&gt; (item&#x3D;kube-apiserver)<br>changed: [192.168.11.211] &#x3D;&gt; (item&#x3D;kube-apiserver)<br>changed: [192.168.11.212] &#x3D;&gt; (item&#x3D;kube-controller-manager)<br>changed: [192.168.11.213] &#x3D;&gt; (item&#x3D;kube-controller-manager)<br>changed: [192.168.11.211] &#x3D;&gt; (item&#x3D;kube-controller-manager)<br>changed: [192.168.11.213] &#x3D;&gt; (item&#x3D;kube-scheduler)<br>changed: [192.168.11.212] &#x3D;&gt; (item&#x3D;kube-scheduler)<br>changed: [192.168.11.211] &#x3D;&gt; (item&#x3D;kube-scheduler)</p>
+<p>PLAY [kube_master,kube_node] *****************************************************************************************************************************************************</p>
+<p>TASK [Gathering Facts] ***********************************************************************************************************************************************************<br>ok: [192.168.11.215]<br>ok: [192.168.11.214]<br>ok: [192.168.11.216]</p>
+<p>TASK [stopping kube_node services] ***********************************************************************************************************************************************<br>changed: [192.168.11.213] &#x3D;&gt; (item&#x3D;kubelet)<br>changed: [192.168.11.212] &#x3D;&gt; (item&#x3D;kubelet)<br>changed: [192.168.11.216] &#x3D;&gt; (item&#x3D;kubelet)<br>changed: [192.168.11.211] &#x3D;&gt; (item&#x3D;kubelet)<br>changed: [192.168.11.214] &#x3D;&gt; (item&#x3D;kubelet)<br>changed: [192.168.11.212] &#x3D;&gt; (item&#x3D;kube-proxy)<br>changed: [192.168.11.213] &#x3D;&gt; (item&#x3D;kube-proxy)<br>changed: [192.168.11.214] &#x3D;&gt; (item&#x3D;kube-proxy)<br>changed: [192.168.11.211] &#x3D;&gt; (item&#x3D;kube-proxy)<br>changed: [192.168.11.216] &#x3D;&gt; (item&#x3D;kube-proxy)<br>changed: [192.168.11.215] &#x3D;&gt; (item&#x3D;kubelet)<br>changed: [192.168.11.215] &#x3D;&gt; (item&#x3D;kube-proxy)</p>
+<p>PLAY [etcd] **********************************************************************************************************************************************************************</p>
+<p>TASK [Gathering Facts] ***********************************************************************************************************************************************************<br>ok: [192.168.11.217]<br>ok: [192.168.11.219]<br>ok: [192.168.11.218]</p>
+<p>TASK [cluster-restore : 停止ectd 服务] ***********************************************************************************************************************************************<br>changed: [192.168.11.218]<br>changed: [192.168.11.217]<br>changed: [192.168.11.219]</p>
+<p>TASK [cluster-restore : 清除etcd 数据目录] *********************************************************************************************************************************************<br>changed: [192.168.11.217]<br>changed: [192.168.11.219]<br>changed: [192.168.11.218]</p>
+<p>TASK [cluster-restore : 清除 etcd 备份目录] ********************************************************************************************************************************************<br>ok: [192.168.11.217]</p>
+<p>TASK [cluster-restore : etcd 数据恢复] ***********************************************************************************************************************************************<br>changed: [192.168.11.217]</p>
+<p>TASK [cluster-restore : 分发恢复文件到 etcd 各个节点] ***************************************************************************************************************************************<br>changed: [192.168.11.217]<br>changed: [192.168.11.219]<br>changed: [192.168.11.218]</p>
+<p>TASK [cluster-restore : 重启etcd 服务] ***********************************************************************************************************************************************<br>changed: [192.168.11.219]<br>changed: [192.168.11.218]<br>changed: [192.168.11.217]</p>
+<p>TASK [cluster-restore : 以轮询的方式等待服务同步完成] ******************************************************************************************************************************************<br>changed: [192.168.11.218]<br>changed: [192.168.11.219]<br>changed: [192.168.11.217]</p>
+<p>PLAY [kube_master] ***************************************************************************************************************************************************************</p>
+<p>TASK [starting kube_master services] *********************************************************************************************************************************************<br>changed: [192.168.11.211] &#x3D;&gt; (item&#x3D;kube-apiserver)<br>changed: [192.168.11.213] &#x3D;&gt; (item&#x3D;kube-apiserver)<br>changed: [192.168.11.212] &#x3D;&gt; (item&#x3D;kube-apiserver)<br>changed: [192.168.11.211] &#x3D;&gt; (item&#x3D;kube-controller-manager)<br>changed: [192.168.11.213] &#x3D;&gt; (item&#x3D;kube-controller-manager)<br>changed: [192.168.11.211] &#x3D;&gt; (item&#x3D;kube-scheduler)<br>changed: [192.168.11.213] &#x3D;&gt; (item&#x3D;kube-scheduler)<br>changed: [192.168.11.212] &#x3D;&gt; (item&#x3D;kube-controller-manager)<br>changed: [192.168.11.212] &#x3D;&gt; (item&#x3D;kube-scheduler)</p>
+<p>PLAY [kube_master,kube_node] *****************************************************************************************************************************************************</p>
+<p>TASK [starting kube_node services] ***********************************************************************************************************************************************<br>changed: [192.168.11.213] &#x3D;&gt; (item&#x3D;kubelet)<br>changed: [192.168.11.212] &#x3D;&gt; (item&#x3D;kubelet)<br>changed: [192.168.11.211] &#x3D;&gt; (item&#x3D;kubelet)<br>changed: [192.168.11.214] &#x3D;&gt; (item&#x3D;kubelet)<br>changed: [192.168.11.216] &#x3D;&gt; (item&#x3D;kubelet)<br>changed: [192.168.11.213] &#x3D;&gt; (item&#x3D;kube-proxy)<br>changed: [192.168.11.212] &#x3D;&gt; (item&#x3D;kube-proxy)<br>changed: [192.168.11.211] &#x3D;&gt; (item&#x3D;kube-proxy)<br>changed: [192.168.11.214] &#x3D;&gt; (item&#x3D;kube-proxy)<br>changed: [192.168.11.216] &#x3D;&gt; (item&#x3D;kube-proxy)<br>changed: [192.168.11.215] &#x3D;&gt; (item&#x3D;kubelet)<br>changed: [192.168.11.215] &#x3D;&gt; (item&#x3D;kube-proxy)</p>
+<p>PLAY RECAP ***********************************************************************************************************************************************************************<br>192.168.11.211             : ok&#x3D;5    changed&#x3D;4    unreachable&#x3D;0    failed&#x3D;0    skipped&#x3D;0    rescued&#x3D;0    ignored&#x3D;0<br>192.168.11.212             : ok&#x3D;5    changed&#x3D;4    unreachable&#x3D;0    failed&#x3D;0    skipped&#x3D;0    rescued&#x3D;0    ignored&#x3D;0<br>192.168.11.213             : ok&#x3D;5    changed&#x3D;4    unreachable&#x3D;0    failed&#x3D;0    skipped&#x3D;0    rescued&#x3D;0    ignored&#x3D;0<br>192.168.11.214             : ok&#x3D;3    changed&#x3D;2    unreachable&#x3D;0    failed&#x3D;0    skipped&#x3D;0    rescued&#x3D;0    ignored&#x3D;0<br>192.168.11.215             : ok&#x3D;3    changed&#x3D;2    unreachable&#x3D;0    failed&#x3D;0    skipped&#x3D;0    rescued&#x3D;0    ignored&#x3D;0<br>192.168.11.216             : ok&#x3D;3    changed&#x3D;2    unreachable&#x3D;0    failed&#x3D;0    skipped&#x3D;0    rescued&#x3D;0    ignored&#x3D;0<br>192.168.11.217             : ok&#x3D;8    changed&#x3D;6    unreachable&#x3D;0    failed&#x3D;0    skipped&#x3D;0    rescued&#x3D;0    ignored&#x3D;0<br>192.168.11.218             : ok&#x3D;6    changed&#x3D;5    unreachable&#x3D;0    failed&#x3D;0    skipped&#x3D;0    rescued&#x3D;0    ignored&#x3D;0<br>192.168.11.219             : ok&#x3D;6    changed&#x3D;5    unreachable&#x3D;0    failed&#x3D;0    skipped&#x3D;0    rescued&#x3D;0    ignored&#x3D;0   </p>
+<p>#4.确认恢复成功<br>[root@K8s-ansible kubeasz]#kubectl get pod -A<br>NAMESPACE     NAME                                          READY   STATUS              RESTARTS      AGE<br>myserver      net-test1                                     0&#x2F;1     ContainerCreating   1             32m<br>myserver      net-test2                                     0&#x2F;1     ContainerCreating   1             32m<br>myserver      net-test3                                     1&#x2F;1     Running             0             32m</p>
+<p>#如果需要将现有数据加入新的集群，除了数据恢复策略，还有etcd数据加入，可以参考kubeasz的数据add配置文件<br>[root@K8s-ansible kubeasz]#ll playbooks&#x2F;21.addetcd.yml<br>-rw-rw-r– 1 root root 1567 Feb  9 15:00 playbooks&#x2F;21.addetcd.yml总结 - ETCD数据恢复流程<br>• 当etcd集群宕机数量超过集群总节点数一半以上的时候(如总数为三台宕机两台)，就会导致整合集群宕机，后期需要重新恢复数据，则恢复流程如下：<br>• 恢复服务器系统<br>• 重新部署ETCD集群<br>• 停止kube-apiserver&#x2F;controller-manager&#x2F;scheduler&#x2F;kubelet&#x2F;kube-proxy<br>• 停止ETCD集群<br>• 各ETCD节点恢复同一份备份数据<br>• 启动各节点并验证ETCD集群<br>• 启动kube-apiserver&#x2F;controller-manager&#x2F;scheduler&#x2F;kubelet&#x2F;kube-proxy<br>• 验证kubernetes master状态及pod数据</p>
+<p>我是moore,大家一起加油！！！</p>
+
+      
+       <hr><span style="font-style: italic;color: gray;"> 转载请注明来源，欢迎对文章中的引用来源进行考证，欢迎指出任何有错误或不够清晰的表达。可以在下面评论区评论，也可以邮件至 jaytp@qq.com </span>
+    </div>
+</article>
+
+
+<p>
+    <a  class="dashang" onclick="dashangToggle()">💰</a>
+</p>
+
+
+
+
+
+
+    
+
+
+
+
+    </div>
+    <div class="copyright">
+        <p class="footer-entry">
+    ©2016-2020 Yelog
+</p>
+<p class="footer-entry">Built with <a href="https://hexo.io/" target="_blank">Hexo</a> and <a href="https://github.com/yelog/hexo-theme-3-hexo" target="_blank">3-hexo</a> theme</p>
+
+    </div>
+    <div class="full-toc">
+        <button class="full" data-title="切换全屏 快捷键 s"><span class="min "></span></button>
+<a class="" id="rocket" ></a>
+
+    </div>
+</div>
+
+<div class="hide_box" onclick="dashangToggle()"></div>
+<div class="shang_box">
+    <a class="shang_close"  onclick="dashangToggle()">×</a>
+    <div class="shang_tit">
+        <p>Help us with donation</p>
+    </div>
+    <div class="shang_payimg">
+        <div class="pay_img">
+            <img src="/img/alipay.jpg" class="alipay" title="扫码支持">
+            <img src="/img/weixin.jpg" class="weixin" title="扫码支持">
+        </div>
+    </div>
+    <div class="shang_payselect">
+        <span><label><input type="radio" name="pay" checked value="alipay">alipay</label></span><span><label><input type="radio" name="pay" value="weixin">weixin</label></span>
+    </div>
+</div>
+
+
+</body>
+<script src="/js/jquery.pjax.js?v=1.1.0" ></script>
+
+<script src="/js/script.js?v=1.1.0" ></script>
+<script>
+    var img_resize = 'default';
+    function initArticle() {
+        /*渲染对应的表格样式*/
+        
+            $("#post .pjax table").addClass("green_title");
+        
+
+        /*渲染打赏样式*/
+        
+        $("input[name=pay]").on("click", function () {
+            if($("input[name=pay]:checked").val()=="weixin"){
+                $(".shang_box .shang_payimg .pay_img").addClass("weixin_img");
+            } else {
+                $(".shang_box .shang_payimg .pay_img").removeClass("weixin_img");
+            }
+        })
+        
+
+        /*高亮代码块行号*/
+        
+
+        /*访问数量*/
+        
+        $.getScript("//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js");
+        
+
+        /*代码高亮，行号对齐*/
+        $('.pre-numbering').css('line-height',$('.has-numbering').css('line-height'));
+
+        
+        
+    }
+
+    /*打赏页面隐藏与展示*/
+    
+    function dashangToggle() {
+        $(".shang_box").fadeToggle();
+        $(".hide_box").fadeToggle();
+    }
+    
+
+</script>
+
+<!--加入行号的高亮代码块样式-->
+
+<!--自定义样式设置-->
+<style>
+    
+    
+    .nav {
+        width: 542px;
+    }
+    .nav.fullscreen {
+        margin-left: -542px;
+    }
+    .nav-left {
+        width: 120px;
+    }
+    
+    
+    @media screen and (max-width: 1468px) {
+        .nav {
+            width: 492px;
+        }
+        .nav.fullscreen {
+            margin-left: -492px;
+        }
+        .nav-left {
+            width: 100px;
+        }
+    }
+    
+    
+    @media screen and (max-width: 1024px) {
+        .nav {
+            width: 492px;
+            margin-left: -492px
+        }
+        .nav.fullscreen {
+            margin-left: 0;
+        }
+    }
+    
+    @media screen and (max-width: 426px) {
+        .nav {
+            width: 100%;
+        }
+        .nav-left {
+            width: 100%;
+        }
+    }
+    
+    
+    .nav-right .title-list nav a .post-title, .nav-right .title-list #local-search-result a .post-title {
+        color: #383636;
+    }
+    
+    
+    .nav-right .title-list nav a .post-date, .nav-right .title-list #local-search-result a .post-date {
+        color: #5e5e5f;
+    }
+    
+    
+    .nav-right nav a.hover, #local-search-result a.hover{
+        background-color: #e2e0e0;
+    }
+    
+    
+
+    /*列表样式*/
+    
+
+    /* 背景图样式 */
+    
+    
+
+
+    /*引用块样式*/
+    
+
+    /*文章列表背景图*/
+    
+
+    
+</style>
+
+
+
+
+
+
+
+</html>
